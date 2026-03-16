@@ -39,7 +39,7 @@ const Layout = ({ children }) => {
     navigate('/login');
   };
 
-  // Owner menu items only
+  // landlord menu items
   const menuItems = [
     {
       key: '/app/dashboard',
