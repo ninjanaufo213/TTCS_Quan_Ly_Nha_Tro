@@ -17,7 +17,7 @@ import {
   DeleteOutlined,
   EyeOutlined
 } from '@ant-design/icons';
-import { houseService } from '../services/houseService';
+import { houseService } from '../../services/houseService';
 import { useNavigate } from 'react-router-dom';
 
 const Houses = () => {

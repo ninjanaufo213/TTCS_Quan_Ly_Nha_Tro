@@ -42,32 +42,32 @@ const Layout = ({ children }) => {
   // Owner menu items only
   const menuItems = [
     {
-      key: '/dashboard',
+      key: '/app/dashboard',
       icon: <HomeOutlined />,
       label: 'Dashboard',
     },
     {
-      key: '/houses',
+      key: '/app/houses',
       icon: <BankOutlined />,
       label: 'Quản lý nhà trọ',
     },
     {
-      key: '/rooms',
+      key: '/app/rooms',
       icon: <ShopOutlined />,
       label: 'Quản lý phòng trọ',
     },
     {
-      key: '/contracts',
+      key: '/app/contracts',
       icon: <FileTextOutlined />,
       label: 'Hợp đồng thuê',
     },
     {
-      key: '/invoices',
+      key: '/app/invoices',
       icon: <DollarOutlined />,
       label: 'Hóa đơn',
     },
     {
-      key: '/reports',
+      key: '/app/reports',
       icon: <FileTextOutlined />,
       label: 'Báo cáo & AI',
     },
@@ -90,7 +90,7 @@ const Layout = ({ children }) => {
     if (key === 'logout') {
       handleLogout();
     } else if (key === 'profile') {
-      navigate('/profile');
+      navigate('/app/profile');
     }
   };
 

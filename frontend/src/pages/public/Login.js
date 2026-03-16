@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Form, Input, Button, Card, Typography, App } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../services/authService';
+import { authService } from '../../services/authService';
 
 const { Title } = Typography;
 
@@ -16,7 +16,7 @@ const Login = () => {
     try {
       await authService.login(values.email, values.password);
       message.success('Đăng nhập thành công!');
-      navigate('/dashboard');
+      navigate('/app/dashboard');
     } catch (error) {
       message.error('Email hoặc mật khẩu không đúng!');
     } finally {

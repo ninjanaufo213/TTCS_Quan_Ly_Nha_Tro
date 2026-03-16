@@ -24,9 +24,9 @@ import {
   ReloadOutlined
 } from '@ant-design/icons';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { rentedRoomService } from '../services/rentedRoomService';
-import { roomService } from '../services/roomService';
-import { houseService } from '../services/houseService';
+import { rentedRoomService } from '../../services/rentedRoomService';
+import { roomService } from '../../services/roomService';
+import { houseService } from '../../services/houseService';
 import dayjs from 'dayjs';
 
 const { Option } = Select;

@@ -8,10 +8,10 @@ import {
   EyeOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { houseService } from '../services/houseService';
-import { roomService } from '../services/roomService';
-import { rentedRoomService } from '../services/rentedRoomService';
-import { invoiceService } from '../services/invoiceService';
+import { houseService } from '../../services/houseService';
+import { roomService } from '../../services/roomService';
+import { rentedRoomService } from '../../services/rentedRoomService';
+import { invoiceService } from '../../services/invoiceService';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({

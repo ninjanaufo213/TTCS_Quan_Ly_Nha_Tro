@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom'; // FIX LỖI: toBeInTheDocument
 import { MemoryRouter } from 'react-router-dom';
-import Login from '../pages/Login';
+import Login from '../pages/public/Login';
 import { authService } from '../services/authService';
 
 // Tạo các hàm mock sẵn để có thể kiểm tra (expect)
@@ -87,7 +87,7 @@ describe('Trang Đăng nhập (Login)', () => {
 
     await waitFor(() => {
       expect(authService.login).toHaveBeenCalledWith('test@gmail.com', 'password123');
-      expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+      expect(mockNavigate).toHaveBeenCalledWith('/app/dashboard');
       expect(mockMessageSuccess).toHaveBeenCalledWith('Đăng nhập thành công!');
     });
   });

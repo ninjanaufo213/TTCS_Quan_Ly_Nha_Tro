@@ -4,14 +4,15 @@ import { ConfigProvider } from 'antd';
 import { App as AntdApp } from 'antd';
 import viVN from 'antd/locale/vi_VN';
 import Layout from './components/Layout';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Houses from './pages/Houses';
-import Rooms from './pages/Rooms';
-import Contracts from './pages/Contracts';
-import Invoices from './pages/Invoices';
-import Reports from './pages/Reports';
-import Register from './pages/Register';
+import Login from './pages/public/Login';
+import HomePage from './pages/public/HomePage';
+import Dashboard from './pages/tenant/Dashboard';
+import Houses from './pages/tenant/Houses';
+import Rooms from './pages/tenant/Rooms';
+import Contracts from './pages/tenant/Contracts';
+import Invoices from './pages/tenant/Invoices';
+import Reports from './pages/tenant/Reports';
+import Register from './pages/public/Register';
 import Profile from './pages/Profile';
 import authService from './services/authService';
 
@@ -26,7 +27,7 @@ const ProtectedRoute = ({ children }) => {
 // Public Route Component
 const PublicRoute = ({ children }) => {
     if (authService.isAuthenticated()) {
-        return <Navigate to="/dashboard" replace />;
+        return <Navigate to="/app/dashboard" replace />;
     }
     return children;
 };
@@ -37,6 +38,9 @@ function App() {
             <AntdApp>
                 <Router>
                     <Routes>
+                        {/* HomePage as default home page */}
+                        <Route path="/" element={<HomePage />} />
+                        <Route path="/home" element={<HomePage />} />
                         <Route
                             path="/login"
                             element={
@@ -54,14 +58,14 @@ function App() {
                             }
                         />
                         <Route
-                            path="/"
+                            path="/app"
                             element={
                                 <ProtectedRoute>
                                     <Layout />
                                 </ProtectedRoute>
                             }
                         >
-                            <Route index element={<Navigate to="/dashboard" replace />} />
+                            <Route index element={<Navigate to="/app/dashboard" replace />} />
                             <Route path="dashboard" element={<Dashboard />} />
 
                             <Route path="houses" element={<Houses />} />
