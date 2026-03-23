@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Card, 
-  Table, 
-  Button, 
-  Modal, 
-  Form, 
-  Input, 
-  DatePicker, 
+  Card,
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  DatePicker,
   InputNumber,
   message,
   Space,
@@ -16,17 +16,17 @@ import {
   Col,
   Select
 } from 'antd';
-import { 
-  PlusOutlined, 
-  EditOutlined, 
+import {
+  PlusOutlined,
+  EditOutlined,
   DeleteOutlined,
   FileTextOutlined,
   ReloadOutlined
 } from '@ant-design/icons';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { rentedRoomService } from '../services/rentedRoomService';
-import { roomService } from '../services/roomService';
-import { houseService } from '../services/houseService';
+import { rentedRoomService } from '../../services/rentedRoomService';
+import { roomService } from '../../services/roomService';
+import { houseService } from '../../services/houseService';
 import dayjs from 'dayjs';
 
 const { Option } = Select;
@@ -335,14 +335,14 @@ const Contracts = () => {
       render: (_, record) => (
         <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 8 }}>
           <Button
-            type="link" 
+            type="link"
             icon={<FileTextOutlined />}
             onClick={() => navigate(`/invoices?contract=${record.rr_id}`)}
           >
             Hóa đơn
           </Button>
-          <Button 
-            type="link" 
+          <Button
+            type="link"
             icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
           >
@@ -536,9 +536,9 @@ const Contracts = () => {
                 label="Số người thuê"
                 rules={[{ required: true, message: 'Vui lòng nhập số người thuê!' }]}
               >
-                <InputNumber 
-                  min={1} 
-                  max={10} 
+                <InputNumber
+                  min={1}
+                  max={10}
                   style={{ width: '100%' }}
                   placeholder="Số người"
                 />
@@ -549,8 +549,8 @@ const Contracts = () => {
                 name="monthly_rent"
                 label="Tiền thuê/tháng (VNĐ)"
               >
-                <InputNumber 
-                  min={0} 
+                <InputNumber
+                  min={0}
                   style={{ width: '100%' }}
                   placeholder="Tiền thuê"
                   formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
@@ -563,8 +563,8 @@ const Contracts = () => {
                 name="deposit"
                 label="Tiền cọc (VNĐ)"
               >
-                <InputNumber 
-                  min={0} 
+                <InputNumber
+                  min={0}
                   style={{ width: '100%' }}
                   placeholder="Tiền cọc"
                   formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
@@ -581,8 +581,8 @@ const Contracts = () => {
                 rules={[{ required: true, message: 'Vui lòng nhập giá tiền nước!' }]}
                 initialValue={80000}
               >
-                <InputNumber 
-                  min={0} 
+                <InputNumber
+                  min={0}
                   style={{ width: '100%' }}
                   placeholder="Giá tiền nước"
                   formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
@@ -596,8 +596,8 @@ const Contracts = () => {
                 rules={[{ required: true, message: 'Vui lòng nhập giá tiền wifi!' }]}
                 initialValue={100000}
               >
-                <InputNumber 
-                  min={0} 
+                <InputNumber
+                  min={0}
                   style={{ width: '100%' }}
                   placeholder="Giá tiền wifi"
                   formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
@@ -611,8 +611,8 @@ const Contracts = () => {
                 rules={[{ required: true, message: 'Vui lòng nhập giá dịch vụ!' }]}
                 initialValue={100000}
               >
-                <InputNumber 
-                  min={0} 
+                <InputNumber
+                  min={0}
                   style={{ width: '100%' }}
                   placeholder="Giá dịch vụ"
                   formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
@@ -628,8 +628,8 @@ const Contracts = () => {
                 label="Số điện ban đầu (kWh)"
                 rules={[{ required: true, message: 'Vui lòng nhập số điện ban đầu!' }]}
               >
-                <InputNumber 
-                  min={0} 
+                <InputNumber
+                  min={0}
                   style={{ width: '100%' }}
                   placeholder="Số điện ban đầu"
                 />
@@ -642,8 +642,8 @@ const Contracts = () => {
                 rules={[{ required: true, message: 'Vui lòng nhập đơn giá điện!' }]}
                 initialValue={3500}
               >
-                <InputNumber 
-                  min={0} 
+                <InputNumber
+                  min={0}
                   style={{ width: '100%' }}
                   placeholder="Đơn giá điện"
                   formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}

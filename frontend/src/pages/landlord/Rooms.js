@@ -23,9 +23,9 @@ import {
   HomeOutlined
 } from '@ant-design/icons';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { roomService } from '../services/roomService';
-import { houseService } from '../services/houseService';
-import { assetService } from '../services/assetService';
+import { roomService } from '../../services/roomService';
+import { houseService } from '../../services/houseService';
+import { assetService } from '../../services/assetService';
 
 const { TextArea } = Input;
 const { Option } = Select;

@@ -17,8 +17,8 @@ import {
   FileTextOutlined,
   RobotOutlined
 } from '@ant-design/icons';
-import { reportsService } from '../services/reportsService';
-import { aiService } from '../services/aiService';
+import { reportsService } from '../../services/reportsService';
+import { aiService } from '../../services/aiService';
 import dayjs from 'dayjs';
 
 const { Title } = Typography;

@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Statistic, Table, Button, Tag } from 'antd';
 import {
-  BankOutlined, 
-  ShopOutlined, 
-  UserOutlined, 
+  BankOutlined,
+  ShopOutlined,
+  UserOutlined,
   DollarOutlined,
   EyeOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { houseService } from '../services/houseService';
-import { roomService } from '../services/roomService';
-import { rentedRoomService } from '../services/rentedRoomService';
-import { invoiceService } from '../services/invoiceService';
+import { houseService } from '../../services/houseService';
+import { roomService } from '../../services/roomService';
+import { rentedRoomService } from '../../services/rentedRoomService';
+import { invoiceService } from '../../services/invoiceService';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -129,7 +129,7 @@ const Dashboard = () => {
       <h2 style={{ marginBottom: 24 }}>
         Dashboard - Chủ trọ
       </h2>
-      
+
       <>
         <Row gutter={16} style={{ marginBottom: 24 }}>
           <Col span={6}>
