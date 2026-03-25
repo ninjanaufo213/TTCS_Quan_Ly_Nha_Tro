@@ -3,15 +3,12 @@ import {
   Input,
   Button,
   Card,
-  Tag,
   Avatar,
-  Space,
   Row,
   Col,
-  Dropdown,
-  Menu,
   Divider,
-  Badge
+  Badge,
+  Empty
 } from 'antd';
 import {
   SearchOutlined,
@@ -23,7 +20,8 @@ import {
   StarFilled,
   ArrowRightOutlined,
   MessageOutlined,
-  ArrowUpOutlined
+  ArrowUpOutlined,
+  EnvironmentOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import '../../styles/HomePage.css';
@@ -34,6 +32,7 @@ const HomePage = () => {
   const [selectedProvince, setSelectedProvince] = useState('all');
   const [savedListings, setSavedListings] = useState(new Set());
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // Listings data - will be populated from API
   const [listings, setListings] = useState([]);
@@ -81,6 +80,9 @@ const HomePage = () => {
   ];
 
   useEffect(() => {
+    // Trigger entrance animation immediately
+    setIsLoaded(true);
+
     // Load listings from API
     // const fetchListings = async () => {
     //   try {
@@ -129,11 +131,15 @@ const HomePage = () => {
     return `${price.toLocaleString()} VNĐ`;
   };
 
-  const renderListingCard = (listing) => (
-    <Card key={listing.id} className="listing-card">
-      <Row gutter={16}>
+  const renderListingCard = (listing, index) => (
+    <Card 
+        key={listing.id} 
+        className="listing-card animate-fade-in-up" 
+        style={{ animationDelay: `${(index % 8) * 100}ms` }}
+    >
+      <Row gutter={24}>
         {/* Images Section */}
-        <Col xs={24} sm={24} md={14}>
+        <Col xs={24} sm={24} md={10}>
           <div className="images-container">
             {/* Main large image */}
             <div className="main-image">
@@ -145,7 +151,6 @@ const HomePage = () => {
               )}
               <Badge
                 count={`${listing.totalImages}`}
-                style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)', color: 'white' }}
                 className="image-count"
               />
             </div>
@@ -162,11 +167,11 @@ const HomePage = () => {
         </Col>
 
         {/* Content Section */}
-        <Col xs={24} sm={24} md={10}>
+        <Col xs={24} sm={24} md={14}>
           <div className="listing-content">
             {/* Title */}
             <div className="listing-title">
-              <StarFilled style={{ color: '#ffd700', marginRight: 8 }} />
+              <StarFilled style={{ color: '#fbbf24', fontSize: '18px', marginTop: '4px' }} />
               <span>{listing.title}</span>
             </div>
 
@@ -177,6 +182,7 @@ const HomePage = () => {
               <span className="area">{listing.area} m²</span>
               <span className="divider">•</span>
               <span className="location">
+                <EnvironmentOutlined style={{ marginRight: '4px' }}/>
                 {listing.district}, {listing.province}
               </span>
             </div>
@@ -195,9 +201,9 @@ const HomePage = () => {
                   type="link"
                   icon={
                     savedListings.has(listing.id) ? (
-                      <HeartFilled style={{ color: 'red' }} />
+                      <HeartFilled style={{ color: '#ef4444', fontSize: '20px' }} />
                     ) : (
-                      <HeartOutlined />
+                      <HeartOutlined style={{ fontSize: '20px' }}/>
                     )
                   }
                   onClick={() => toggleSavedListing(listing.id)}
@@ -221,13 +227,13 @@ const HomePage = () => {
   return (
     <div className="home-page">
       {/* Top Navigation Bar */}
-      <header className="top-navbar">
+      <header className="top-navbar animate-fade-in">
         <div className="navbar-container">
           <div className="logo">TTCS</div>
 
           <Input
-            placeholder="Tìm kiếm theo khu vực..."
-            prefix={<SearchOutlined />}
+            placeholder="Tìm kiếm theo khu vực, tên đường..."
+            prefix={<SearchOutlined style={{ color: '#94a3b8' }}/>}
             className="search-input"
           />
 
@@ -251,7 +257,7 @@ const HomePage = () => {
       </header>
 
       {/* Menu Categories */}
-      <nav className="category-menu">
+      <nav className={`category-menu animate-fade-in`}>
         <div className="menu-container">
           {menuCategories.map(cat => (
             <a
@@ -268,23 +274,17 @@ const HomePage = () => {
       {/* Main Content */}
       <div className="main-content">
         <div className="content-container">
-          {/* Left Sidebar - Ad Banner */}
-          <aside className="left-sidebar">
-            <div className="ad-banner">
-            </div>
-          </aside>
-
           {/* Center Content */}
           <main className="center-content">
             {/* Page Title */}
-            <section className="page-title">
+            <section className="page-title animate-fade-in-up">
               <h1>Kênh thông tin Phòng Trọ số 1 Việt Nam</h1>
-              <p>Có {listings.length} tin đăng cho thuê</p>
+              <p>Có {listings.length} tin đăng cho thuê phù hợp với bạn</p>
             </section>
 
             {/* Province Selection */}
-            <section className="province-section">
-              <div className="section-label">TỈNH THÀNH</div>
+            <section className="province-section animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+              <div className="section-label">Tỉnh Thành Nổi Bật</div>
               <div className="province-buttons">
                 {provinces.map(prov => (
                   <Button
@@ -299,40 +299,46 @@ const HomePage = () => {
             </section>
 
             {/* Content Tabs */}
-            <div className="content-tabs">
+            <div className="content-tabs animate-fade-in-up" style={{ animationDelay: '200ms' }}>
               <div className="tab-list">
                 <div
                   className={`tab-item ${activeTab === 'suggest' ? 'active' : ''}`}
                   onClick={() => setActiveTab('suggest')}
                 >
-                  Đề xuất
+                  Đề xuất cho bạn
                 </div>
                 <div
                   className={`tab-item ${activeTab === 'new' ? 'active' : ''}`}
                   onClick={() => setActiveTab('new')}
                 >
-                  Mới đăng
+                  Mới đăng gần đây
                 </div>
                 <div
                   className={`tab-item ${activeTab === 'video' ? 'active' : ''}`}
                   onClick={() => setActiveTab('video')}
                 >
-                  Có video
+                  Có video xem trước
                 </div>
               </div>
             </div>
 
             {/* Listings */}
             <section className="listings-section">
-              {listings.map(listing => renderListingCard(listing))}
+              {listings.length > 0 ? (
+                  listings.map((listing, index) => renderListingCard(listing, index))
+              ) : (
+                  <div className="animate-fade-in-up" style={{ animationDelay: '300ms' }}>
+                     <Empty description="Không có tin đăng nào phù hợp" />
+                  </div>
+              )}
             </section>
           </main>
 
           {/* Right Sidebar */}
-          <aside className="right-sidebar">
+          <aside className="right-sidebar animate-fade-in-up" style={{ animationDelay: '200ms' }}>
             {/* Price Filter */}
             <Card className="filter-card">
-              <h3 className="filter-title">Xem theo khoảng giá</h3>
+              <h3 className="filter-title">Lọc theo giá</h3>
               <div className="filter-links">
                 {priceRanges.map((range, idx) => (
                   <div key={idx} className="filter-item">
@@ -347,7 +353,7 @@ const HomePage = () => {
 
             {/* Area Filter */}
             <Card className="filter-card">
-              <h3 className="filter-title">Xem theo diện tích</h3>
+              <h3 className="filter-title">Lọc theo diện tích</h3>
               <div className="filter-links">
                 {areaRanges.map((range, idx) => (
                   <div key={idx} className="filter-item">
@@ -360,37 +366,36 @@ const HomePage = () => {
               </div>
             </Card>
 
-            {/* Ad Banner */}
-            <div className="ad-banner-right">
-            </div>
-
             {/* New Listings */}
-            <Card className="new-listings-card">
-              <h3 className="filter-title">Tin mới đăng</h3>
-              {newListings.map((listing, idx) => (
-                <div key={idx}>
-                  <div className="new-listing-item">
-                    <img
-                      src={listing.images[0]}
-                      alt={listing.title}
-                      className="new-listing-thumb"
-                    />
-                    <div className="new-listing-info">
-                      <a href="#" className="new-listing-title">
-                        {listing.title.substring(0, 40)}...
-                      </a>
-                      <div className="new-listing-meta">
-                        <span className="new-price">
-                          {formatPrice(listing.price)}
-                        </span>
-                        <span className="new-time">{listing.createdAt}</span>
-                      </div>
+            {newListings.length > 0 && (
+                <Card className="new-listings-card">
+                <h3 className="filter-title">Tin mới đăng</h3>
+                {newListings.map((listing, idx) => (
+                    <div key={idx}>
+                    <div className="new-listing-item">
+                        <img
+                        src={listing.images[0]}
+                        alt={listing.title}
+                        className="new-listing-thumb"
+                        />
+                        <div className="new-listing-info">
+                        <a href="#" className="new-listing-title">
+                            {listing.title.substring(0, 40)}...
+                        </a>
+                        <div className="new-listing-meta">
+                            <span className="new-price">
+                            {formatPrice(listing.price)}
+                            </span>
+                            <span className="new-time">{listing.createdAt}</span>
+                        </div>
+                        </div>
                     </div>
-                  </div>
-                  {idx < newListings.length - 1 && <Divider style={{ margin: '12px 0' }} />}
-                </div>
-              ))}
-            </Card>
+                    {idx < newListings.length - 1 && <Divider style={{ margin: '8px 0', borderColor: '#e2e8f0' }} />}
+                    </div>
+                ))}
+                </Card>
+            )}
+            
           </aside>
         </div>
       </div>
