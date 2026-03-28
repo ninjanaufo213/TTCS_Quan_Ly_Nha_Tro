@@ -37,30 +37,30 @@ const Login = () => {
     }}>
       {/* 3D Background using iframe to isolate errors */}
       {process.env.NODE_ENV !== 'test' && (
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        zIndex: 0,
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-      }}>
-        <iframe
-          src="https://my.spline.design/r4xbot-OaKDFcUbSxFFfqVeaB8uvzNg/"
-          frameBorder="0"
-          width="100%"
-          height="100%"
-          style={{
-            border: 'none',
-            position: 'absolute',
-            top: 0,
-            left: 0
-          }}
-          title="3D Background"
-        />
-      </div>
-    )}
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 0,
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+        }}>
+          <iframe
+            src="https://my.spline.design/r4xbot-OaKDFcUbSxFFfqVeaB8uvzNg/"
+            frameBorder="0"
+            width="100%"
+            height="100%"
+            style={{
+              border: 'none',
+              position: 'absolute',
+              top: 0,
+              left: 0
+            }}
+            title="3D Background"
+          />
+        </div>
+      )}
 
       {/* Welcome Text - Left Side */}
       <div style={{
@@ -168,7 +168,7 @@ const Login = () => {
             Đăng nhập vào hệ thống
           </p>
         </div>
-        
+
         <Form
           name="login"
           onFinish={onFinish}
@@ -182,7 +182,7 @@ const Login = () => {
               { type: 'email', message: 'Email không hợp lệ!' }
             ]}
           >
-            <Input 
+            <Input
               prefix={<UserOutlined style={{ fontSize: '22px' }} />}
               placeholder="Email"
               style={{
@@ -210,9 +210,9 @@ const Login = () => {
 
           <Form.Item style={{ marginTop: '32px' }}>
             <Button
-              type="primary" 
-              htmlType="submit" 
-              loading={loading}
+              type="primary"
+              htmlType="submit"
+              loading={false}
               style={{
                 width: '100%',
                 height: '50px',

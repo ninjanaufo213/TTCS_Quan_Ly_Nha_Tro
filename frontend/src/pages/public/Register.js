@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Form, Input, Button, Card, Typography, App } from 'antd';
+import { Form, Input, Button, Card, Typography, App, Radio } from 'antd';
 import { UserOutlined, MailOutlined, PhoneOutlined, LockOutlined } from '@ant-design/icons';
 import { authService } from '../../services/authService';
 
@@ -19,8 +19,8 @@ const Register = () => {
     }
     setLoading(true);
     try {
-      const { fullname, phone, email, password } = values;
-      await authService.register({ fullname, phone, email, password });
+      const { fullname, phone, email, password, role } = values;
+      await authService.register({ fullname, phone, email, password, role });
       message.success('Đăng ký thành công! Vui lòng đăng nhập.');
       navigate('/login');
     } catch (err) {
@@ -248,6 +248,17 @@ const Register = () => {
           `}
         </style>
         <Form layout="vertical" form={form} onFinish={onFinish} size="large" style={{ fontSize: '16px' }}>
+          <Form.Item
+            name="role"
+            initialValue="LANDLORD"
+            style={{ marginBottom: '16px' }}
+          >
+            <Radio.Group style={{ width: '100%', display: 'flex' }}>
+              <Radio.Button value="LANDLORD" style={{ flex: 1, textAlign: 'center', height: '44px', lineHeight: '42px', fontSize: '16px' }}>Tôi là Chủ Trọ</Radio.Button>
+              <Radio.Button value="TENANT" style={{ flex: 1, textAlign: 'center', height: '44px', lineHeight: '42px', fontSize: '16px' }}>Tôi là Khách Thuê</Radio.Button>
+            </Radio.Group>
+          </Form.Item>
+
           <Form.Item
             label={<span style={{ fontSize: '16px', fontWeight: '500' }}>Họ và tên</span>}
             name="fullname"
