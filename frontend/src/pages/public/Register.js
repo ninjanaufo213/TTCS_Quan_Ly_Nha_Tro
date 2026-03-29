@@ -249,17 +249,6 @@ const Register = () => {
         </style>
         <Form layout="vertical" form={form} onFinish={onFinish} size="large" style={{ fontSize: '16px' }}>
           <Form.Item
-            name="role"
-            initialValue="LANDLORD"
-            style={{ marginBottom: '16px' }}
-          >
-            <Radio.Group style={{ width: '100%', display: 'flex' }}>
-              <Radio.Button value="LANDLORD" style={{ flex: 1, textAlign: 'center', height: '44px', lineHeight: '42px', fontSize: '16px' }}>Tôi là Chủ Trọ</Radio.Button>
-              <Radio.Button value="TENANT" style={{ flex: 1, textAlign: 'center', height: '44px', lineHeight: '42px', fontSize: '16px' }}>Tôi là Khách Thuê</Radio.Button>
-            </Radio.Group>
-          </Form.Item>
-
-          <Form.Item
             label={<span style={{ fontSize: '16px', fontWeight: '500' }}>Họ và tên</span>}
             name="fullname"
             rules={[
@@ -366,7 +355,18 @@ const Register = () => {
             />
           </Form.Item>
 
-          <Form.Item style={{ marginTop: '16px', marginBottom: '4px' }}>
+          <Form.Item
+            name="role"
+            initialValue="LANDLORD"
+            style={{ marginBottom: '16px', textAlign: 'center' }}
+          >
+            <Radio.Group>
+              <Radio value="LANDLORD" style={{ fontSize: '15px', marginRight: '24px' }}>Tôi là Chủ trọ</Radio>
+              <Radio value="TENANT" style={{ fontSize: '15px' }}>Tôi là Khách thuê</Radio>
+            </Radio.Group>
+          </Form.Item>
+
+          <Form.Item style={{ marginTop: '8px', marginBottom: '4px' }}>
             <Button
               type="primary"
               htmlType="submit"

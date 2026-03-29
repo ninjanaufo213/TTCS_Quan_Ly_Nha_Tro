@@ -2,21 +2,28 @@ import api from './api';
 
 export const authService = {
     login: async(email, password) => {
-        // Send login credentials as JSON
         const response = await api.post('/auth/login', {
             email: email,
             password: password
         });
 
-        if (response.data.access_token) {
-            localStorage.setItem('access_token', response.data.access_token);
+        const data = response.data;
 
-            // Fetch and store user info
-            const userResponse = await api.get('/users/me');
-            localStorage.setItem('user_info', JSON.stringify(userResponse.data));
+        // Nếu Backend trả về success (Theo Lean Web)
+        if (data.success) {
+            // Lưu token giả để pass qua điều kiện Bảo vệ Route (ProtectedRoute)
+            localStorage.setItem('access_token', 'dummy-token-' + data.userId);
+
+            // Lưu trực tiếp thông tin Backend gửi sang mà không cần gọi API /users/me
+            const userInfo = {
+                userId: data.userId,
+                email: data.email,
+                role: { authority: data.role.toLowerCase() } // VD: "landlord" thay vì "LANDLORD"
+            };
+            localStorage.setItem('user_info', JSON.stringify(userInfo));
         }
 
-        return response.data;
+        return data;
     },
 
     register: async(userData) => {
