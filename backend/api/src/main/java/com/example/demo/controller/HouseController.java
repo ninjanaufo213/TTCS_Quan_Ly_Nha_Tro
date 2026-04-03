@@ -1,8 +1,8 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.RoomRequest;
-import com.example.demo.dto.RoomResponse;
-import com.example.demo.service.RoomService;
+import com.example.demo.dto.HouseRequest;
+import com.example.demo.dto.HouseResponse;
+import com.example.demo.service.HouseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,55 +13,37 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/rooms")
+@RequestMapping("/api/houses")
 @CrossOrigin(origins = "*")
-public class RoomController {
+public class HouseController {
 
-    private final RoomService roomService;
+    private final HouseService houseService;
 
     @Autowired
-    public RoomController(RoomService roomService) {
-        this.roomService = roomService;
+    public HouseController(HouseService houseService) {
+        this.houseService = houseService;
     }
 
     /**
-     * Get all rooms for current landlord
+     * Get all houses for current landlord
      */
     @GetMapping("/")
-    public ResponseEntity<List<RoomResponse>> getAllRooms() {
+    public ResponseEntity<List<HouseResponse>> getAllHouses() {
         try {
-            List<RoomResponse> rooms = roomService.getAllRooms();
-            return ResponseEntity.ok(rooms);
+            List<HouseResponse> houses = houseService.getAllHouses();
+            return ResponseEntity.ok(houses);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     /**
-     * Get rooms by house ID
-     */
-    @GetMapping("/house/{houseId}")
-    public ResponseEntity<List<RoomResponse>> getRoomsByHouse(@PathVariable("houseId") Integer houseId) {
-        try {
-            List<RoomResponse> rooms = roomService.getRoomsByHouse(houseId);
-            return ResponseEntity.ok(rooms);
-        } catch (IllegalArgumentException e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("detail", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    /**
-     * Get a specific room by ID
+     * Get a specific house by ID
      */
     @GetMapping("/{id}")
-    public ResponseEntity<RoomResponse> getRoomById(@PathVariable("id") Integer id) {
+    public ResponseEntity<HouseResponse> getHouseById(@PathVariable("id") Integer id) {
         try {
-            return roomService.getRoomById(id)
+            return houseService.getHouseById(id)
                     .map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
         } catch (Exception e) {
@@ -70,13 +52,13 @@ public class RoomController {
     }
 
     /**
-     * Create a new room
+     * Create a new house
      */
     @PostMapping("/")
-    public ResponseEntity<?> createRoom(@RequestBody RoomRequest request) {
+    public ResponseEntity<?> createHouse(@RequestBody HouseRequest request) {
         try {
-            RoomResponse room = roomService.createRoom(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(room);
+            HouseResponse house = houseService.createHouse(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(house);
         } catch (IllegalArgumentException e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
@@ -85,19 +67,19 @@ public class RoomController {
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
-            response.put("detail", "Lỗi khi tạo phòng: " + e.getMessage());
+            response.put("detail", "Lỗi khi tạo nhà trọ: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
     /**
-     * Update an existing room
+     * Update an existing house
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateRoom(@PathVariable("id") Integer id, @RequestBody RoomRequest request) {
+    public ResponseEntity<?> updateHouse(@PathVariable("id") Integer id, @RequestBody HouseRequest request) {
         try {
-            RoomResponse room = roomService.updateRoom(id, request);
-            return ResponseEntity.ok(room);
+            HouseResponse house = houseService.updateHouse(id, request);
+            return ResponseEntity.ok(house);
         } catch (IllegalArgumentException e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
@@ -106,21 +88,21 @@ public class RoomController {
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
-            response.put("detail", "Lỗi khi cập nhật phòng: " + e.getMessage());
+            response.put("detail", "Lỗi khi cập nhật nhà trọ: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
     /**
-     * Delete a room
+     * Delete a house
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteRoom(@PathVariable("id") Integer id) {
+    public ResponseEntity<?> deleteHouse(@PathVariable("id") Integer id) {
         try {
-            roomService.deleteRoom(id);
+            houseService.deleteHouse(id);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("message", "Xóa phòng thành công");
+            response.put("message", "Xóa nhà trọ thành công");
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             Map<String, Object> response = new HashMap<>();
@@ -130,7 +112,7 @@ public class RoomController {
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
-            response.put("detail", "Lỗi khi xóa phòng: " + e.getMessage());
+            response.put("detail", "Lỗi khi xóa nhà trọ: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
