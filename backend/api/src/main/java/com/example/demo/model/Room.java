@@ -23,7 +23,7 @@ public class Room {
     @Column(name = "room_id")
     private Integer roomId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "house_id", nullable = false)
     private House house;
 

@@ -19,8 +19,8 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  EyeOutlined,
-  HomeOutlined
+  HomeOutlined,
+  FileTextOutlined
 } from '@ant-design/icons';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { roomService } from '../../services/roomService';
@@ -77,6 +77,7 @@ const Rooms = () => {
     setLoading(true);
     try {
       const data = await roomService.getByHouse(houseId);
+      console.log('Rooms data from API:', data);
       setRooms(data);
     } catch (error) {
       message.error('Lỗi khi tải danh sách phòng!');
@@ -89,6 +90,7 @@ const Rooms = () => {
     setLoading(true);
     try {
       const data = await roomService.getAll();
+      console.log('All rooms data from API:', data);
       setRooms(data);
     } catch (error) {
       message.error('Lỗi khi tải danh sách phòng!');
@@ -224,10 +226,45 @@ const Rooms = () => {
           </Button>
           <Button
             type="link"
-            icon={<EyeOutlined />}
-            onClick={() => navigate(`/contracts?room=${record.room_id}`)}
+            icon={<FileTextOutlined />}
+            onClick={() => {
+              let houseId = record.houseId || record.house_id;
+              if (!houseId && record.house) {
+                houseId = record.house.house_id || record.house.houseId;
+              }
+              if (!houseId && record.house_id) {
+                houseId = record.house_id;
+              }
+              console.log('View contracts - Record:', record, 'HouseId:', houseId);
+              if (houseId) {
+                navigate(`/app/contracts?house=${houseId}&room=${record.room_id}`);
+              } else {
+                message.error('Không tìm thấy nhà trọ. Vui lòng làm mới trang.');
+              }
+            }}
           >
-            Hợp đồng
+            Xem hợp đồng
+          </Button>
+          <Button
+            type="link"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              let houseId = record.houseId || record.house_id;
+              if (!houseId && record.house) {
+                houseId = record.house.house_id || record.house.houseId;
+              }
+              if (!houseId && record.house_id) {
+                houseId = record.house_id;
+              }
+              console.log('Create contract - Record:', record, 'HouseId:', houseId);
+              if (houseId) {
+                navigate(`/app/contracts?house=${houseId}&room=${record.room_id}&action=create`);
+              } else {
+                message.error('Không tìm thấy nhà trọ. Vui lòng làm mới trang.');
+              }
+            }}
+          >
+            Tạo hợp đồng
           </Button>
           <Button
             type="link"
@@ -254,7 +291,7 @@ const Rooms = () => {
   return (
     <div>
       <Card
-        title={`Quản lý phòng trọ${houseId ? ` - ${houses.find(h => h.house_id == houseId)?.name}` : ''}`}
+        title={`Quản lý phòng trọ${houseId ? ` - ${houses.find(h => h.house_id === parseInt(houseId))?.name}` : ''}`}
         extra={
           <Space>
             {!houseId && (
@@ -387,7 +424,7 @@ const Rooms = () => {
          onCancel={() => setAssetModalVisible(false)}
          footer={null}
          width={1100}
-         bodyStyle={{ maxHeight: '70vh', overflowY: 'auto' }}
+         styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }}
        >
          <AssetManagement 
            roomId={selectedRoom?.room_id}

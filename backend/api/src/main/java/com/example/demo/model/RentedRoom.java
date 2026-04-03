@@ -29,7 +29,7 @@ public class RentedRoom {
     private Room room;
 
     @ManyToOne
-    @JoinColumn(name = "tenant_id", nullable = false)
+    @JoinColumn(name = "tenant_id", nullable = true)
     private Tenant tenant;
 
     @Column(name = "number_of_tenants")
