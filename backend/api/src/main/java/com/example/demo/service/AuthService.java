@@ -11,8 +11,11 @@ import com.example.demo.repository.TenantRepository;
 import com.example.demo.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.Optional;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 public class AuthService {
@@ -89,6 +92,70 @@ public class AuthService {
                     .brandName(request.getFullname())
                     .build();
             landlordRepository.save(landlord);
+        }
+    }
+
+    /**
+     * Get current user's landlord ID from request header
+     * Expected header: X-User-Email
+     */
+    public Integer getCurrentLandlordId() {
+        try {
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes == null) {
+                throw new IllegalStateException("Không thể lấy request context");
+            }
+
+            HttpServletRequest request = attributes.getRequest();
+            String userEmail = request.getHeader("X-User-Email");
+
+            if (userEmail == null || userEmail.isEmpty()) {
+                throw new IllegalStateException("Header X-User-Email không tìm thấy");
+            }
+
+            Optional<User> userOpt = userRepository.findByEmail(userEmail);
+            if (userOpt.isEmpty()) {
+                throw new IllegalStateException("User không tìm thấy");
+            }
+
+            User user = userOpt.get();
+            Optional<Landlord> landlordOpt = landlordRepository.findByUser_UserId(user.getUserId());
+
+            if (landlordOpt.isEmpty()) {
+                throw new IllegalStateException("Landlord không tìm thấy");
+            }
+
+            return landlordOpt.get().getLandlordId();
+        } catch (Exception e) {
+            throw new IllegalStateException("Lỗi khi lấy thông tin landlord: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get current user's ID from request header
+     */
+    public Integer getCurrentUserId() {
+        try {
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes == null) {
+                throw new IllegalStateException("Không thể lấy request context");
+            }
+
+            HttpServletRequest request = attributes.getRequest();
+            String userEmail = request.getHeader("X-User-Email");
+
+            if (userEmail == null || userEmail.isEmpty()) {
+                throw new IllegalStateException("Header X-User-Email không tìm thấy");
+            }
+
+            Optional<User> userOpt = userRepository.findByEmail(userEmail);
+            if (userOpt.isEmpty()) {
+                throw new IllegalStateException("User không tìm thấy");
+            }
+
+            return userOpt.get().getUserId();
+        } catch (Exception e) {
+            throw new IllegalStateException("Lỗi khi lấy thông tin user: " + e.getMessage());
         }
     }
 }

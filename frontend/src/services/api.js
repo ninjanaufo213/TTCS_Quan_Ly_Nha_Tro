@@ -7,10 +7,14 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Add auth token to requests
+// Add auth token and user email to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
+  const userEmail = localStorage.getItem('user_email');
+
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (userEmail) config.headers['X-User-Email'] = userEmail;
+
   return config;
 });
 
@@ -20,6 +24,7 @@ api.interceptors.response.use(
   (error) => {
     if (error?.response?.status === 401 && !error?.config?.url?.includes('/auth/login')) {
       localStorage.removeItem('access_token');
+      localStorage.removeItem('user_email');
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -27,3 +32,5 @@ api.interceptors.response.use(
 );
 
 export default api;
+
+

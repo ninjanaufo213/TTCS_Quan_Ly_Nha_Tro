@@ -108,7 +108,7 @@ const Houses = () => {
       title: 'Số tầng',
       dataIndex: 'floor_count',
       key: 'floor_count',
-      render: (value) => `${value} tầng`,
+      render: (value) => value ? `${value} tầng` : 'N/A',
     },
     {
       title: 'Phường/Xã',
@@ -130,7 +130,7 @@ const Houses = () => {
       title: 'Ngày tạo',
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date) => new Date(date).toLocaleDateString('vi-VN'),
+      render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : 'N/A',
     },
     {
       title: 'Hành động',

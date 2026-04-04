@@ -32,10 +32,13 @@ import dayjs from 'dayjs';
 const { Option } = Select;
 
 const Contracts = () => {
+  console.log('Contracts component loaded');
+
   const [contracts, setContracts] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [houses, setHouses] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 5,
@@ -51,6 +54,8 @@ const Contracts = () => {
   const navigate = useNavigate();
 
   const roomId = searchParams.get('room');
+  const houseId = searchParams.get('house');
+  const action = searchParams.get('action');
   const [roomsAll, setRoomsAll] = useState([]);
 
   // Filter states
@@ -64,6 +69,7 @@ const Contracts = () => {
   });
 
   useEffect(() => {
+    console.log('Main useEffect running, roomId:', roomId, 'houseId:', houseId);
     fetchHouses();
     if (roomId) {
       fetchContractsByRoom(roomId);
@@ -71,6 +77,27 @@ const Contracts = () => {
       fetchAllContracts();
     }
   }, [roomId]);
+
+  useEffect(() => {
+    // Tự động mở modal tạo hợp đồng nếu action=create
+    if (action === 'create' && roomId && !modalVisible) {
+      // Mở modal
+      setEditingContract(null);
+      form.resetFields();
+      if (houseId) {
+        form.setFieldsValue({ house_id: parseInt(houseId) });
+      }
+      if (roomId) {
+        const rid = parseInt(roomId);
+        form.setFieldsValue({ room_id: rid });
+        const selectedRoom = roomsAll.find(r => r.room_id === rid) || rooms.find(r => r.room_id === rid);
+        if (selectedRoom) {
+          form.setFieldsValue({ monthly_rent: selectedRoom.price });
+        }
+      }
+      setModalVisible(true);
+    }
+  }, [action, roomId, houseId, modalVisible, roomsAll, rooms, form]);
 
   useEffect(() => {
     // Load all rooms for name mapping
@@ -84,10 +111,14 @@ const Contracts = () => {
 
   const fetchHouses = async () => {
     try {
+      console.log('Fetching houses...');
       const data = await houseService.getAll();
+      console.log('Houses fetched:', data);
       setHouses(data);
+      setError(null);
     } catch (error) {
-      message.error('Lỗi khi tải danh sách nhà trọ!');
+      console.error('Lỗi khi tải danh sách nhà trọ:', error);
+      setError('Lỗi khi tải danh sách nhà trọ: ' + (error?.message || 'Không xác định'));
     }
   };
 
@@ -102,11 +133,14 @@ const Contracts = () => {
 
   const fetchContractsByRoom = async (roomId) => {
     setLoading(true);
+    setError(null);
     try {
       const data = await rentedRoomService.getByRoom(roomId);
+      console.log('Contracts by room loaded:', data);
       setContracts(data);
     } catch (error) {
-      message.error('Lỗi khi tải danh sách hợp đồng!');
+      console.error('Lỗi khi tải danh sách hợp đồng:', error);
+      setError('Lỗi khi tải danh sách hợp đồng');
     } finally {
       setLoading(false);
     }
@@ -114,11 +148,14 @@ const Contracts = () => {
 
   const fetchAllContracts = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await rentedRoomService.getAll();
+      console.log('All contracts loaded:', data);
       setContracts(data);
     } catch (error) {
-      message.error('Lỗi khi tải danh sách hợp đồng!');
+      console.error('Lỗi khi tải danh sách hợp đồng:', error);
+      setError('Lỗi khi tải danh sách hợp đồng');
     } finally {
       setLoading(false);
     }
@@ -131,6 +168,9 @@ const Contracts = () => {
   const handleCreate = () => {
     setEditingContract(null);
     form.resetFields();
+    if (houseId) {
+      form.setFieldsValue({ house_id: parseInt(houseId) });
+    }
     if (roomId) {
       const rid = parseInt(roomId);
       form.setFieldsValue({ room_id: rid });
@@ -145,8 +185,23 @@ const Contracts = () => {
     setModalVisible(true);
   };
 
+  const handleModalClose = () => {
+    setModalVisible(false);
+    // Clear action param from URL so it doesn't auto-open again
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('action');
+    setSearchParams(newParams);
+  };
+
   const handleEdit = (record) => {
     setEditingContract(record);
+    // Load rooms for the house if available
+    if (record.room && record.room.house_id) {
+      fetchRooms(record.room.house_id);
+      form.setFieldsValue({
+        house_id: record.room.house_id,
+      });
+    }
     form.setFieldsValue({
       ...record,
       start_date: dayjs(record.start_date),
@@ -171,8 +226,17 @@ const Contracts = () => {
 
   const handleSubmit = async (values) => {
     try {
+      // Validate số người không vượt quá sức chứa
+      const selectedRoom = roomsMap[values.room_id];
+      if (selectedRoom && values.number_of_tenants > selectedRoom.capacity) {
+        message.error(`Số người thuê (${values.number_of_tenants} người) không được vượt quá sức chứa của phòng (${selectedRoom.capacity} người)!`);
+        return;
+      }
+
       // If creating new contract, enforce monthly_rent from selected room price
       let submitValues = { ...values };
+      // Remove house_id - it's only for selecting rooms
+      delete submitValues.house_id;
       if (!editingContract && values.room_id) {
         const selectedRoom = roomsMap[values.room_id];
         if (selectedRoom) {
@@ -193,14 +257,16 @@ const Contracts = () => {
         await rentedRoomService.create(submitData);
         message.success('Tạo hợp đồng thành công!');
       }
-      setModalVisible(false);
+      handleModalClose();
       if (roomId) {
         fetchContractsByRoom(roomId);
       } else {
         fetchAllContracts();
       }
     } catch (error) {
-      message.error('Lỗi khi lưu hợp đồng!');
+      console.error('Error:', error);
+      const errorMsg = error.response?.data?.message || error.message || 'Lỗi khi lưu hợp đồng!';
+      message.error(errorMsg);
     }
   };
 
@@ -337,7 +403,7 @@ const Contracts = () => {
           <Button
             type="link"
             icon={<FileTextOutlined />}
-            onClick={() => navigate(`/invoices?contract=${record.rr_id}`)}
+            onClick={() => navigate(`/app/invoices?contract=${record.rr_id}`)}
           >
             Hóa đơn
           </Button>
@@ -365,34 +431,202 @@ const Contracts = () => {
     },
   ];
 
+  console.log('Rendering Contracts, houses:', houses.length, 'contracts:', contracts.length, 'loading:', loading, 'roomId:', roomId, 'action:', action);
+
   return (
     <div>
+      {error && (
+        <Card style={{ marginBottom: 16, borderColor: '#ff4d4f', backgroundColor: '#fff1f0' }}>
+          <p style={{ color: '#ff4d4f', margin: 0 }}>
+            <strong>Lỗi:</strong> {error}
+          </p>
+        </Card>
+      )}
       <Card
-        title={`Quản lý hợp đồng thuê${roomId ? ` - ${rooms.find(r => r.room_id === parseInt(roomId))?.name}` : ''}`}
+        title={`Quản lý hợp đồng thuê${roomId ? ` - ${rooms.find(r => r.room_id === parseInt(roomId))?.name || 'Phòng ' + roomId}` : ''}`}
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-            Tạo hợp đồng mới
-          </Button>
+          action !== 'create' && (
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+              Tạo hợp đồng mới
+            </Button>
+          )
         }
       >
-        <Card size="small" style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Filter Row */}
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'nowrap' }}>
-              <div style={{ flex: '1 1 200px', minWidth: '150px' }}>
-                <div style={{ color: '#888', marginBottom: '8px', fontSize: '13px' }}>Nhà trọ</div>
+        {/* Show filters only if not in create mode and no specific room selected */}
+        {action !== 'create' && !roomId && (
+          <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: 16 }}>
+              {/* Filter Row */}
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 200px', minWidth: '150px' }}>
+                  <div style={{ color: '#888', marginBottom: '8px', fontSize: '13px' }}>Nhà trọ</div>
+                  <Select
+                    placeholder="Chọn nhà trọ"
+                    style={{ width: '100%' }}
+                    allowClear
+                    value={filters.houseId}
+                    onChange={(value) => {
+                      if (value) {
+                        fetchRooms(value);
+                        handleFilterChange({ houseId: value, roomId: null });
+                      } else {
+                        setRooms([]);
+                        handleFilterChange({ houseId: null, roomId: null });
+                      }
+                    }}
+                  >
+                    {houses.map(house => (
+                      <Option key={house.house_id} value={house.house_id}>
+                        {house.name}
+                      </Option>
+                    ))}
+                  </Select>
+                </div>
+
+                <div style={{ flex: '1 1 200px', minWidth: '150px' }}>
+                  <div style={{ color: '#888', marginBottom: '8px', fontSize: '13px' }}>Phòng</div>
+                  <Select
+                    placeholder="Chọn phòng"
+                    style={{ width: '100%' }}
+                    allowClear
+                    disabled={!filters.houseId}
+                    value={filters.roomId}
+                    onChange={(value) => {
+                      if (value) {
+                        setSearchParams({ room: value });
+                        handleFilterChange({ roomId: value });
+                      } else {
+                        setSearchParams({});
+                        handleFilterChange({ roomId: null });
+                      }
+                    }}
+                  >
+                    {rooms.map(room => (
+                      <Option key={room.room_id} value={room.room_id}>
+                        {room.name}
+                      </Option>
+                    ))}
+                  </Select>
+                </div>
+
+                <div style={{ flex: '1 1 200px', minWidth: '150px' }}>
+                  <div style={{ color: '#888', marginBottom: '8px', fontSize: '13px' }}>Tên khách thuê</div>
+                  <Input
+                    placeholder="Nhập tên khách thuê"
+                    value={filters.tenantName}
+                    onChange={(e) => handleFilterChange({ tenantName: e.target.value })}
+                    allowClear
+                  />
+                </div>
+
+                <div style={{ flex: '1 1 180px', minWidth: '150px' }}>
+                  <div style={{ color: '#888', marginBottom: '8px', fontSize: '13px' }}>Trạng thái</div>
+                  <Select
+                    placeholder="Tất cả"
+                    style={{ width: '100%' }}
+                    allowClear
+                    value={filters.status}
+                    onChange={(value) => handleFilterChange({ status: value })}
+                  >
+                    <Option value="active">Đang thuê</Option>
+                    <Option value="inactive">Đã kết thúc</Option>
+                  </Select>
+                </div>
+
+                <div style={{ flex: '1 1 180px', minWidth: '150px' }}>
+                  <div style={{ color: '#888', marginBottom: '8px', fontSize: '13px' }}>Ngày bắt đầu</div>
+                  <DatePicker
+                    placeholder="Chọn ngày"
+                    style={{ width: '100%' }}
+                    value={filters.startDate}
+                    onChange={(date) => handleFilterChange({ startDate: date })}
+                    allowClear
+                  />
+                </div>
+
+                <div style={{ flex: '1 1 180px', minWidth: '150px' }}>
+                  <div style={{ color: '#888', marginBottom: '8px', fontSize: '13px' }}>Ngày kết thúc</div>
+                  <DatePicker
+                    placeholder="Chọn ngày"
+                    style={{ width: '100%' }}
+                    value={filters.endDate}
+                    onChange={(date) => handleFilterChange({ endDate: date })}
+                    allowClear
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <Button type="primary" icon={<ReloadOutlined />} onClick={handleClearFilters}>
+                  Xóa bộ lọc
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Show table or empty message */}
+        {action !== 'create' && (
+          <>
+            {filteredContracts.length > 0 ? (
+              <Table
+                columns={columns}
+                dataSource={filteredContracts}
+                rowKey="rr_id"
+                loading={loading}
+                pagination={pagination}
+                onChange={handleTableChange}
+              />
+            ) : (
+              <div style={{ textAlign: 'center', padding: '40px 20px', background: '#fafafa', borderRadius: '4px' }}>
+                <p style={{ fontSize: '16px', color: '#999', margin: 0 }}>
+                  {loading ? 'Đang tải...' : 'Chưa có hợp đồng nào'}
+                </p>
+                {roomId && !loading && (
+                  <Button type="primary" onClick={handleCreate} style={{ marginTop: '16px' }}>
+                    Tạo hợp đồng cho phòng này
+                  </Button>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </Card>
+
+      <Modal
+        title={editingContract ? 'Sửa hợp đồng' : 'Tạo hợp đồng mới'}
+        open={modalVisible}
+        onCancel={handleModalClose}
+        footer={null}
+        width={800}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+          onValuesChange={(changedValues) => {
+            // Re-validate number_of_tenants when room changes
+            if (changedValues.room_id) {
+              form.validateFields(['number_of_tenants']);
+            }
+          }}
+        >
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item
+                name="house_id"
+                label="Nhà Trọ"
+                rules={[{ required: true, message: 'Vui lòng chọn nhà trọ!' }]}
+              >
                 <Select
                   placeholder="Chọn nhà trọ"
-                  style={{ width: '100%' }}
-                  allowClear
-                  value={filters.houseId}
                   onChange={(value) => {
+                    // Load rooms when house changes
                     if (value) {
                       fetchRooms(value);
-                      handleFilterChange({ houseId: value, roomId: null });
-                    } else {
-                      setRooms([]);
-                      handleFilterChange({ houseId: null, roomId: null });
+                      // Clear room selection
+                      form.setFieldsValue({ room_id: undefined, monthly_rent: undefined });
                     }
                   }}
                 >
@@ -402,112 +636,38 @@ const Contracts = () => {
                     </Option>
                   ))}
                 </Select>
-              </div>
+              </Form.Item>
+            </Col>
+          </Row>
 
-              <div style={{ flex: '1 1 200px', minWidth: '150px' }}>
-                <div style={{ color: '#888', marginBottom: '8px', fontSize: '13px' }}>Phòng</div>
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item
+                name="room_id"
+                label="Phòng"
+                rules={[{ required: true, message: 'Vui lòng chọn phòng!' }]}
+              >
                 <Select
                   placeholder="Chọn phòng"
-                  style={{ width: '100%' }}
-                  allowClear
-                  disabled={!filters.houseId}
-                  value={filters.roomId}
+                  disabled={!!roomId || !!editingContract}
                   onChange={(value) => {
-                    if (value) {
-                      setSearchParams({ room: value });
-                      handleFilterChange({ roomId: value });
-                    } else {
-                      setSearchParams({});
-                      handleFilterChange({ roomId: null });
+                    // When room changes, update monthly_rent from room price
+                    const selectedRoom = roomsMap[value];
+                    if (selectedRoom) {
+                      form.setFieldsValue({ monthly_rent: selectedRoom.price });
                     }
                   }}
                 >
-                  {rooms.map(room => (
+                  {(rooms.length ? rooms : roomsAll).map(room => (
                     <Option key={room.room_id} value={room.room_id}>
                       {room.name}
                     </Option>
                   ))}
                 </Select>
-              </div>
+              </Form.Item>
+            </Col>
+          </Row>
 
-              <div style={{ flex: '1 1 200px', minWidth: '150px' }}>
-                <div style={{ color: '#888', marginBottom: '8px', fontSize: '13px' }}>Tên khách thuê</div>
-                <Input
-                  placeholder="Nhập tên khách thuê"
-                  value={filters.tenantName}
-                  onChange={(e) => handleFilterChange({ tenantName: e.target.value })}
-                  allowClear
-                />
-              </div>
-
-              <div style={{ flex: '1 1 180px', minWidth: '150px' }}>
-                <div style={{ color: '#888', marginBottom: '8px', fontSize: '13px' }}>Trạng thái</div>
-                <Select
-                  placeholder="Tất cả"
-                  style={{ width: '100%' }}
-                  allowClear
-                  value={filters.status}
-                  onChange={(value) => handleFilterChange({ status: value })}
-                >
-                  <Option value="active">Đang thuê</Option>
-                  <Option value="inactive">Đã kết thúc</Option>
-                </Select>
-              </div>
-
-              <div style={{ flex: '1 1 180px', minWidth: '150px' }}>
-                <div style={{ color: '#888', marginBottom: '8px', fontSize: '13px' }}>Ngày bắt đầu</div>
-                <DatePicker
-                  placeholder="Chọn ngày"
-                  style={{ width: '100%' }}
-                  value={filters.startDate}
-                  onChange={(date) => handleFilterChange({ startDate: date })}
-                  allowClear
-                />
-              </div>
-
-              <div style={{ flex: '1 1 180px', minWidth: '150px' }}>
-                <div style={{ color: '#888', marginBottom: '8px', fontSize: '13px' }}>Ngày kết thúc</div>
-                <DatePicker
-                  placeholder="Chọn ngày"
-                  style={{ width: '100%' }}
-                  value={filters.endDate}
-                  onChange={(date) => handleFilterChange({ endDate: date })}
-                  allowClear
-                />
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <Button type="primary" icon={<ReloadOutlined />} onClick={handleClearFilters}>
-                Xóa bộ lọc
-              </Button>
-            </div>
-          </div>
-        </Card>
-
-        <Table
-          columns={columns}
-          dataSource={filteredContracts}
-          rowKey="rr_id"
-          loading={loading}
-          pagination={pagination}
-          onChange={handleTableChange}
-        />
-      </Card>
-
-      <Modal
-        title={editingContract ? 'Sửa hợp đồng' : 'Tạo hợp đồng mới'}
-        open={modalVisible}
-        onCancel={() => setModalVisible(false)}
-        footer={null}
-        width={800}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-        >
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -534,7 +694,19 @@ const Contracts = () => {
               <Form.Item
                 name="number_of_tenants"
                 label="Số người thuê"
-                rules={[{ required: true, message: 'Vui lòng nhập số người thuê!' }]}
+                rules={[
+                  { required: true, message: 'Vui lòng nhập số người thuê!' },
+                  {
+                    validator: (_, value) => {
+                      if (!value) return Promise.resolve();
+                      const selectedRoom = roomsMap[form.getFieldValue('room_id')];
+                      if (selectedRoom && value > selectedRoom.capacity) {
+                        return Promise.reject(new Error(`Không được vượt quá sức chứa ${selectedRoom.capacity} người!`));
+                      }
+                      return Promise.resolve();
+                    }
+                  }
+                ]}
               >
                 <InputNumber
                   min={1}
@@ -673,29 +845,6 @@ const Contracts = () => {
             </Col>
           </Row>
 
-          <Form.Item
-            name="room_id"
-            label="Phòng"
-            rules={[{ required: true, message: 'Vui lòng chọn phòng!' }]}
-          >
-            <Select
-              placeholder="Chọn phòng"
-              disabled={!!roomId || !!editingContract}
-              onChange={(value) => {
-                // When room changes, update monthly_rent from room price
-                const selectedRoom = roomsMap[value];
-                if (selectedRoom) {
-                  form.setFieldsValue({ monthly_rent: selectedRoom.price });
-                }
-              }}
-            >
-              {(rooms.length ? rooms : roomsAll).map(room => (
-                <Option key={room.room_id} value={room.room_id}>
-                  {room.name}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
 
           <Form.Item
             name="contract_url"
@@ -706,7 +855,7 @@ const Contracts = () => {
 
           <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
             <Space>
-              <Button onClick={() => setModalVisible(false)}>
+              <Button onClick={handleModalClose}>
                 Hủy
               </Button>
               <Button type="primary" htmlType="submit">

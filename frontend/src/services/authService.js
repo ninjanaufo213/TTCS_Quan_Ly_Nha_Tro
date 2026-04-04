@@ -14,6 +14,9 @@ export const authService = {
             // Lưu token giả để pass qua điều kiện Bảo vệ Route (ProtectedRoute)
             localStorage.setItem('access_token', 'dummy-token-' + data.userId);
 
+            // Lưu email để gửi trong header X-User-Email
+            localStorage.setItem('user_email', email);
+
             // Lưu trực tiếp thông tin Backend gửi sang mà không cần gọi API /users/me
             const userInfo = {
                 userId: data.userId,
@@ -57,6 +60,7 @@ export const authService = {
     logout: () => {
         localStorage.removeItem('access_token');
         localStorage.removeItem('user_info');
+        localStorage.removeItem('user_email');
     },
 
     getCurrentUser: async() => {

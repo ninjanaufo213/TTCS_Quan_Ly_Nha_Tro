@@ -1,8 +1,8 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.RoomRequest;
-import com.example.demo.dto.RoomResponse;
-import com.example.demo.service.RoomService;
+import com.example.demo.dto.AssetRequest;
+import com.example.demo.dto.AssetResponse;
+import com.example.demo.service.AssetService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,70 +13,55 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/rooms")
+@RequestMapping("/api/assets")
 @CrossOrigin(origins = "*")
-public class RoomController {
+public class AssetController {
 
-    private final RoomService roomService;
+    private final AssetService assetService;
 
     @Autowired
-    public RoomController(RoomService roomService) {
-        this.roomService = roomService;
+    public AssetController(AssetService assetService) {
+        this.assetService = assetService;
     }
 
     /**
-     * Get all rooms for current landlord
+     * Get all assets for a specific room
      */
-    @GetMapping("/")
-    public ResponseEntity<List<RoomResponse>> getAllRooms() {
+    @GetMapping("/room/{roomId}")
+    public ResponseEntity<List<AssetResponse>> getAssetsByRoom(@PathVariable("roomId") Integer roomId) {
         try {
-            List<RoomResponse> rooms = roomService.getAllRooms();
-            return ResponseEntity.ok(rooms);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    /**
-     * Get rooms by house ID
-     */
-    @GetMapping("/house/{houseId}")
-    public ResponseEntity<List<RoomResponse>> getRoomsByHouse(@PathVariable("houseId") Integer houseId) {
-        try {
-            List<RoomResponse> rooms = roomService.getRoomsByHouse(houseId);
-            return ResponseEntity.ok(rooms);
+            List<AssetResponse> assets = assetService.getAssetsByRoom(roomId);
+            return ResponseEntity.ok(assets);
         } catch (IllegalArgumentException e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("detail", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     /**
-     * Get a specific room by ID
+     * Get a specific asset by ID
      */
     @GetMapping("/{id}")
-    public ResponseEntity<RoomResponse> getRoomById(@PathVariable("id") Integer id) {
+    public ResponseEntity<AssetResponse> getAssetById(@PathVariable("id") Integer id) {
         try {
-            return roomService.getRoomById(id)
-                    .map(ResponseEntity::ok)
-                    .orElse(ResponseEntity.notFound().build());
+            AssetResponse asset = assetService.getAssetById(id);
+            return ResponseEntity.ok(asset);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     /**
-     * Create a new room
+     * Create a new asset for a room
      */
-    @PostMapping("/")
-    public ResponseEntity<?> createRoom(@RequestBody RoomRequest request) {
+    @PostMapping("/{roomId}")
+    public ResponseEntity<?> createAsset(@PathVariable("roomId") Integer roomId, @RequestBody AssetRequest request) {
         try {
-            RoomResponse room = roomService.createRoom(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(room);
+            AssetResponse asset = assetService.createAsset(roomId, request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(asset);
         } catch (IllegalArgumentException e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
@@ -85,19 +70,19 @@ public class RoomController {
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
-            response.put("detail", "Lỗi khi tạo phòng: " + e.getMessage());
+            response.put("detail", "Lỗi khi tạo tài sản: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
     /**
-     * Update an existing room
+     * Update an existing asset
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateRoom(@PathVariable("id") Integer id, @RequestBody RoomRequest request) {
+    public ResponseEntity<?> updateAsset(@PathVariable("id") Integer id, @RequestBody AssetRequest request) {
         try {
-            RoomResponse room = roomService.updateRoom(id, request);
-            return ResponseEntity.ok(room);
+            AssetResponse asset = assetService.updateAsset(id, request);
+            return ResponseEntity.ok(asset);
         } catch (IllegalArgumentException e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
@@ -106,21 +91,21 @@ public class RoomController {
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
-            response.put("detail", "Lỗi khi cập nhật phòng: " + e.getMessage());
+            response.put("detail", "Lỗi khi cập nhật tài sản: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
     /**
-     * Delete a room
+     * Delete an asset
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteRoom(@PathVariable("id") Integer id) {
+    public ResponseEntity<?> deleteAsset(@PathVariable("id") Integer id) {
         try {
-            roomService.deleteRoom(id);
+            assetService.deleteAsset(id);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("message", "Xóa phòng thành công");
+            response.put("message", "Xóa tài sản thành công");
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             Map<String, Object> response = new HashMap<>();
@@ -130,8 +115,9 @@ public class RoomController {
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
-            response.put("detail", "Lỗi khi xóa phòng: " + e.getMessage());
+            response.put("detail", "Lỗi khi xóa tài sản: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 }
+

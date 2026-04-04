@@ -19,13 +19,14 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  EyeOutlined,
-  HomeOutlined
+  HomeOutlined,
+  FileTextOutlined
 } from '@ant-design/icons';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { roomService } from '../../services/roomService';
 import { houseService } from '../../services/houseService';
 import { assetService } from '../../services/assetService';
+import AssetManagement from '../../components/AssetManagement';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -50,7 +51,6 @@ const Rooms = () => {
     showTotal: (total) => `Tổng cộng ${total} phòng`,
   });
   const [form] = Form.useForm();
-  const [assetForm] = Form.useForm();
   const navigate = useNavigate();
 
   const houseId = searchParams.get('house');
@@ -77,6 +77,7 @@ const Rooms = () => {
     setLoading(true);
     try {
       const data = await roomService.getByHouse(houseId);
+      console.log('Rooms data from API:', data);
       setRooms(data);
     } catch (error) {
       message.error('Lỗi khi tải danh sách phòng!');
@@ -89,6 +90,7 @@ const Rooms = () => {
     setLoading(true);
     try {
       const data = await roomService.getAll();
+      console.log('All rooms data from API:', data);
       setRooms(data);
     } catch (error) {
       message.error('Lỗi khi tải danh sách phòng!');
@@ -162,35 +164,11 @@ const Rooms = () => {
     }
   };
 
-  const handleViewAssets = (record) => {
-    setSelectedRoom(record);
-    fetchAssets(record.room_id);
-    setAssetModalVisible(true);
-  };
-
-  const handleAddAsset = async (values) => {
-    try {
-      await assetService.create({
-        ...values,
-        room_id: selectedRoom.room_id
-      });
-      message.success('Thêm tài sản thành công!');
-      assetForm.resetFields();
-      fetchAssets(selectedRoom.room_id);
-    } catch (error) {
-      message.error('Lỗi khi thêm tài sản!');
-    }
-  };
-
-  const handleDeleteAsset = async (id) => {
-    try {
-      await assetService.delete(id);
-      message.success('Xóa tài sản thành công!');
-      fetchAssets(selectedRoom.room_id);
-    } catch (error) {
-      message.error('Lỗi khi xóa tài sản!');
-    }
-  };
+   const handleViewAssets = (record) => {
+     setSelectedRoom(record);
+     fetchAssets(record.room_id);
+     setAssetModalVisible(true);
+   };
 
   const housesById = useMemo(() => {
     const m = {};
@@ -248,10 +226,45 @@ const Rooms = () => {
           </Button>
           <Button
             type="link"
-            icon={<EyeOutlined />}
-            onClick={() => navigate(`/contracts?room=${record.room_id}`)}
+            icon={<FileTextOutlined />}
+            onClick={() => {
+              let houseId = record.houseId || record.house_id;
+              if (!houseId && record.house) {
+                houseId = record.house.house_id || record.house.houseId;
+              }
+              if (!houseId && record.house_id) {
+                houseId = record.house_id;
+              }
+              console.log('View contracts - Record:', record, 'HouseId:', houseId);
+              if (houseId) {
+                navigate(`/app/contracts?house=${houseId}&room=${record.room_id}`);
+              } else {
+                message.error('Không tìm thấy nhà trọ. Vui lòng làm mới trang.');
+              }
+            }}
           >
-            Hợp đồng
+            Xem hợp đồng
+          </Button>
+          <Button
+            type="link"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              let houseId = record.houseId || record.house_id;
+              if (!houseId && record.house) {
+                houseId = record.house.house_id || record.house.houseId;
+              }
+              if (!houseId && record.house_id) {
+                houseId = record.house_id;
+              }
+              console.log('Create contract - Record:', record, 'HouseId:', houseId);
+              if (houseId) {
+                navigate(`/app/contracts?house=${houseId}&room=${record.room_id}&action=create`);
+              } else {
+                message.error('Không tìm thấy nhà trọ. Vui lòng làm mới trang.');
+              }
+            }}
+          >
+            Tạo hợp đồng
           </Button>
           <Button
             type="link"
@@ -278,7 +291,7 @@ const Rooms = () => {
   return (
     <div>
       <Card
-        title={`Quản lý phòng trọ${houseId ? ` - ${houses.find(h => h.house_id == houseId)?.name}` : ''}`}
+        title={`Quản lý phòng trọ${houseId ? ` - ${houses.find(h => h.house_id === parseInt(houseId))?.name}` : ''}`}
         extra={
           <Space>
             {!houseId && (
@@ -405,60 +418,25 @@ const Rooms = () => {
         </Form>
       </Modal>
 
-      <Modal
-        title={`Tài sản phòng ${selectedRoom?.name}`}
-        open={assetModalVisible}
-        onCancel={() => setAssetModalVisible(false)}
-        footer={null}
-        width={800}
-      >
-        <div style={{ marginBottom: 16 }}>
-          <Form
-            form={assetForm}
-            layout="inline"
-            onFinish={handleAddAsset}
-            style={{ marginBottom: 16 }}
-          >
-            <Form.Item
-              name="name"
-              rules={[{ required: true, message: 'Vui lòng nhập tên tài sản!' }]}
-            >
-              <Input placeholder="Tên tài sản" style={{ width: 200 }} />
-            </Form.Item>
-            <Form.Item>
-              <Button type="primary" htmlType="submit">
-                Thêm tài sản
-              </Button>
-            </Form.Item>
-          </Form>
-        </div>
-
-        <Table
-          columns={[
-            { title: 'Tên tài sản', dataIndex: 'name', key: 'name' },
-            {
-              title: 'Hành động',
-              key: 'action',
-              render: (_, record) => (
-                <Popconfirm
-                  title="Xóa tài sản này?"
-                  onConfirm={() => handleDeleteAsset(record.asset_id)}
-                  okText="Có"
-                  cancelText="Không"
-                >
-                  <Button type="link" danger size="small">
-                    Xóa
-                  </Button>
-                </Popconfirm>
-              ),
-            },
-          ]}
-          dataSource={assets}
-          rowKey="asset_id"
-          size="small"
-          pagination={false}
-        />
-      </Modal>
+       <Modal
+         title={`Quản lý tài sản phòng ${selectedRoom?.name}`}
+         open={assetModalVisible}
+         onCancel={() => setAssetModalVisible(false)}
+         footer={null}
+         width={1100}
+         styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }}
+       >
+         <AssetManagement 
+           roomId={selectedRoom?.room_id}
+           roomName={selectedRoom?.name}
+           assets={assets}
+           onAssetsUpdate={() => {
+             if (selectedRoom) {
+               fetchAssets(selectedRoom.room_id);
+             }
+           }}
+         />
+       </Modal>
     </div>
   );
 };

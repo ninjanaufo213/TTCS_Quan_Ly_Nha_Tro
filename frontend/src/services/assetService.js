@@ -11,8 +11,8 @@ export const assetService = {
     return response.data;
   },
 
-  create: async (assetData) => {
-    const response = await api.post('/assets/', assetData);
+  create: async (roomId, assetData) => {
+    const response = await api.post(`/assets/${roomId}`, assetData);
     return response.data;
   },
 
