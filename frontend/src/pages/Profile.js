@@ -93,20 +93,6 @@ const Profile = () => {
     <div>
       <Title level={3}>Thông tin cá nhân</Title>
 
-      {/* Thông tin tổng quan người dùng */}
-      {user && (
-        <Card style={{ marginBottom: 24 }}>
-          <Descriptions column={1} bordered size="small">
-            <Descriptions.Item label="ID người dùng">{user.owner_id}</Descriptions.Item>
-            <Descriptions.Item label="Vai trò">{user.role?.authority}</Descriptions.Item>
-            <Descriptions.Item label="Trạng thái">{user.is_active ? 'Hoạt động' : 'Không hoạt động'}</Descriptions.Item>
-            <Descriptions.Item label="Ngày tạo">
-              {user.created_at ? new Date(user.created_at).toLocaleString('vi-VN') : '-'}
-            </Descriptions.Item>
-          </Descriptions>
-        </Card>
-      )}
-
       <Card title="Chỉnh sửa thông tin" style={{ marginBottom: 24 }}>
         {/* Form chỉnh sửa thông tin: KHÔNG cho phép sửa email */}
         <Form layout="vertical" form={form} onFinish={onFinish}>

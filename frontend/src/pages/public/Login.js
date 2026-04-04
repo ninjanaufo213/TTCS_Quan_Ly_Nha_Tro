@@ -17,10 +17,13 @@ const Login = () => {
       await authService.login(values.email, values.password);
       message.success('Đăng nhập thành công!');
       const checkRole = authService.getUserRole();
-      if (checkRole === 'admin' || checkRole === 'ADMIN')
+      if (checkRole === 'admin' || checkRole === 'ADMIN') {
         navigate('/admin/dashboard');
-      else
+      } else if (checkRole === 'tenant' || checkRole === 'TENANT') {
+        navigate('/');
+      } else {
         navigate('/app/dashboard');
+      }
     } catch (error) {
       message.error('Email hoặc mật khẩu không đúng!');
     } finally {

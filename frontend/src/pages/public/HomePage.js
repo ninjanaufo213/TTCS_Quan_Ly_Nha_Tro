@@ -21,9 +21,11 @@ import {
   ArrowRightOutlined,
   MessageOutlined,
   ArrowUpOutlined,
-  EnvironmentOutlined
+  EnvironmentOutlined,
+  UserOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../../services/authService';
 import '../../styles/HomePage.css';
 
 const HomePage = () => {
@@ -243,15 +245,53 @@ const HomePage = () => {
 
           <div className="navbar-actions">
             <Button type="link">Tin đã lưu</Button>
-            <Button type="link" onClick={() => navigate('/register')}>Đăng ký</Button>
-            <Button type="link" onClick={() => navigate('/login')}>Đăng nhập</Button>
-            <Button
-              type="primary"
-              className="post-button"
-              onClick={() => navigate('/login')}
-            >
-              Đăng tin
-            </Button>
+            {authService.isAuthenticated() ? (
+              (() => {
+                const role = authService.getUserRole();
+                const isTenant = role === 'tenant' || role === 'TENANT';
+                
+                return (
+                  <>
+                    <Button type="link" onClick={() => {
+                      navigate((role === 'admin' || role === 'ADMIN') ? '/admin/dashboard' : '/app/dashboard');
+                    }}>Quản lý</Button>
+                    
+                    {isTenant ? (
+                      <Button
+                        type="default"
+                        shape="circle"
+                        icon={<UserOutlined />}
+                        onClick={() => navigate('/app/profile')}
+                        title="Trang cá nhân"
+                        style={{ marginLeft: 8 }}
+                      />
+                    ) : (
+                      <Button
+                        type="primary"
+                        className="post-button"
+                        onClick={() => {
+                          navigate((role === 'admin' || role === 'ADMIN') ? '/admin/dashboard' : '/app/dashboard');
+                        }}
+                      >
+                        Đăng tin
+                      </Button>
+                    )}
+                  </>
+                );
+              })()
+            ) : (
+              <>
+                <Button type="link" onClick={() => navigate('/register')}>Đăng ký</Button>
+                <Button type="link" onClick={() => navigate('/login')}>Đăng nhập</Button>
+                <Button
+                  type="primary"
+                  className="post-button"
+                  onClick={() => navigate('/login')}
+                >
+                  Đăng tin
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>

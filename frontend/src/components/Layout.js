@@ -39,6 +39,8 @@ const Layout = ({ children }) => {
     navigate('/login');
   };
 
+  const isTenant = userInfo?.role?.authority?.toLowerCase() === 'tenant';
+
   // landlord menu items
   const menuItems = [
     {
@@ -96,8 +98,9 @@ const Layout = ({ children }) => {
 
   return (
     <AntLayout style={{ minHeight: '100vh' }}>
-      <Sider trigger={null} collapsible collapsed={collapsed}>
-        <div style={{ 
+      {!isTenant && (
+        <Sider trigger={null} collapsible collapsed={collapsed}>
+          <div style={{ 
           height: 32, 
           margin: 16, 
           background: 'rgba(255, 255, 255, 0.3)',
@@ -117,7 +120,8 @@ const Layout = ({ children }) => {
           items={menuItems}
           onClick={({ key }) => navigate(key)}
         />
-      </Sider>
+        </Sider>
+      )}
       <AntLayout>
         <Header style={{ 
           padding: 0, 
@@ -126,16 +130,22 @@ const Layout = ({ children }) => {
           alignItems: 'center',
           justifyContent: 'space-between'
         }}>
-          <Button
-            type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
-            style={{
-              fontSize: '16px',
-              width: 64,
-              height: 64,
-            }}
-          />
+          {isTenant ? (
+            <div style={{ paddingLeft: 24, fontWeight: 'bold', fontSize: 18, color: '#1890ff' }}>
+              Trung tâm Cá nhân
+            </div>
+          ) : (
+            <Button
+              type="text"
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => setCollapsed(!collapsed)}
+              style={{
+                fontSize: '16px',
+                width: 64,
+                height: 64,
+              }}
+            />
+          )}
           <Dropdown
             menu={{ items: userMenuItems, onClick: onUserMenuClick }}
             placement="bottomRight"

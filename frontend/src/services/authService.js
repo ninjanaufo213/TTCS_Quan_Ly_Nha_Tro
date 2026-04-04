@@ -32,16 +32,22 @@ export const authService = {
     },
 
     updateProfile: async(updateData) => {
-        const response = await api.patch('/users/me', updateData);
-        // Refresh cache
+        const userInfo = authService.getUserInfo();
+        if (!userInfo || !userInfo.userId) throw new Error("User ID is missing");
+        const response = await api.patch(`/users/${userInfo.userId}`, updateData);
+        // Refresh cache with new profile data
         const updatedUser = response.data;
-        localStorage.setItem('user_info', JSON.stringify(updatedUser));
-        return updatedUser;
+        // Keep the old token/userId properties intact
+        const newUserInfo = { ...userInfo, ...updatedUser };
+        localStorage.setItem('user_info', JSON.stringify(newUserInfo));
+        return newUserInfo;
     },
 
     // Đổi mật khẩu người dùng hiện tại
     changePassword: async(oldPassword, newPassword) => {
-        const response = await api.patch('/users/me/password', {
+        const userInfo = authService.getUserInfo();
+        if (!userInfo || !userInfo.userId) throw new Error("User ID is missing");
+        const response = await api.patch(`/users/${userInfo.userId}/password`, {
             old_password: oldPassword,
             new_password: newPassword,
         });
@@ -54,9 +60,16 @@ export const authService = {
     },
 
     getCurrentUser: async() => {
-        const response = await api.get('/users/me');
-        localStorage.setItem('user_info', JSON.stringify(response.data));
-        return response.data;
+        const userInfo = authService.getUserInfo();
+        if (!userInfo || !userInfo.userId) throw new Error("User ID is missing");
+        
+        const response = await api.get(`/users/${userInfo.userId}`);
+        const freshUser = response.data;
+        
+        // Merge with existing info to keep userId if it was formatted differently
+        const newUserInfo = { ...userInfo, ...freshUser };
+        localStorage.setItem('user_info', JSON.stringify(newUserInfo));
+        return freshUser;
     },
 
     getUserInfo: () => {

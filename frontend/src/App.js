@@ -47,8 +47,9 @@ const PublicRoute = ({ children }) => {
         const role = authService.getUserRole();
         if (role === 'admin' || role === 'ADMIN') {
             return <Navigate to="/admin/dashboard" replace />;
-        }
-        else {
+        } else if (role === 'tenant' || role === 'TENANT') {
+            return <Navigate to="/" replace />;
+        } else {
             return <Navigate to="/app/dashboard" replace />;
         }
     }
