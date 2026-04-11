@@ -39,6 +39,9 @@ public class Room {
     @Column(name = "is_available")
     private Boolean isAvailable;
 
+    @Column(name = "is_approval", columnDefinition = "bit default 0")
+    private Boolean isApproval;
+
     @Column(columnDefinition = "nvarchar(max)")
     private String description;
 

@@ -13,6 +13,8 @@ import {
   HomeOutlined,
   FilterOutlined,
   EditOutlined,
+  SafetyCertificateOutlined,
+  MinusCircleOutlined,
 } from '@ant-design/icons';
 import adminService from '../../services/adminService';
 
@@ -21,13 +23,13 @@ const { Search } = Input;
 
 // Mock data fallback
 const MOCK_USERS = [
-  { userId: 1, email: 'admin@nhatro.vn', phone: '0901000001', role: 'ADMIN', isActive: true, createdAt: '2024-01-01T00:00:00' },
-  { userId: 2, email: 'chuTro1@gmail.com', phone: '0901000002', role: 'LANDLORD', isActive: true, createdAt: '2024-02-10T08:00:00' },
-  { userId: 3, email: 'nguoiThue1@gmail.com', phone: '0901000003', role: 'TENANT', isActive: true, createdAt: '2024-02-15T09:00:00' },
-  { userId: 4, email: 'chuTro2@gmail.com', phone: '0901000004', role: 'LANDLORD', isActive: false, createdAt: '2024-03-01T10:00:00' },
-  { userId: 5, email: 'nguoiThue2@gmail.com', phone: '0901000005', role: 'TENANT', isActive: true, createdAt: '2024-03-05T11:00:00' },
-  { userId: 6, email: 'nguoiThue3@gmail.com', phone: '0901000006', role: 'TENANT', isActive: false, createdAt: '2024-03-10T12:00:00' },
-  { userId: 7, email: 'chuTro3@gmail.com', phone: '0901000007', role: 'LANDLORD', isActive: true, createdAt: '2024-03-15T13:00:00' },
+  { userId: 1, email: 'admin@nhatro.vn', phone: '0901000001', role: 'ADMIN', isActive: true, isVerified: true, createdAt: '2024-01-01T00:00:00' },
+  { userId: 2, email: 'chuTro1@gmail.com', phone: '0901000002', role: 'LANDLORD', isActive: true, isVerified: true, createdAt: '2024-02-10T08:00:00' },
+  { userId: 3, email: 'nguoiThue1@gmail.com', phone: '0901000003', role: 'TENANT', isActive: true, isVerified: false, createdAt: '2024-02-15T09:00:00' },
+  { userId: 4, email: 'chuTro2@gmail.com', phone: '0901000004', role: 'LANDLORD', isActive: false, isVerified: false, createdAt: '2024-03-01T10:00:00' },
+  { userId: 5, email: 'nguoiThue2@gmail.com', phone: '0901000005', role: 'TENANT', isActive: true, isVerified: true, createdAt: '2024-03-05T11:00:00' },
+  { userId: 6, email: 'nguoiThue3@gmail.com', phone: '0901000006', role: 'TENANT', isActive: false, isVerified: false, createdAt: '2024-03-10T12:00:00' },
+  { userId: 7, email: 'chuTro3@gmail.com', phone: '0901000007', role: 'LANDLORD', isActive: true, isVerified: true, createdAt: '2024-03-15T13:00:00' },
 ];
 
 const roleConfig = {
@@ -95,6 +97,20 @@ const UserManagement = () => {
     }
   };
 
+  const handleToggleVerification = async (record) => {
+    try {
+      await adminService.toggleUserVerification(record.userId).catch(() => null);
+      setUsers(prev => prev.map(u =>
+        u.userId === record.userId ? { ...u, isVerified: !u.isVerified } : u
+      ));
+      message.success(
+        record.isVerified ? `Đã hủy xác minh ${record.email}` : `✅ Đã xác minh ${record.email}`
+      );
+    } catch {
+      message.error('Lỗi khi thay đổi trạng thái xác minh!');
+    }
+  };
+
   const openEdit = (record) => {
     setEditModal({ open: true, record });
     form.setFieldsValue({ email: record.email, phone: record.phone, role: record.role });
@@ -102,6 +118,7 @@ const UserManagement = () => {
 
   const handleEditSubmit = async (values) => {
     try {
+      await adminService.updateUser(editModal.record.userId, values);
       setUsers(prev => prev.map(u =>
         u.userId === editModal.record.userId ? { ...u, ...values } : u
       ));
@@ -164,6 +181,16 @@ const UserManagement = () => {
           : <Badge status="error" text={<Tag color="error">Bị khóa</Tag>} />,
     },
     {
+      title: 'Xác minh',
+      dataIndex: 'isVerified',
+      key: 'isVerified',
+      width: 130,
+      render: (verified) =>
+        verified
+          ? <Tag color="blue" icon={<SafetyCertificateOutlined />}>Đã xác minh</Tag>
+          : <Tag color="default" icon={<MinusCircleOutlined />}>Chưa xác minh</Tag>,
+    },
+    {
       title: 'Ngày tạo',
       dataIndex: 'createdAt',
       key: 'createdAt',
@@ -176,6 +203,23 @@ const UserManagement = () => {
       width: 180,
       render: (_, record) => (
         <Space>
+          <Tooltip title={record.isVerified ? 'Hủy xác minh' : 'Xác minh tài khoản'}>
+            <Popconfirm
+              title={record.isVerified
+                ? `Hủy xác minh tài khoản ${record.email}?`
+                : `Xác minh tài khoản ${record.email}?`}
+              onConfirm={() => handleToggleVerification(record)}
+              okText="Xác nhận"
+              cancelText="Hủy"
+            >
+              <Button
+                size="small"
+                type="dashed"
+                icon={<SafetyCertificateOutlined />}
+                style={record.isVerified ? { color: '#1677ff', borderColor: '#1677ff' } : {}}
+              />
+            </Popconfirm>
+          </Tooltip>
           <Tooltip title="Chỉnh sửa">
             <Button
               size="small"
