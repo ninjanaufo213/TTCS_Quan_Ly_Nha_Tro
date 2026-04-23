@@ -49,6 +49,21 @@ public class RentedRoomResponse {
     @JsonProperty("contract_url")
     private String contractUrl;
 
+    @JsonProperty("water_price")
+    private BigDecimal waterPrice;
+
+    @JsonProperty("internet_price")
+    private BigDecimal internetPrice;
+
+    @JsonProperty("general_price")
+    private BigDecimal generalPrice;
+
+    @JsonProperty("initial_electricity_num")
+    private Integer initialElectricityNum;
+
+    @JsonProperty("electricity_unit_price")
+    private BigDecimal electricityUnitPrice;
+
     @JsonProperty("is_active")
     private Boolean isActive;
 
@@ -58,4 +73,3 @@ public class RentedRoomResponse {
     @JsonProperty("updated_at")
     private LocalDateTime updatedAt;
 }
-

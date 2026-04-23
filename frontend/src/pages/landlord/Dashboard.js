@@ -82,7 +82,7 @@ const Dashboard = () => {
           <Button
             type="link"
             icon={<EyeOutlined />}
-            onClick={() => navigate(`/rooms?house=${record.house_id}`)}
+            onClick={() => navigate(`/app/rooms?house=${record.house_id}`)}
           >
             Xem chi tiết
           </Button>
