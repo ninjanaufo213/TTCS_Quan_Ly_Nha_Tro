@@ -18,39 +18,7 @@ import adminService from '../../services/adminService';
 const { Title, Text, Paragraph } = Typography;
 const { Search } = Input;
 
-// Mock data fallback
-const MOCK_LISTINGS = [
-  {
-    listingId: 1, title: 'Phòng trọ Cầu Giấy gần ĐH Quốc Gia', description: 'Phòng rộng 25m2, đủ nội thất, gác xép, WC riêng.',
-    isPublished: false, viewsCount: 312,
-    room: { price: 3500000, district: 'Cầu Giấy', ward: 'Dịch Vọng', address: '15 Ngõ 5, Dịch Vọng' },
-    createdAt: '2024-03-20T10:00:00',
-  },
-  {
-    listingId: 2, title: 'Căn hộ mini Đống Đa full nội thất', description: 'Studio 30m2 ban công riêng, điều hòa, tủ lạnh, máy giặt.',
-    isPublished: true, viewsCount: 289,
-    room: { price: 5000000, district: 'Đống Đa', ward: 'Ô Chợ Dừa', address: '22 Khâm Thiên' },
-    createdAt: '2024-03-19T08:30:00',
-  },
-  {
-    listingId: 3, title: 'Phòng trọ Thanh Xuân giá rẻ sinh viên', description: 'Phòng 20m2, giá ưu đãi cho sinh viên, an ninh tốt.',
-    isPublished: false, viewsCount: 241,
-    room: { price: 2800000, district: 'Thanh Xuân', ward: 'Nhân Chính', address: '8 Ngõ 72 Nguyễn Trãi' },
-    createdAt: '2024-03-18T14:00:00',
-  },
-  {
-    listingId: 4, title: 'Studio Hà Đông ban công riêng', description: 'Studio hiện đại 35m2, ban công view thoáng, gần Aeon Mall.',
-    isPublished: true, viewsCount: 198,
-    room: { price: 4500000, district: 'Hà Đông', ward: 'Văn Quán', address: '102 Trần Phú' },
-    createdAt: '2024-03-17T09:00:00',
-  },
-  {
-    listingId: 5, title: 'Phòng trọ Long Biên gần cầu Chương Dương', description: 'Phòng mới xây, sạch sẽ, thoáng mát, gần chợ Long Biên.',
-    isPublished: false, viewsCount: 175,
-    room: { price: 3200000, district: 'Long Biên', ward: 'Bồ Đề', address: '55 Ngô Gia Tự' },
-    createdAt: '2024-03-16T11:00:00',
-  },
-];
+// No Mock Data Needed
 
 const RoomApproval = () => {
   const { message } = App.useApp();
@@ -72,10 +40,18 @@ const RoomApproval = () => {
   const fetchListings = async () => {
     setLoading(true);
     try {
-      const data = await adminService.getAllListings();
-      setListings(data);
+      const rawData = await adminService.getAllListings();
+      const mappedData = rawData.map(l => ({
+        ...l,
+        listingId: l.listing_id || l.listingId,
+        viewsCount: l.views_count || l.viewsCount,
+        isPublished: l.is_published ?? l.isPublished,
+        createdAt: l.created_at || l.createdAt
+      }));
+      setListings(mappedData);
     } catch {
-      setListings(MOCK_LISTINGS);
+      message.error("Lỗi khi tải dữ liệu từ Backend!");
+      setListings([]);
     } finally {
       setLoading(false);
     }
@@ -96,12 +72,7 @@ const RoomApproval = () => {
 
   const handleApprove = async (record) => {
     try {
-      await adminService.approveListing(record.listingId).catch(() => {
-        // Mock: toggle locally
-        setListings(prev => prev.map(l =>
-          l.listingId === record.listingId ? { ...l, isPublished: true } : l
-        ));
-      });
+      await adminService.approveListing(record.listingId);
       message.success(`✅ Đã duyệt: "${record.title}"`);
       setListings(prev => prev.map(l =>
         l.listingId === record.listingId ? { ...l, isPublished: true } : l
@@ -116,11 +87,7 @@ const RoomApproval = () => {
 
   const handleReject = async (record) => {
     try {
-      await adminService.rejectListing(record.listingId).catch(() => {
-        setListings(prev => prev.map(l =>
-          l.listingId === record.listingId ? { ...l, isPublished: false } : l
-        ));
-      });
+      await adminService.rejectListing(record.listingId);
       message.warning(`🚫 Đã từ chối: "${record.title}"`);
       setListings(prev => prev.map(l =>
         l.listingId === record.listingId ? { ...l, isPublished: false } : l
