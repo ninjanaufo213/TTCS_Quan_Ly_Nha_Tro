@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,17 +20,14 @@ public class AssetService {
     private final AssetRepository assetRepository;
     private final RoomRepository roomRepository;
     private final AuthService authService;
-    private final FileStorageService fileStorageService;
 
     @Autowired
     public AssetService(AssetRepository assetRepository,
                         RoomRepository roomRepository,
-                        AuthService authService,
-                        FileStorageService fileStorageService) {
+                        AuthService authService) {
         this.assetRepository = assetRepository;
         this.roomRepository = roomRepository;
         this.authService = authService;
-        this.fileStorageService = fileStorageService;
     }
 
     /**
@@ -79,10 +78,7 @@ public class AssetService {
             throw new IllegalArgumentException("Bạn không có quyền thêm tài sản vào phòng này");
         }
 
-        String imageUrl = null;
-        if (image != null && !image.isEmpty()) {
-            imageUrl = fileStorageService.store("assets", image);
-        }
+        String imageUrl = encodeToDataUrl(image);
 
         Asset asset = Asset.builder()
                 .room(room)
@@ -109,8 +105,7 @@ public class AssetService {
 
         asset.setName(name);
         if (image != null && !image.isEmpty()) {
-            String imageUrl = fileStorageService.store("assets", image);
-            asset.setImageUrl(imageUrl);
+            asset.setImageUrl(encodeToDataUrl(image));
         }
 
         Asset updatedAsset = assetRepository.save(asset);
@@ -141,5 +136,21 @@ public class AssetService {
                 asset.getImageUrl(),
                 asset.getCreatedAt()
         );
+    }
+
+    private String encodeToDataUrl(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return null;
+        }
+        try {
+            String contentType = file.getContentType();
+            if (contentType == null || contentType.isBlank()) {
+                contentType = "application/octet-stream";
+            }
+            String base64 = Base64.getEncoder().encodeToString(file.getBytes());
+            return "data:" + contentType + ";base64," + base64;
+        } catch (IOException e) {
+            throw new IllegalStateException("Lưu ảnh tài sản thất bại", e);
+        }
     }
 }

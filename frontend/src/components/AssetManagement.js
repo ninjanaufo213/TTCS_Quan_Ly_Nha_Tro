@@ -32,6 +32,7 @@ const AssetManagement = ({ roomId, roomName, assets, onAssetsUpdate }) => {
   const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
   const resolveImageUrl = (url) => {
     if (!url) return url;
+    if (url.startsWith('data:') || url.startsWith('blob:')) return url;
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
     if (!apiOrigin) return url;
     const normalized = url.startsWith('/') ? url : `/${url}`;
@@ -142,9 +143,6 @@ const AssetManagement = ({ roomId, roomName, assets, onAssetsUpdate }) => {
                 e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="50" height="50"%3E%3Crect fill="%23f0f0f0" width="50" height="50"/%3E%3C/svg%3E';
               }}
             />
-            <a href={imageUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }}>
-              Xem
-            </a>
           </Space>
         );
       }

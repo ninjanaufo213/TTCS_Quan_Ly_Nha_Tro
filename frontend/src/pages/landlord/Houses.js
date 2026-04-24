@@ -43,6 +43,7 @@ const Houses = () => {
   const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
   const resolveImageUrl = (url) => {
     if (!url) return url;
+    if (url.startsWith('data:') || url.startsWith('blob:')) return url;
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
     if (!apiOrigin) return url;
     const normalized = url.startsWith('/') ? url : `/${url}`;

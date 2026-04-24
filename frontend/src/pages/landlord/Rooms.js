@@ -55,6 +55,17 @@ const Rooms = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
 
+  const apiBaseUrl = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/$/, '');
+  const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
+  const resolveImageUrl = (url) => {
+    if (!url) return url;
+    if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (!apiOrigin) return url;
+    const normalized = url.startsWith('/') ? url : `/${url}`;
+    return `${apiOrigin}${normalized}`;
+  };
+
   const houseId = searchParams.get('house');
 
   useEffect(() => {
@@ -125,7 +136,19 @@ const Rooms = () => {
   const handleEdit = (record) => {
     setEditingRoom(record);
     form.setFieldsValue(record);
-    setImageFileList([]);
+    const existingImages = Array.isArray(record.images)
+      ? record.images.map((img, index) => {
+          const imageUrl = resolveImageUrl(img.image_url || img.imageUrl);
+          return {
+            uid: img.image_id ? String(img.image_id) : `existing-${index}`,
+            name: `room-image-${index + 1}`,
+            status: 'done',
+            url: imageUrl,
+            thumbUrl: imageUrl
+          };
+        })
+      : [];
+    setImageFileList(existingImages);
     setModalVisible(true);
   };
 

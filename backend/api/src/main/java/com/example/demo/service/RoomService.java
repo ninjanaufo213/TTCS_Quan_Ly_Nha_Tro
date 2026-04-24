@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -25,19 +27,16 @@ public class RoomService {
     private final HouseRepository houseRepository;
     private final AuthService authService;
     private final RoomImageRepository roomImageRepository;
-    private final FileStorageService fileStorageService;
 
     @Autowired
     public RoomService(RoomRepository roomRepository,
                        HouseRepository houseRepository,
                        AuthService authService,
-                       RoomImageRepository roomImageRepository,
-                       FileStorageService fileStorageService) {
+                       RoomImageRepository roomImageRepository) {
         this.roomRepository = roomRepository;
         this.houseRepository = houseRepository;
         this.authService = authService;
         this.roomImageRepository = roomImageRepository;
-        this.fileStorageService = fileStorageService;
     }
 
     /**
@@ -178,7 +177,7 @@ public class RoomService {
         boolean shouldSetThumbnail = !hasThumbnail;
 
         for (MultipartFile file : images) {
-            String imageUrl = fileStorageService.store("rooms", file);
+            String imageUrl = encodeToDataUrl(file);
             RoomImage image = RoomImage.builder()
                     .room(room)
                     .imageUrl(imageUrl)
@@ -217,5 +216,21 @@ public class RoomService {
                 image.getImageUrl(),
                 image.getIsThumbnail()
         );
+    }
+
+    private String encodeToDataUrl(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return null;
+        }
+        try {
+            String contentType = file.getContentType();
+            if (contentType == null || contentType.isBlank()) {
+                contentType = "application/octet-stream";
+            }
+            String base64 = Base64.getEncoder().encodeToString(file.getBytes());
+            return "data:" + contentType + ";base64," + base64;
+        } catch (IOException e) {
+            throw new IllegalStateException("Lưu ảnh phòng thất bại", e);
+        }
     }
 }
