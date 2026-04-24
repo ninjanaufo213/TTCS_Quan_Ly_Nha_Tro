@@ -7,9 +7,12 @@ import com.example.demo.model.House;
 import com.example.demo.model.Room;
 import com.example.demo.model.RoomImage;
 import com.example.demo.repository.HouseRepository;
+import com.example.demo.repository.RoomImageRepository;
 import com.example.demo.repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,12 +24,20 @@ public class RoomService {
     private final RoomRepository roomRepository;
     private final HouseRepository houseRepository;
     private final AuthService authService;
+    private final RoomImageRepository roomImageRepository;
+    private final FileStorageService fileStorageService;
 
     @Autowired
-    public RoomService(RoomRepository roomRepository, HouseRepository houseRepository, AuthService authService) {
+    public RoomService(RoomRepository roomRepository,
+                       HouseRepository houseRepository,
+                       AuthService authService,
+                       RoomImageRepository roomImageRepository,
+                       FileStorageService fileStorageService) {
         this.roomRepository = roomRepository;
         this.houseRepository = houseRepository;
         this.authService = authService;
+        this.roomImageRepository = roomImageRepository;
+        this.fileStorageService = fileStorageService;
     }
 
     /**
@@ -143,6 +154,41 @@ public class RoomService {
         }
 
         roomRepository.deleteById(roomId);
+    }
+
+    /**
+     * Add images to a room
+     */
+    @Transactional
+    public RoomResponse addRoomImages(Integer roomId, List<MultipartFile> images) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Phòng không tìm thấy"));
+
+        Integer currentLandlordId = authService.getCurrentLandlordId();
+        if (!room.getHouse().getLandlord().getLandlordId().equals(currentLandlordId)) {
+            throw new IllegalArgumentException("Bạn không có quyền thêm ảnh cho phòng này");
+        }
+
+        if (images == null || images.isEmpty()) {
+            return mapToResponse(room);
+        }
+
+        boolean hasThumbnail = room.getImages() != null
+                && room.getImages().stream().anyMatch(image -> Boolean.TRUE.equals(image.getIsThumbnail()));
+        boolean shouldSetThumbnail = !hasThumbnail;
+
+        for (MultipartFile file : images) {
+            String imageUrl = fileStorageService.store("rooms", file);
+            RoomImage image = RoomImage.builder()
+                    .room(room)
+                    .imageUrl(imageUrl)
+                    .isThumbnail(shouldSetThumbnail)
+                    .build();
+            roomImageRepository.save(image);
+            shouldSetThumbnail = false;
+        }
+
+        return mapToResponse(room);
     }
 
     private RoomResponse mapToResponse(Room room) {

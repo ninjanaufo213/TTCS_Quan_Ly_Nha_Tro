@@ -1,4 +1,4 @@
-﻿CREATE DATABASE MotelManagement;
+﻿﻿CREATE DATABASE MotelManagement;
 GO
 
 USE MotelManagement;
@@ -53,6 +53,15 @@ CREATE TABLE Houses (
     created_at DATETIME DEFAULT GETDATE(),
     updated_at DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (landlord_id) REFERENCES Landlords(landlord_id) ON DELETE CASCADE
+);
+
+CREATE TABLE House_Images (
+    image_id INT IDENTITY(1,1) PRIMARY KEY,
+    house_id INT NOT NULL,
+    image_url VARCHAR(MAX) NOT NULL,
+    is_thumbnail BIT DEFAULT 0,
+    created_at DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (house_id) REFERENCES Houses(house_id) ON DELETE CASCADE
 );
 
 CREATE TABLE Rooms (

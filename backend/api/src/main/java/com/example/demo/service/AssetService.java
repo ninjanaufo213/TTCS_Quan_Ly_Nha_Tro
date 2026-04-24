@@ -1,6 +1,5 @@
 package com.example.demo.service;
 
-import com.example.demo.dto.AssetRequest;
 import com.example.demo.dto.AssetResponse;
 import com.example.demo.model.Asset;
 import com.example.demo.model.Room;
@@ -8,6 +7,7 @@ import com.example.demo.repository.AssetRepository;
 import com.example.demo.repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,12 +18,17 @@ public class AssetService {
     private final AssetRepository assetRepository;
     private final RoomRepository roomRepository;
     private final AuthService authService;
+    private final FileStorageService fileStorageService;
 
     @Autowired
-    public AssetService(AssetRepository assetRepository, RoomRepository roomRepository, AuthService authService) {
+    public AssetService(AssetRepository assetRepository,
+                        RoomRepository roomRepository,
+                        AuthService authService,
+                        FileStorageService fileStorageService) {
         this.assetRepository = assetRepository;
         this.roomRepository = roomRepository;
         this.authService = authService;
+        this.fileStorageService = fileStorageService;
     }
 
     /**
@@ -64,7 +69,7 @@ public class AssetService {
     /**
      * Create a new asset
      */
-    public AssetResponse createAsset(Integer roomId, AssetRequest request) {
+    public AssetResponse createAsset(Integer roomId, String name, MultipartFile image) {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("Phòng không tìm thấy"));
 
@@ -74,10 +79,15 @@ public class AssetService {
             throw new IllegalArgumentException("Bạn không có quyền thêm tài sản vào phòng này");
         }
 
+        String imageUrl = null;
+        if (image != null && !image.isEmpty()) {
+            imageUrl = fileStorageService.store("assets", image);
+        }
+
         Asset asset = Asset.builder()
                 .room(room)
-                .name(request.name())
-                .imageUrl(request.imageUrl())
+                .name(name)
+                .imageUrl(imageUrl)
                 .build();
 
         Asset savedAsset = assetRepository.save(asset);
@@ -87,7 +97,7 @@ public class AssetService {
     /**
      * Update an existing asset
      */
-    public AssetResponse updateAsset(Integer assetId, AssetRequest request) {
+    public AssetResponse updateAsset(Integer assetId, String name, MultipartFile image) {
         Asset asset = assetRepository.findById(assetId)
                 .orElseThrow(() -> new IllegalArgumentException("Tài sản không tìm thấy"));
 
@@ -97,8 +107,11 @@ public class AssetService {
             throw new IllegalArgumentException("Bạn không có quyền cập nhật tài sản này");
         }
 
-        asset.setName(request.name());
-        asset.setImageUrl(request.imageUrl());
+        asset.setName(name);
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = fileStorageService.store("assets", image);
+            asset.setImageUrl(imageUrl);
+        }
 
         Asset updatedAsset = assetRepository.save(asset);
         return mapToResponse(updatedAsset);
@@ -130,4 +143,3 @@ public class AssetService {
         );
     }
 }
-

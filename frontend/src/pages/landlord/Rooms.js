@@ -13,7 +13,8 @@ import {
   Popconfirm,
   Tag,
   Row,
-  Col
+  Col,
+  Upload
 } from 'antd';
 import {
   PlusOutlined,
@@ -41,6 +42,7 @@ const Rooms = () => {
   const [assetModalVisible, setAssetModalVisible] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [imageFileList, setImageFileList] = useState([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const [pagination, setPagination] = useState({
     current: 1,
@@ -113,6 +115,7 @@ const Rooms = () => {
   const handleCreate = () => {
     setEditingRoom(null);
     form.resetFields();
+    setImageFileList([]);
     if (houseId) {
       form.setFieldsValue({ house_id: parseInt(houseId) });
     }
@@ -122,6 +125,7 @@ const Rooms = () => {
   const handleEdit = (record) => {
     setEditingRoom(record);
     form.setFieldsValue(record);
+    setImageFileList([]);
     setModalVisible(true);
   };
 
@@ -144,14 +148,18 @@ const Rooms = () => {
 
   const handleSubmit = async (values) => {
     try {
-      if (editingRoom) {
-        await roomService.update(editingRoom.room_id, values);
-        message.success('Cập nhật phòng thành công!');
-      } else {
-        await roomService.create(values);
-        message.success('Tạo phòng thành công!');
+      const savedRoom = editingRoom
+        ? await roomService.update(editingRoom.room_id, values)
+        : await roomService.create(values);
+
+      const files = imageFileList.map((file) => file.originFileObj).filter(Boolean);
+      if (files.length > 0) {
+        await roomService.uploadImages(savedRoom.room_id, files);
       }
+
+      message.success(editingRoom ? 'Cập nhật phòng thành công!' : 'Tạo phòng thành công!');
       setModalVisible(false);
+      setImageFileList([]);
       if (houseId) {
         fetchRooms(houseId);
       } else {
@@ -296,7 +304,10 @@ const Rooms = () => {
       <Modal
         title={editingRoom ? 'Sửa phòng' : 'Tạo phòng mới'}
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={() => {
+          setModalVisible(false);
+          setImageFileList([]);
+        }}
         footer={null}
         width={600}
       >
@@ -366,6 +377,18 @@ const Rooms = () => {
               rows={3}
               placeholder="Mô tả phòng trọ"
             />
+          </Form.Item>
+
+          <Form.Item label="Hình ảnh phòng">
+            <Upload
+              listType="picture"
+              multiple
+              beforeUpload={() => false}
+              fileList={imageFileList}
+              onChange={({ fileList }) => setImageFileList(fileList)}
+            >
+              <Button icon={<PlusOutlined />}>Chọn ảnh</Button>
+            </Upload>
           </Form.Item>
 
           <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>

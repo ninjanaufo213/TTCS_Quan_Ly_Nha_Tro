@@ -1,6 +1,7 @@
 package com.example.demo.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record HouseResponse(
         Integer houseId,
@@ -11,5 +12,6 @@ public record HouseResponse(
         String ward,
         String district,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        List<HouseImageDto> images
 ) {}

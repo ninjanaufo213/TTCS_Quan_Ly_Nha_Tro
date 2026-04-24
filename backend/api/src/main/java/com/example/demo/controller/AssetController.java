@@ -1,12 +1,13 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.AssetRequest;
 import com.example.demo.dto.AssetResponse;
 import com.example.demo.service.AssetService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.List;
@@ -57,10 +58,12 @@ public class AssetController {
     /**
      * Create a new asset for a room
      */
-    @PostMapping("/{roomId}")
-    public ResponseEntity<?> createAsset(@PathVariable("roomId") Integer roomId, @RequestBody AssetRequest request) {
+    @PostMapping(value = "/{roomId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> createAsset(@PathVariable("roomId") Integer roomId,
+                                         @RequestParam("name") String name,
+                                         @RequestPart(value = "image", required = false) MultipartFile image) {
         try {
-            AssetResponse asset = assetService.createAsset(roomId, request);
+            AssetResponse asset = assetService.createAsset(roomId, name, image);
             return ResponseEntity.status(HttpStatus.CREATED).body(asset);
         } catch (IllegalArgumentException e) {
             Map<String, Object> response = new HashMap<>();
@@ -78,10 +81,12 @@ public class AssetController {
     /**
      * Update an existing asset
      */
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateAsset(@PathVariable("id") Integer id, @RequestBody AssetRequest request) {
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateAsset(@PathVariable("id") Integer id,
+                                         @RequestParam("name") String name,
+                                         @RequestPart(value = "image", required = false) MultipartFile image) {
         try {
-            AssetResponse asset = assetService.updateAsset(id, request);
+            AssetResponse asset = assetService.updateAsset(id, name, image);
             return ResponseEntity.ok(asset);
         } catch (IllegalArgumentException e) {
             Map<String, Object> response = new HashMap<>();
@@ -120,4 +125,3 @@ public class AssetController {
         }
     }
 }
-

@@ -1,13 +1,18 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.HouseImageDto;
 import com.example.demo.dto.HouseRequest;
 import com.example.demo.dto.HouseResponse;
 import com.example.demo.model.House;
+import com.example.demo.model.HouseImage;
 import com.example.demo.model.Landlord;
+import com.example.demo.repository.HouseImageRepository;
 import com.example.demo.repository.HouseRepository;
 import com.example.demo.repository.LandlordRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,12 +24,20 @@ public class HouseService {
     private final HouseRepository houseRepository;
     private final LandlordRepository landlordRepository;
     private final AuthService authService;
+    private final HouseImageRepository houseImageRepository;
+    private final FileStorageService fileStorageService;
 
     @Autowired
-    public HouseService(HouseRepository houseRepository, LandlordRepository landlordRepository, AuthService authService) {
+    public HouseService(HouseRepository houseRepository,
+                        LandlordRepository landlordRepository,
+                        AuthService authService,
+                        HouseImageRepository houseImageRepository,
+                        FileStorageService fileStorageService) {
         this.houseRepository = houseRepository;
         this.landlordRepository = landlordRepository;
         this.authService = authService;
+        this.houseImageRepository = houseImageRepository;
+        this.fileStorageService = fileStorageService;
     }
 
     /**
@@ -106,7 +119,47 @@ public class HouseService {
         houseRepository.deleteById(houseId);
     }
 
+    /**
+     * Add images to a house
+     */
+    @Transactional
+    public HouseResponse addHouseImages(Integer houseId, List<MultipartFile> images) {
+        House house = houseRepository.findById(houseId)
+                .orElseThrow(() -> new IllegalArgumentException("Nhà trọ không tìm thấy"));
+
+        Integer currentLandlordId = authService.getCurrentLandlordId();
+        if (!house.getLandlord().getLandlordId().equals(currentLandlordId)) {
+            throw new IllegalArgumentException("Bạn không có quyền thêm ảnh cho nhà trọ này");
+        }
+
+        if (images == null || images.isEmpty()) {
+            return mapToResponse(house);
+        }
+
+        boolean hasThumbnail = house.getImages() != null
+                && house.getImages().stream().anyMatch(image -> Boolean.TRUE.equals(image.getIsThumbnail()));
+        boolean shouldSetThumbnail = !hasThumbnail;
+
+        for (MultipartFile file : images) {
+            String imageUrl = fileStorageService.store("houses", file);
+            HouseImage image = HouseImage.builder()
+                    .house(house)
+                    .imageUrl(imageUrl)
+                    .isThumbnail(shouldSetThumbnail)
+                    .build();
+            houseImageRepository.save(image);
+            shouldSetThumbnail = false;
+        }
+
+        return mapToResponse(house);
+    }
+
     private HouseResponse mapToResponse(House house) {
+        List<HouseImageDto> imageDtos = house.getImages() != null ?
+                house.getImages().stream()
+                        .map(this::mapToImageDto)
+                        .collect(Collectors.toList()) : List.of();
+
         return new HouseResponse(
                 house.getHouseId(),
                 house.getLandlord().getLandlordId(),
@@ -116,7 +169,16 @@ public class HouseService {
                 house.getWard(),
                 house.getDistrict(),
                 house.getCreatedAt(),
-                house.getUpdatedAt()
+                house.getUpdatedAt(),
+                imageDtos
+        );
+    }
+
+    private HouseImageDto mapToImageDto(HouseImage image) {
+        return new HouseImageDto(
+                image.getImageId(),
+                image.getImageUrl(),
+                image.getIsThumbnail()
         );
     }
 }
