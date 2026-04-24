@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "Rooms")
+@Table(name = "rooms")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -33,13 +33,14 @@ public class Room {
     @Column(nullable = false, precision = 18, scale = 0)
     private BigDecimal price;
 
-    @Column(columnDefinition = "int default 1")
-    private Integer capacity;
+    @Builder.Default
+    @Column
+    private Integer capacity = 1;
 
     @Column(name = "is_available")
     private Boolean isAvailable;
 
-    @Column(columnDefinition = "nvarchar(max)")
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @CreationTimestamp

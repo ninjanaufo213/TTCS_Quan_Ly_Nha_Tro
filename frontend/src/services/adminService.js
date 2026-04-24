@@ -12,6 +12,11 @@ export const adminService = {
     return response.data;
   },
 
+  updateUser: async (userId, payload) => {
+    const response = await api.patch(`/admin/users/${userId}`, payload);
+    return response.data;
+  },
+
   deleteUser: async (userId) => {
     const response = await api.delete(`/admin/users/${userId}`);
     return response.data;

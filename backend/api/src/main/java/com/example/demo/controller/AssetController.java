@@ -32,6 +32,8 @@ public class AssetController {
         try {
             List<AssetResponse> assets = assetService.getAssetsByRoom(roomId);
             return ResponseEntity.ok(assets);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } catch (Exception e) {
@@ -47,6 +49,8 @@ public class AssetController {
         try {
             AssetResponse asset = assetService.getAssetById(id);
             return ResponseEntity.ok(asset);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
@@ -62,6 +66,11 @@ public class AssetController {
         try {
             AssetResponse asset = assetService.createAsset(roomId, request);
             return ResponseEntity.status(HttpStatus.CREATED).body(asset);
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("detail", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         } catch (IllegalArgumentException e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
@@ -83,6 +92,11 @@ public class AssetController {
         try {
             AssetResponse asset = assetService.updateAsset(id, request);
             return ResponseEntity.ok(asset);
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("detail", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         } catch (IllegalArgumentException e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
@@ -107,6 +121,11 @@ public class AssetController {
             response.put("success", true);
             response.put("message", "Xóa tài sản thành công");
             return ResponseEntity.ok(response);
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("detail", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         } catch (IllegalArgumentException e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
@@ -120,4 +139,3 @@ public class AssetController {
         }
     }
 }
-

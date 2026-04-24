@@ -27,13 +27,21 @@ public class HouseController {
     /**
      * Get all houses for current landlord
      */
-    @GetMapping("/")
-    public ResponseEntity<List<HouseResponse>> getAllHouses() {
+    @GetMapping({"", "/"})
+    public ResponseEntity<?> getAllHouses() {
         try {
             List<HouseResponse> houses = houseService.getAllHouses();
             return ResponseEntity.ok(houses);
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("detail", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("detail", "Lỗi khi lấy danh sách nhà trọ: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
@@ -54,11 +62,16 @@ public class HouseController {
     /**
      * Create a new house
      */
-    @PostMapping("/")
+    @PostMapping({"", "/"})
     public ResponseEntity<?> createHouse(@RequestBody HouseRequest request) {
         try {
             HouseResponse house = houseService.createHouse(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(house);
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("detail", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         } catch (IllegalArgumentException e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
@@ -80,6 +93,11 @@ public class HouseController {
         try {
             HouseResponse house = houseService.updateHouse(id, request);
             return ResponseEntity.ok(house);
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("detail", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         } catch (IllegalArgumentException e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
@@ -104,6 +122,11 @@ public class HouseController {
             response.put("success", true);
             response.put("message", "Xóa nhà trọ thành công");
             return ResponseEntity.ok(response);
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("detail", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         } catch (IllegalArgumentException e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);

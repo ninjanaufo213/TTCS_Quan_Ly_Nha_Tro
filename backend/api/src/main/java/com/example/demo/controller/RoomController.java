@@ -27,13 +27,21 @@ public class RoomController {
     /**
      * Get all rooms for current landlord
      */
-    @GetMapping("/")
-    public ResponseEntity<List<RoomResponse>> getAllRooms() {
+    @GetMapping({"", "/"})
+    public ResponseEntity<?> getAllRooms() {
         try {
             List<RoomResponse> rooms = roomService.getAllRooms();
             return ResponseEntity.ok(rooms);
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("detail", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("detail", "Lỗi khi lấy danh sách phòng: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
@@ -41,17 +49,25 @@ public class RoomController {
      * Get rooms by house ID
      */
     @GetMapping("/house/{houseId}")
-    public ResponseEntity<List<RoomResponse>> getRoomsByHouse(@PathVariable("houseId") Integer houseId) {
+    public ResponseEntity<?> getRoomsByHouse(@PathVariable("houseId") Integer houseId) {
         try {
             List<RoomResponse> rooms = roomService.getRoomsByHouse(houseId);
             return ResponseEntity.ok(rooms);
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("detail", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         } catch (IllegalArgumentException e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
             response.put("detail", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("detail", "Lỗi khi lấy danh sách phòng theo nhà trọ: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
@@ -59,24 +75,37 @@ public class RoomController {
      * Get a specific room by ID
      */
     @GetMapping("/{id}")
-    public ResponseEntity<RoomResponse> getRoomById(@PathVariable("id") Integer id) {
+    public ResponseEntity<?> getRoomById(@PathVariable("id") Integer id) {
         try {
             return roomService.getRoomById(id)
                     .map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("detail", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("detail", "Lỗi khi lấy thông tin phòng: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
     /**
      * Create a new room
      */
-    @PostMapping("/")
+    @PostMapping({"", "/"})
     public ResponseEntity<?> createRoom(@RequestBody RoomRequest request) {
         try {
             RoomResponse room = roomService.createRoom(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(room);
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("detail", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         } catch (IllegalArgumentException e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
@@ -98,6 +127,11 @@ public class RoomController {
         try {
             RoomResponse room = roomService.updateRoom(id, request);
             return ResponseEntity.ok(room);
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("detail", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         } catch (IllegalArgumentException e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
@@ -122,6 +156,11 @@ public class RoomController {
             response.put("success", true);
             response.put("message", "Xóa phòng thành công");
             return ResponseEntity.ok(response);
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("detail", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         } catch (IllegalArgumentException e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);

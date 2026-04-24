@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "Rented_Rooms")
+@Table(name = "rented_rooms")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -47,7 +47,7 @@ public class RentedRoom {
     @Column(precision = 18, scale = 0)
     private BigDecimal deposit;
 
-    @Column(name = "contract_url", columnDefinition = "varchar(max)")
+    @Column(name = "contract_url", columnDefinition = "TEXT")
     private String contractUrl;
 
     @Column(name = "is_active")

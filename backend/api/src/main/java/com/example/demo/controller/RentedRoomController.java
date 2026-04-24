@@ -27,7 +27,7 @@ public class RentedRoomController {
     /**
      * Lấy tất cả hợp đồng
      */
-    @GetMapping("/")
+    @GetMapping({"", "/"})
     public ResponseEntity<List<RentedRoomResponse>> getAllRentedRooms() {
         try {
             List<RentedRoomResponse> rentedRooms = rentedRoomService.getAllRentedRooms();
@@ -76,7 +76,7 @@ public class RentedRoomController {
     /**
      * Tạo hợp đồng mới
      */
-    @PostMapping("/")
+    @PostMapping({"", "/"})
     public ResponseEntity<?> createRentedRoom(@RequestBody RentedRoomRequest request) {
         try {
             RentedRoomResponse rentedRoom = rentedRoomService.createRentedRoom(request);
@@ -160,4 +160,3 @@ public class RentedRoomController {
         }
     }
 }
-

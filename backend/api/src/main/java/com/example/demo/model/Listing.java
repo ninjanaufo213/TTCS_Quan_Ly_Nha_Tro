@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "Listings")
+@Table(name = "listings")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -29,11 +29,12 @@ public class Listing {
     @Column(nullable = false, length = 255)
     private String title;
 
-    @Column(columnDefinition = "nvarchar(max)")
+    @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "views_count", columnDefinition = "int default 0")
-    private Integer viewsCount;
+    @Builder.Default
+    @Column(name = "views_count")
+    private Integer viewsCount = 0;
 
     @Column(name = "is_published")
     private Boolean isPublished;

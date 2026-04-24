@@ -7,7 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Room_Images")
+@Table(name = "room_images")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,7 +23,7 @@ public class RoomImage {
     @JoinColumn(name = "room_id", nullable = false)
     private Room room;
 
-    @Column(name = "image_url", nullable = false, columnDefinition = "varchar(max)")
+    @Column(name = "image_url", nullable = false, columnDefinition = "TEXT")
     private String imageUrl;
 
     @Column(name = "is_thumbnail")

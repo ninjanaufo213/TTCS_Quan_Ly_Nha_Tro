@@ -19,17 +19,6 @@ import adminService from '../../services/adminService';
 const { Text } = Typography;
 const { Search } = Input;
 
-// Mock data fallback
-const MOCK_USERS = [
-  { userId: 1, email: 'admin@nhatro.vn', phone: '0901000001', role: 'ADMIN', isActive: true, createdAt: '2024-01-01T00:00:00' },
-  { userId: 2, email: 'chuTro1@gmail.com', phone: '0901000002', role: 'LANDLORD', isActive: true, createdAt: '2024-02-10T08:00:00' },
-  { userId: 3, email: 'nguoiThue1@gmail.com', phone: '0901000003', role: 'TENANT', isActive: true, createdAt: '2024-02-15T09:00:00' },
-  { userId: 4, email: 'chuTro2@gmail.com', phone: '0901000004', role: 'LANDLORD', isActive: false, createdAt: '2024-03-01T10:00:00' },
-  { userId: 5, email: 'nguoiThue2@gmail.com', phone: '0901000005', role: 'TENANT', isActive: true, createdAt: '2024-03-05T11:00:00' },
-  { userId: 6, email: 'nguoiThue3@gmail.com', phone: '0901000006', role: 'TENANT', isActive: false, createdAt: '2024-03-10T12:00:00' },
-  { userId: 7, email: 'chuTro3@gmail.com', phone: '0901000007', role: 'LANDLORD', isActive: true, createdAt: '2024-03-15T13:00:00' },
-];
-
 const roleConfig = {
   ADMIN: { color: 'volcano', icon: <CrownOutlined />, label: 'Admin' },
   LANDLORD: { color: 'blue', icon: <HomeOutlined />, label: 'Chủ trọ' },
@@ -61,8 +50,9 @@ const UserManagement = () => {
     try {
       const data = await adminService.getAllUsers();
       setUsers(data);
-    } catch {
-      setUsers(MOCK_USERS);
+    } catch (e) {
+      setUsers([]);
+      message.error(e?.response?.data?.detail || 'Không thể tải danh sách người dùng');
     } finally {
       setLoading(false);
     }
@@ -83,15 +73,11 @@ const UserManagement = () => {
 
   const handleToggleStatus = async (record) => {
     try {
-      await adminService.toggleUserStatus(record.userId).catch(() => null);
-      setUsers(prev => prev.map(u =>
-        u.userId === record.userId ? { ...u, isActive: !u.isActive } : u
-      ));
-      message.success(
-        record.isActive ? `🔒 Đã khóa tài khoản ${record.email}` : `✅ Đã mở khóa ${record.email}`
-      );
-    } catch {
-      message.error('Lỗi khi thay đổi trạng thái!');
+      const updated = await adminService.toggleUserStatus(record.userId);
+      setUsers(prev => prev.map(u => (u.userId === updated.userId ? updated : u)));
+      message.success(updated.isActive ? `✅ Đã mở khóa ${updated.email}` : `🔒 Đã khóa tài khoản ${updated.email}`);
+    } catch (e) {
+      message.error(e?.response?.data?.detail || 'Lỗi khi thay đổi trạng thái!');
     }
   };
 
@@ -102,13 +88,12 @@ const UserManagement = () => {
 
   const handleEditSubmit = async (values) => {
     try {
-      setUsers(prev => prev.map(u =>
-        u.userId === editModal.record.userId ? { ...u, ...values } : u
-      ));
+      const updated = await adminService.updateUser(editModal.record.userId, values);
+      setUsers(prev => prev.map(u => (u.userId === updated.userId ? updated : u)));
       message.success('Cập nhật người dùng thành công!');
       setEditModal({ open: false, record: null });
-    } catch {
-      message.error('Lỗi khi cập nhật!');
+    } catch (e) {
+      message.error(e?.response?.data?.detail || 'Lỗi khi cập nhật!');
     }
   };
 

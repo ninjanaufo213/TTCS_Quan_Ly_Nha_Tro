@@ -52,7 +52,7 @@ public class RoomControllerTest {
         mockMvc.perform(get("/api/rooms/1")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.roomId").value(1))
+                .andExpect(jsonPath("$.room_id").value(1)) 
                 .andExpect(jsonPath("$.name").value("Room 101"))
                 .andExpect(jsonPath("$.price").value(1500000))
                 .andExpect(jsonPath("$.images").isArray())
