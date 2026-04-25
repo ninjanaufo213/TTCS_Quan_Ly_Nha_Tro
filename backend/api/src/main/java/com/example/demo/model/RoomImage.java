@@ -23,7 +23,7 @@ public class RoomImage {
     @JoinColumn(name = "room_id", nullable = false)
     private Room room;
 
-    @Column(name = "image_url", nullable = false, columnDefinition = "TEXT")
+    @Column(columnDefinition = "LONGTEXT", nullable = false,name = "image_url") 
     private String imageUrl;
 
     @Column(name = "is_thumbnail")

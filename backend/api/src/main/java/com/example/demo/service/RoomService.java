@@ -7,23 +7,17 @@ import com.example.demo.model.House;
 import com.example.demo.model.Room;
 import com.example.demo.model.RoomImage;
 import com.example.demo.repository.HouseRepository;
-<<<<<<< HEAD
 import com.example.demo.repository.RentedRoomRepository;
-=======
 import com.example.demo.repository.RoomImageRepository;
->>>>>>> origin/ThuyTien
 import com.example.demo.repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-<<<<<<< HEAD
 import java.time.LocalDate;
-=======
 import java.io.IOException;
 import java.util.Base64;
->>>>>>> origin/ThuyTien
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -40,13 +34,9 @@ public class RoomService {
     @Autowired
     public RoomService(RoomRepository roomRepository,
                        HouseRepository houseRepository,
-<<<<<<< HEAD
                        RentedRoomRepository rentedRoomRepository,
-                       AuthService authService) {
-=======
                        AuthService authService,
                        RoomImageRepository roomImageRepository) {
->>>>>>> origin/ThuyTien
         this.roomRepository = roomRepository;
         this.houseRepository = houseRepository;
         this.rentedRoomRepository = rentedRoomRepository;
@@ -241,7 +231,6 @@ public class RoomService {
         );
     }
 
-<<<<<<< HEAD
     private void syncRoomAvailability(Room room) {
         if (room == null || room.getRoomId() == null) {
             return;
@@ -259,7 +248,8 @@ public class RoomService {
         if (!Boolean.valueOf(shouldBeAvailable).equals(room.getIsAvailable())) {
             room.setIsAvailable(shouldBeAvailable);
             roomRepository.save(room);
-=======
+        }
+    }
     private String encodeToDataUrl(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             return null;
@@ -273,7 +263,6 @@ public class RoomService {
             return "data:" + contentType + ";base64," + base64;
         } catch (IOException e) {
             throw new IllegalStateException("Lưu ảnh phòng thất bại", e);
->>>>>>> origin/ThuyTien
         }
     }
 }
