@@ -12,12 +12,26 @@ export const assetService = {
   },
 
   create: async (roomId, assetData) => {
-    const response = await api.post(`/assets/${roomId}`, assetData);
+    const formData = new FormData();
+    formData.append('name', assetData.name);
+    if (assetData.image) {
+      formData.append('image', assetData.image);
+    }
+    const response = await api.post(`/assets/${roomId}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return response.data;
   },
 
   update: async (id, assetData) => {
-    const response = await api.put(`/assets/${id}`, assetData);
+    const formData = new FormData();
+    formData.append('name', assetData.name);
+    if (assetData.image) {
+      formData.append('image', assetData.image);
+    }
+    const response = await api.put(`/assets/${id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return response.data;
   },
 

@@ -13,7 +13,8 @@ import {
   Popconfirm,
   Tag,
   Row,
-  Col
+  Col,
+  Upload
 } from 'antd';
 import {
   PlusOutlined,
@@ -41,6 +42,7 @@ const Rooms = () => {
   const [assetModalVisible, setAssetModalVisible] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [imageFileList, setImageFileList] = useState([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const [pagination, setPagination] = useState({
     current: 1,
@@ -52,6 +54,17 @@ const Rooms = () => {
   });
   const [form] = Form.useForm();
   const navigate = useNavigate();
+
+  const apiBaseUrl = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/$/, '');
+  const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
+  const resolveImageUrl = (url) => {
+    if (!url) return url;
+    if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (!apiOrigin) return url;
+    const normalized = url.startsWith('/') ? url : `/${url}`;
+    return `${apiOrigin}${normalized}`;
+  };
 
   const houseId = searchParams.get('house');
 
@@ -115,6 +128,7 @@ const Rooms = () => {
   const handleCreate = () => {
     setEditingRoom(null);
     form.resetFields();
+    setImageFileList([]);
     if (houseId) {
       form.setFieldsValue({ house_id: parseInt(houseId) });
     }
@@ -124,6 +138,19 @@ const Rooms = () => {
   const handleEdit = (record) => {
     setEditingRoom(record);
     form.setFieldsValue(record);
+    const existingImages = Array.isArray(record.images)
+      ? record.images.map((img, index) => {
+          const imageUrl = resolveImageUrl(img.image_url || img.imageUrl);
+          return {
+            uid: img.image_id ? String(img.image_id) : `existing-${index}`,
+            name: `room-image-${index + 1}`,
+            status: 'done',
+            url: imageUrl,
+            thumbUrl: imageUrl
+          };
+        })
+      : [];
+    setImageFileList(existingImages);
     setModalVisible(true);
   };
 
@@ -146,14 +173,18 @@ const Rooms = () => {
 
   const handleSubmit = async (values) => {
     try {
-      if (editingRoom) {
-        await roomService.update(editingRoom.room_id, values);
-        message.success('Cập nhật phòng thành công!');
-      } else {
-        await roomService.create(values);
-        message.success('Tạo phòng thành công!');
+      const savedRoom = editingRoom
+        ? await roomService.update(editingRoom.room_id, values)
+        : await roomService.create(values);
+
+      const files = imageFileList.map((file) => file.originFileObj).filter(Boolean);
+      if (files.length > 0) {
+        await roomService.uploadImages(savedRoom.room_id, files);
       }
+
+      message.success(editingRoom ? 'Cập nhật phòng thành công!' : 'Tạo phòng thành công!');
       setModalVisible(false);
+      setImageFileList([]);
       if (houseId) {
         fetchRooms(houseId);
       } else {
@@ -339,7 +370,10 @@ const Rooms = () => {
       <Modal
         title={editingRoom ? 'Sửa phòng' : 'Tạo phòng mới'}
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={() => {
+          setModalVisible(false);
+          setImageFileList([]);
+        }}
         footer={null}
         width={600}
       >
@@ -409,6 +443,18 @@ const Rooms = () => {
               rows={3}
               placeholder="Mô tả phòng trọ"
             />
+          </Form.Item>
+
+          <Form.Item label="Hình ảnh phòng">
+            <Upload
+              listType="picture"
+              multiple
+              beforeUpload={() => false}
+              fileList={imageFileList}
+              onChange={({ fileList }) => setImageFileList(fileList)}
+            >
+              <Button icon={<PlusOutlined />}>Chọn ảnh</Button>
+            </Upload>
           </Form.Item>
 
           <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>

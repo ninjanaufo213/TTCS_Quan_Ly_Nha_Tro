@@ -11,7 +11,8 @@ import {
   Tag,
   Popconfirm,
   App,
-  Space
+  Space,
+  Upload
 } from 'antd';
 import {
   DeleteOutlined,
@@ -25,16 +26,32 @@ const AssetManagement = ({ roomId, roomName, assets, onAssetsUpdate }) => {
   const [form] = Form.useForm();
   const [editingAsset, setEditingAsset] = useState(null);
   const [isFormVisible, setIsFormVisible] = useState(false);
+  const [imageFileList, setImageFileList] = useState([]);
+
+  const apiBaseUrl = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/$/, '');
+  const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
+  const resolveImageUrl = (url) => {
+    if (!url) return url;
+    if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (!apiOrigin) return url;
+    const normalized = url.startsWith('/') ? url : `/${url}`;
+    return `${apiOrigin}${normalized}`;
+  };
+
+  const getAssetImageUrl = (asset) => resolveImageUrl(asset?.imageUrl || asset?.image_url);
 
   const handleAddAsset = async (values) => {
     try {
+      const imageFile = imageFileList[0]?.originFileObj || null;
       await assetService.create(roomId, {
         name: values.name,
-        imageUrl: values.imageUrl
+        image: imageFile
       });
       message.success('Thêm tài sản thành công!');
       form.resetFields();
       setIsFormVisible(false);
+      setImageFileList([]);
       onAssetsUpdate();
     } catch (error) {
       console.error('Error adding asset:', error);
@@ -44,14 +61,16 @@ const AssetManagement = ({ roomId, roomName, assets, onAssetsUpdate }) => {
 
   const handleUpdateAsset = async (values) => {
     try {
+      const imageFile = imageFileList[0]?.originFileObj || null;
       await assetService.update(editingAsset.asset_id, {
         name: values.name,
-        imageUrl: values.imageUrl
+        image: imageFile
       });
       message.success('Cập nhật tài sản thành công!');
       form.resetFields();
       setEditingAsset(null);
       setIsFormVisible(false);
+      setImageFileList([]);
       onAssetsUpdate();
     } catch (error) {
       console.error('Error updating asset:', error);
@@ -62,9 +81,9 @@ const AssetManagement = ({ roomId, roomName, assets, onAssetsUpdate }) => {
   const handleEdit = (asset) => {
     setEditingAsset(asset);
     form.setFieldsValue({
-      name: asset.name,
-      imageUrl: asset.imageUrl
+      name: asset.name
     });
+    setImageFileList([]);
     setIsFormVisible(true);
   };
 
@@ -83,6 +102,7 @@ const AssetManagement = ({ roomId, roomName, assets, onAssetsUpdate }) => {
     form.resetFields();
     setEditingAsset(null);
     setIsFormVisible(false);
+    setImageFileList([]);
   };
 
   const columns = [
@@ -105,7 +125,8 @@ const AssetManagement = ({ roomId, roomName, assets, onAssetsUpdate }) => {
       dataIndex: 'imageUrl',
       key: 'imageUrl',
       width: '25%',
-      render: (imageUrl) => {
+      render: (_, record) => {
+        const imageUrl = getAssetImageUrl(record);
         if (!imageUrl) {
           return <Tag color="default">Không có</Tag>;
         }
@@ -122,9 +143,6 @@ const AssetManagement = ({ roomId, roomName, assets, onAssetsUpdate }) => {
                 e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="50" height="50"%3E%3Crect fill="%23f0f0f0" width="50" height="50"/%3E%3C/svg%3E';
               }}
             />
-            <a href={imageUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }}>
-              Xem
-            </a>
           </Space>
         );
       }
@@ -202,10 +220,18 @@ const AssetManagement = ({ roomId, roomName, assets, onAssetsUpdate }) => {
               </Col>
               <Col span={12}>
                 <Form.Item
-                  name="imageUrl"
-                  label="URL hình ảnh"
+                  name="image"
+                  label="Hình ảnh"
                 >
-                  <Input placeholder="https://example.com/image.jpg" />
+                  <Upload
+                    listType="picture"
+                    maxCount={1}
+                    beforeUpload={() => false}
+                    fileList={imageFileList}
+                    onChange={({ fileList }) => setImageFileList(fileList)}
+                  >
+                    <Button icon={<PlusOutlined />}>Chọn ảnh</Button>
+                  </Upload>
                 </Form.Item>
               </Col>
             </Row>
@@ -249,5 +275,4 @@ const AssetManagement = ({ roomId, roomName, assets, onAssetsUpdate }) => {
 };
 
 export default AssetManagement;
-
 

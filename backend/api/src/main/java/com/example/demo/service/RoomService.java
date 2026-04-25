@@ -7,12 +7,23 @@ import com.example.demo.model.House;
 import com.example.demo.model.Room;
 import com.example.demo.model.RoomImage;
 import com.example.demo.repository.HouseRepository;
+<<<<<<< HEAD
 import com.example.demo.repository.RentedRoomRepository;
+=======
+import com.example.demo.repository.RoomImageRepository;
+>>>>>>> origin/ThuyTien
 import com.example.demo.repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+<<<<<<< HEAD
 import java.time.LocalDate;
+=======
+import java.io.IOException;
+import java.util.Base64;
+>>>>>>> origin/ThuyTien
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -24,16 +35,23 @@ public class RoomService {
     private final HouseRepository houseRepository;
     private final RentedRoomRepository rentedRoomRepository;
     private final AuthService authService;
+    private final RoomImageRepository roomImageRepository;
 
     @Autowired
     public RoomService(RoomRepository roomRepository,
                        HouseRepository houseRepository,
+<<<<<<< HEAD
                        RentedRoomRepository rentedRoomRepository,
                        AuthService authService) {
+=======
+                       AuthService authService,
+                       RoomImageRepository roomImageRepository) {
+>>>>>>> origin/ThuyTien
         this.roomRepository = roomRepository;
         this.houseRepository = houseRepository;
         this.rentedRoomRepository = rentedRoomRepository;
         this.authService = authService;
+        this.roomImageRepository = roomImageRepository;
     }
 
     /**
@@ -160,6 +178,41 @@ public class RoomService {
         roomRepository.deleteById(roomId);
     }
 
+    /**
+     * Add images to a room
+     */
+    @Transactional
+    public RoomResponse addRoomImages(Integer roomId, List<MultipartFile> images) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Phòng không tìm thấy"));
+
+        Integer currentLandlordId = authService.getCurrentLandlordId();
+        if (!room.getHouse().getLandlord().getLandlordId().equals(currentLandlordId)) {
+            throw new IllegalArgumentException("Bạn không có quyền thêm ảnh cho phòng này");
+        }
+
+        if (images == null || images.isEmpty()) {
+            return mapToResponse(room);
+        }
+
+        boolean hasThumbnail = room.getImages() != null
+                && room.getImages().stream().anyMatch(image -> Boolean.TRUE.equals(image.getIsThumbnail()));
+        boolean shouldSetThumbnail = !hasThumbnail;
+
+        for (MultipartFile file : images) {
+            String imageUrl = encodeToDataUrl(file);
+            RoomImage image = RoomImage.builder()
+                    .room(room)
+                    .imageUrl(imageUrl)
+                    .isThumbnail(shouldSetThumbnail)
+                    .build();
+            roomImageRepository.save(image);
+            shouldSetThumbnail = false;
+        }
+
+        return mapToResponse(room);
+    }
+
     private RoomResponse mapToResponse(Room room) {
         List<RoomImageDto> imageDtos = room.getImages() != null ?
                 room.getImages().stream()
@@ -188,6 +241,7 @@ public class RoomService {
         );
     }
 
+<<<<<<< HEAD
     private void syncRoomAvailability(Room room) {
         if (room == null || room.getRoomId() == null) {
             return;
@@ -205,6 +259,21 @@ public class RoomService {
         if (!Boolean.valueOf(shouldBeAvailable).equals(room.getIsAvailable())) {
             room.setIsAvailable(shouldBeAvailable);
             roomRepository.save(room);
+=======
+    private String encodeToDataUrl(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return null;
+        }
+        try {
+            String contentType = file.getContentType();
+            if (contentType == null || contentType.isBlank()) {
+                contentType = "application/octet-stream";
+            }
+            String base64 = Base64.getEncoder().encodeToString(file.getBytes());
+            return "data:" + contentType + ";base64," + base64;
+        } catch (IOException e) {
+            throw new IllegalStateException("Lưu ảnh phòng thất bại", e);
+>>>>>>> origin/ThuyTien
         }
     }
 }

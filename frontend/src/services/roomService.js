@@ -32,10 +32,18 @@ export const roomService = {
     return response.data;
   },
 
+  uploadImages: async (id, files) => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('images', file));
+    const response = await api.post(`/rooms/${id}/images`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
   delete: async (id, config) => {
     const response = await api.delete(`/rooms/${id}`, config);
     return response.data;
   }
 };
-
 
