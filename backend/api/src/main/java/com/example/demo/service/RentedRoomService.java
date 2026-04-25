@@ -11,7 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,6 +32,7 @@ public class RentedRoomService {
      * Lấy tất cả hợp đồng
      */
     public List<RentedRoomResponse> getAllRentedRooms() {
+        syncExpiredContractsAndRoomAvailability();
         return rentedRoomRepository.findAll().stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
@@ -39,6 +42,7 @@ public class RentedRoomService {
      * Lấy hợp đồng theo phòng
      */
     public List<RentedRoomResponse> getRentedRoomsByRoom(Integer roomId) {
+        syncExpiredContractsAndRoomAvailability();
         if (!roomRepository.existsById(roomId)) {
             throw new IllegalArgumentException("Phòng không tồn tại!");
         }
@@ -51,6 +55,7 @@ public class RentedRoomService {
      * Lấy hợp đồng theo ID
      */
     public RentedRoomResponse getRentedRoomById(Integer id) {
+        syncExpiredContractsAndRoomAvailability();
         return rentedRoomRepository.findById(id)
                 .map(this::convertToResponse)
                 .orElseThrow(() -> new IllegalArgumentException("Hợp đồng không tồn tại!"));
@@ -60,12 +65,16 @@ public class RentedRoomService {
      * Tạo hợp đồng mới
      */
     public RentedRoomResponse createRentedRoom(RentedRoomRequest request) {
+        syncExpiredContractsAndRoomAvailability();
+
         // Validate
         validateRentedRoomRequest(request);
 
         // Lấy Room
         Room room = roomRepository.findById(request.getRoomId())
                 .orElseThrow(() -> new IllegalArgumentException("Phòng không tồn tại!"));
+
+        validateNoOverlappingContract(room.getRoomId(), request.getStartDate(), request.getEndDate(), null);
 
         // Tạo hoặc lấy Tenant
         Tenant tenant = null;
@@ -87,13 +96,15 @@ public class RentedRoomService {
                 .monthlyRent(request.getMonthlyRent())
                 .deposit(request.getDeposit() != null ? request.getDeposit() : BigDecimal.ZERO)
                 .contractUrl(request.getContractUrl())
-                .isActive(true)
+                .isActive(!request.getEndDate().isBefore(LocalDate.now()))
                 .build();
 
         RentedRoom saved = rentedRoomRepository.save(rentedRoom);
 
         // Tạo Contract Services (nước, điện, wifi, dịch vụ chung)
         createContractServices(saved, request);
+
+        refreshRoomAvailability(room.getRoomId());
 
         return convertToResponse(saved);
     }
@@ -138,11 +149,16 @@ public class RentedRoomService {
      * Cập nhật hợp đồng
      */
     public RentedRoomResponse updateRentedRoom(Integer id, RentedRoomRequest request) {
+        syncExpiredContractsAndRoomAvailability();
+
         RentedRoom rentedRoom = rentedRoomRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Hợp đồng không tồn tại!"));
 
         // Validate
         validateUpdateRequest(request, rentedRoom);
+
+        LocalDate effectiveEndDate = request.getEndDate() != null ? request.getEndDate() : rentedRoom.getEndDate();
+        validateNoOverlappingContract(rentedRoom.getRoom().getRoomId(), rentedRoom.getStartDate(), effectiveEndDate, rentedRoom.getRrId());
 
         // Cập nhật thông tin
         if (request.getNumberOfTenants() != null) {
@@ -150,6 +166,9 @@ public class RentedRoomService {
         }
         if (request.getEndDate() != null) {
             rentedRoom.setEndDate(request.getEndDate());
+            if (request.getEndDate().isBefore(LocalDate.now())) {
+                rentedRoom.setIsActive(false);
+            }
         }
         if (request.getMonthlyRent() != null) {
             rentedRoom.setMonthlyRent(request.getMonthlyRent());
@@ -172,6 +191,10 @@ public class RentedRoomService {
             createContractServices(updated, request);
         }
 
+        if (updated.getRoom() != null) {
+            refreshRoomAvailability(updated.getRoom().getRoomId());
+        }
+
         return convertToResponse(updated);
     }
 
@@ -179,11 +202,17 @@ public class RentedRoomService {
      * Chấm dứt hợp đồng
      */
     public RentedRoomResponse terminateRentedRoom(Integer id) {
+        syncExpiredContractsAndRoomAvailability();
+
         RentedRoom rentedRoom = rentedRoomRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Hợp đồng không tồn tại!"));
 
         rentedRoom.setIsActive(false);
         RentedRoom updated = rentedRoomRepository.save(rentedRoom);
+
+        if (updated.getRoom() != null) {
+            refreshRoomAvailability(updated.getRoom().getRoomId());
+        }
 
         return convertToResponse(updated);
     }
@@ -192,10 +221,68 @@ public class RentedRoomService {
      * Xóa hợp đồng
      */
     public void deleteRentedRoom(Integer id) {
-        if (!rentedRoomRepository.existsById(id)) {
-            throw new IllegalArgumentException("Hợp đồng không tồn tại!");
-        }
+        RentedRoom rentedRoom = rentedRoomRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Hợp đồng không tồn tại!"));
+        Integer roomId = rentedRoom.getRoom() != null ? rentedRoom.getRoom().getRoomId() : null;
+
         rentedRoomRepository.deleteById(id);
+
+        if (roomId != null) {
+            refreshRoomAvailability(roomId);
+        }
+    }
+
+    private void validateNoOverlappingContract(Integer roomId, LocalDate startDate, LocalDate endDate, Integer excludeRrId) {
+        LocalDate requestedEnd = endDate != null ? endDate : LocalDate.MAX;
+
+        for (RentedRoom existing : rentedRoomRepository.findByRoom_RoomIdAndIsActiveTrue(roomId)) {
+            if (excludeRrId != null && excludeRrId.equals(existing.getRrId())) {
+                continue;
+            }
+
+            LocalDate existingStart = existing.getStartDate();
+            LocalDate existingEnd = existing.getEndDate() != null ? existing.getEndDate() : LocalDate.MAX;
+
+            boolean isOverlapping = !startDate.isAfter(existingEnd) && !requestedEnd.isBefore(existingStart);
+            if (isOverlapping) {
+                throw new IllegalArgumentException("Phòng này đã có hợp đồng còn hiệu lực trong khoảng thời gian đã chọn!");
+            }
+        }
+    }
+
+    private void syncExpiredContractsAndRoomAvailability() {
+        LocalDate today = LocalDate.now();
+        List<RentedRoom> activeContracts = rentedRoomRepository.findByIsActiveTrue();
+        Set<Integer> changedRoomIds = new HashSet<>();
+
+        for (RentedRoom contract : activeContracts) {
+            if (contract.getEndDate() != null && contract.getEndDate().isBefore(today)) {
+                contract.setIsActive(false);
+                if (contract.getRoom() != null) {
+                    changedRoomIds.add(contract.getRoom().getRoomId());
+                }
+            }
+        }
+
+        rentedRoomRepository.saveAll(activeContracts);
+
+        for (Integer roomId : changedRoomIds) {
+            refreshRoomAvailability(roomId);
+        }
+    }
+
+    private void refreshRoomAvailability(Integer roomId) {
+        roomRepository.findById(roomId).ifPresent(room -> {
+            LocalDate today = LocalDate.now();
+            boolean hasEffectiveActiveContract = rentedRoomRepository
+                    .existsByRoom_RoomIdAndIsActiveTrueAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                            roomId,
+                            today,
+                            today
+                    );
+            room.setIsAvailable(!hasEffectiveActiveContract);
+            roomRepository.save(room);
+        });
     }
 
     /**
@@ -261,6 +348,33 @@ public class RentedRoomService {
             tenantPhone = rentedRoom.getTenant().getUser().getPhone();
         }
 
+        BigDecimal waterPrice = null;
+        BigDecimal internetPrice = null;
+        BigDecimal generalPrice = null;
+        Integer initialElectricityNum = null;
+        BigDecimal electricityUnitPrice = null;
+
+        List<ContractService> contractServices = rentedRoom.getContractServices();
+        if (contractServices != null) {
+            for (ContractService service : contractServices) {
+                if (service == null || service.getServiceName() == null) {
+                    continue;
+                }
+                switch (service.getServiceName()) {
+                    case "Nước" -> waterPrice = service.getUnitPrice();
+                    case "Wifi" -> internetPrice = service.getUnitPrice();
+                    case "Dịch vụ chung" -> generalPrice = service.getUnitPrice();
+                    case "Điện" -> {
+                        electricityUnitPrice = service.getUnitPrice();
+                        initialElectricityNum = service.getInitialNumber();
+                    }
+                    default -> {
+                        // Ignore unknown service names
+                    }
+                }
+            }
+        }
+
         return RentedRoomResponse.builder()
                 .rrId(rentedRoom.getRrId())
                 .roomId(rentedRoom.getRoom() != null ? rentedRoom.getRoom().getRoomId() : null)
@@ -274,6 +388,11 @@ public class RentedRoomService {
                 .monthlyRent(rentedRoom.getMonthlyRent())
                 .deposit(rentedRoom.getDeposit())
                 .contractUrl(rentedRoom.getContractUrl())
+                .waterPrice(waterPrice)
+                .internetPrice(internetPrice)
+                .generalPrice(generalPrice)
+                .initialElectricityNum(initialElectricityNum)
+                .electricityUnitPrice(electricityUnitPrice)
                 .isActive(rentedRoom.getIsActive())
                 .createdAt(rentedRoom.getCreatedAt())
                 .updatedAt(rentedRoom.getUpdatedAt())

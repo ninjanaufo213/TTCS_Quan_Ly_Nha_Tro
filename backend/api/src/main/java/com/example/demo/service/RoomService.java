@@ -7,10 +7,12 @@ import com.example.demo.model.House;
 import com.example.demo.model.Room;
 import com.example.demo.model.RoomImage;
 import com.example.demo.repository.HouseRepository;
+import com.example.demo.repository.RentedRoomRepository;
 import com.example.demo.repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -20,12 +22,17 @@ public class RoomService {
 
     private final RoomRepository roomRepository;
     private final HouseRepository houseRepository;
+    private final RentedRoomRepository rentedRoomRepository;
     private final AuthService authService;
 
     @Autowired
-    public RoomService(RoomRepository roomRepository, HouseRepository houseRepository, AuthService authService) {
+    public RoomService(RoomRepository roomRepository,
+                       HouseRepository houseRepository,
+                       RentedRoomRepository rentedRoomRepository,
+                       AuthService authService) {
         this.roomRepository = roomRepository;
         this.houseRepository = houseRepository;
+        this.rentedRoomRepository = rentedRoomRepository;
         this.authService = authService;
     }
 
@@ -38,6 +45,7 @@ public class RoomService {
 
         return houses.stream()
                 .flatMap(house -> house.getRooms().stream())
+                .peek(this::syncRoomAvailability)
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -57,6 +65,7 @@ public class RoomService {
 
         return roomRepository.findByHouse_HouseId(houseId)
                 .stream()
+                .peek(this::syncRoomAvailability)
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -65,7 +74,11 @@ public class RoomService {
      * Get a specific room by ID
      */
     public Optional<RoomResponse> getRoomById(Integer id) {
-        return roomRepository.findById(id).map(this::mapToResponse);
+        return roomRepository.findById(id)
+                .map(room -> {
+                    syncRoomAvailability(room);
+                    return mapToResponse(room);
+                });
     }
 
     /**
@@ -122,7 +135,9 @@ public class RoomService {
         room.setName(request.name());
         room.setPrice(request.price());
         room.setCapacity(request.capacity() != null ? request.capacity() : 1);
-        room.setIsAvailable(request.is_available() != null ? request.is_available() : true);
+        if (request.is_available() != null) {
+            room.setIsAvailable(request.is_available());
+        }
         room.setDescription(request.description());
 
         Room updatedRoom = roomRepository.save(room);
@@ -171,5 +186,25 @@ public class RoomService {
                 image.getImageUrl(),
                 image.getIsThumbnail()
         );
+    }
+
+    private void syncRoomAvailability(Room room) {
+        if (room == null || room.getRoomId() == null) {
+            return;
+        }
+
+        LocalDate today = LocalDate.now();
+        boolean hasEffectiveActiveContract = rentedRoomRepository
+                .existsByRoom_RoomIdAndIsActiveTrueAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        room.getRoomId(),
+                        today,
+                        today
+                );
+        boolean shouldBeAvailable = !hasEffectiveActiveContract;
+
+        if (!Boolean.valueOf(shouldBeAvailable).equals(room.getIsAvailable())) {
+            room.setIsAvailable(shouldBeAvailable);
+            roomRepository.save(room);
+        }
     }
 }

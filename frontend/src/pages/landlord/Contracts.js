@@ -68,6 +68,31 @@ const Contracts = () => {
     endDate: null,
   });
 
+  const roomsMap = useMemo(() => {
+    const m = {};
+    roomsAll.forEach(r => { m[r.room_id] = r; });
+    rooms.forEach(r => { m[r.room_id] = r; }); // prefer freshly selected list
+    return m;
+  }, [roomsAll, rooms]);
+
+  const availableRoomsForCreate = useMemo(() => {
+    const source = rooms.length ? rooms : roomsAll;
+    return source.filter((room) => room.is_available);
+  }, [rooms, roomsAll]);
+
+  const syncMonthlyRentFromRoom = (targetRoomId) => {
+    const rid = Number(targetRoomId ?? form.getFieldValue('room_id'));
+    if (!rid) {
+      form.setFieldsValue({ monthly_rent: undefined });
+      return;
+    }
+
+    const selectedRoom = roomsMap[rid] || roomsAll.find(r => r.room_id === rid) || rooms.find(r => r.room_id === rid);
+    if (selectedRoom && selectedRoom.price !== undefined && selectedRoom.price !== null) {
+      form.setFieldsValue({ monthly_rent: selectedRoom.price });
+    }
+  };
+
   useEffect(() => {
     console.log('Main useEffect running, roomId:', roomId, 'houseId:', houseId);
     fetchHouses();
@@ -81,6 +106,16 @@ const Contracts = () => {
   useEffect(() => {
     // Tự động mở modal tạo hợp đồng nếu action=create
     if (action === 'create' && roomId && !modalVisible) {
+      const rid = parseInt(roomId, 10);
+      const targetRoom = roomsMap[rid];
+      if (targetRoom && !targetRoom.is_available) {
+        message.warning('Phòng này đang được thuê, không thể tạo hợp đồng mới.');
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete('action');
+        setSearchParams(newParams);
+        return;
+      }
+
       // Mở modal
       setEditingContract(null);
       form.resetFields();
@@ -88,16 +123,21 @@ const Contracts = () => {
         form.setFieldsValue({ house_id: parseInt(houseId) });
       }
       if (roomId) {
-        const rid = parseInt(roomId);
         form.setFieldsValue({ room_id: rid });
-        const selectedRoom = roomsAll.find(r => r.room_id === rid) || rooms.find(r => r.room_id === rid);
-        if (selectedRoom) {
-          form.setFieldsValue({ monthly_rent: selectedRoom.price });
-        }
+        syncMonthlyRentFromRoom(rid);
       }
       setModalVisible(true);
     }
-  }, [action, roomId, houseId, modalVisible, roomsAll, rooms, form]);
+  }, [action, roomId, houseId, modalVisible, form, roomsMap]);
+
+  useEffect(() => {
+    // Khi modal đang mở và dữ liệu phòng vừa tải xong, đồng bộ lại tiền thuê theo phòng đã chọn
+    if (!modalVisible || editingContract) return;
+    const rid = form.getFieldValue('room_id');
+    if (rid) {
+      syncMonthlyRentFromRoom(rid);
+    }
+  }, [modalVisible, editingContract, roomsMap, form]);
 
   useEffect(() => {
     // Load all rooms for name mapping
@@ -166,6 +206,15 @@ const Contracts = () => {
   };
 
   const handleCreate = () => {
+    if (roomId) {
+      const rid = parseInt(roomId, 10);
+      const targetRoom = roomsMap[rid];
+      if (targetRoom && !targetRoom.is_available) {
+        message.warning('Phòng này đang được thuê, không thể tạo hợp đồng mới.');
+        return;
+      }
+    }
+
     setEditingContract(null);
     form.resetFields();
     if (houseId) {
@@ -174,11 +223,7 @@ const Contracts = () => {
     if (roomId) {
       const rid = parseInt(roomId);
       form.setFieldsValue({ room_id: rid });
-      // Prefill monthly_rent from room price
-      const selectedRoom = roomsAll.find(r => r.room_id === rid) || rooms.find(r => r.room_id === rid);
-      if (selectedRoom) {
-        form.setFieldsValue({ monthly_rent: selectedRoom.price });
-      }
+      syncMonthlyRentFromRoom(rid);
     } else {
       form.setFieldsValue({ monthly_rent: undefined });
     }
@@ -288,13 +333,6 @@ const Contracts = () => {
     fetchAllContracts();
   };
 
-  const roomsMap = useMemo(() => {
-    const m = {};
-    roomsAll.forEach(r => { m[r.room_id] = r; });
-    rooms.forEach(r => { m[r.room_id] = r; }); // prefer freshly selected list
-    return m;
-  }, [roomsAll, rooms]);
-
   // Filter contracts based on filter state
   const filteredContracts = useMemo(() => {
     return contracts.filter(contract => {
@@ -342,6 +380,12 @@ const Contracts = () => {
     });
   }, [contracts, filters, roomsMap]);
 
+  const housesById = useMemo(() => {
+    const m = {};
+    houses.forEach(h => { m[h.house_id] = h; });
+    return m;
+  }, [houses]);
+
   const columns = [
     {
       title: 'Tên khách thuê',
@@ -364,6 +408,15 @@ const Contracts = () => {
       dataIndex: 'room',
       key: 'room',
       render: (_, record) => record.room?.name || roomsMap[record.room_id]?.name || 'N/A',
+    },
+    {
+      title: 'Nhà trọ',
+      dataIndex: 'room',
+      key: 'house_name',
+      render: (_, record) => {
+        const hid = record.room?.house_id || roomsMap[record.room_id]?.house_id;
+        return housesById[hid]?.name || 'N/A';
+      },
     },
     {
       title: 'Tiền thuê/tháng',
@@ -606,9 +659,10 @@ const Contracts = () => {
           layout="vertical"
           onFinish={handleSubmit}
           onValuesChange={(changedValues) => {
-            // Re-validate number_of_tenants when room changes
+            // Re-validate number_of_tenants and sync rent when room changes
             if (changedValues.room_id) {
               form.validateFields(['number_of_tenants']);
+              syncMonthlyRentFromRoom(changedValues.room_id);
             }
           }}
         >
@@ -651,14 +705,10 @@ const Contracts = () => {
                   placeholder="Chọn phòng"
                   disabled={!!roomId || !!editingContract}
                   onChange={(value) => {
-                    // When room changes, update monthly_rent from room price
-                    const selectedRoom = roomsMap[value];
-                    if (selectedRoom) {
-                      form.setFieldsValue({ monthly_rent: selectedRoom.price });
-                    }
+                    syncMonthlyRentFromRoom(value);
                   }}
                 >
-                  {(rooms.length ? rooms : roomsAll).map(room => (
+                  {(editingContract ? (rooms.length ? rooms : roomsAll) : availableRoomsForCreate).map(room => (
                     <Option key={room.room_id} value={room.room_id}>
                       {room.name}
                     </Option>

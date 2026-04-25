@@ -248,7 +248,13 @@ const Rooms = () => {
           <Button
             type="link"
             icon={<PlusOutlined />}
+            disabled={!record.is_available}
             onClick={() => {
+              if (!record.is_available) {
+                message.warning('Phòng này đang được thuê, không thể tạo hợp đồng mới.');
+                return;
+              }
+
               let houseId = record.houseId || record.house_id;
               if (!houseId && record.house) {
                 houseId = record.house.house_id || record.house.houseId;
