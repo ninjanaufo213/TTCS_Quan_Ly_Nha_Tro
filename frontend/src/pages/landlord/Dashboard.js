@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Statistic, Table, Button, Tag } from 'antd';
+import { Row, Col, Card, Statistic, Table, Button, Tag, Modal, Descriptions, Image, Spin, App } from 'antd';
 import {
   BankOutlined,
   ShopOutlined,
@@ -14,6 +14,7 @@ import { rentedRoomService } from '../../services/rentedRoomService';
 import { invoiceService } from '../../services/invoiceService';
 
 const Dashboard = () => {
+  const { message } = App.useApp();
   const [stats, setStats] = useState({
     totalHouses: 0,
     totalRooms: 0,
@@ -23,7 +24,21 @@ const Dashboard = () => {
   const [recentData, setRecentData] = useState([]);
   const [pendingInvoices, setPendingInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [houseDetailOpen, setHouseDetailOpen] = useState(false);
+  const [houseDetailLoading, setHouseDetailLoading] = useState(false);
+  const [selectedHouse, setSelectedHouse] = useState(null);
   const navigate = useNavigate();
+
+  const apiBaseUrl = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/$/, '');
+  const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
+  const resolveImageUrl = (url) => {
+    if (!url) return url;
+    if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (!apiOrigin) return url;
+    const normalized = url.startsWith('/') ? url : `/${url}`;
+    return `${apiOrigin}${normalized}`;
+  };
 
   useEffect(() => {
     fetchDashboardData();
@@ -55,6 +70,20 @@ const Dashboard = () => {
     }
   };
 
+  const handleOpenHouseDetail = async (houseId) => {
+    setHouseDetailOpen(true);
+    setHouseDetailLoading(true);
+    try {
+      const data = await houseService.getById(houseId);
+      setSelectedHouse(data);
+    } catch (error) {
+      console.error('Error fetching house detail:', error);
+      message.error('Lỗi khi tải chi tiết nhà trọ!');
+    } finally {
+      setHouseDetailLoading(false);
+    }
+  };
+
   const houseColumns = [
     {
       title: 'Tên nhà trọ',
@@ -76,15 +105,22 @@ const Dashboard = () => {
       title: 'Hành động',
       key: 'action',
       align: 'center',
-      width: 200,
+      width: 240,
       render: (_, record) => (
         <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 8 }}>
           <Button
             type="link"
             icon={<EyeOutlined />}
+            onClick={() => handleOpenHouseDetail(record.house_id)}
+          >
+            Chi tiết
+          </Button>
+          <Button
+            type="link"
+            icon={<ShopOutlined />}
             onClick={() => navigate(`/app/rooms?house=${record.house_id}`)}
           >
-            Xem chi tiết
+            Xem phòng
           </Button>
         </div>
       ),
@@ -201,6 +237,83 @@ const Dashboard = () => {
           </Col>
         </Row>
       </>
+
+      <Modal
+        title={selectedHouse?.name ? `Chi tiết nhà trọ - ${selectedHouse.name}` : 'Chi tiết nhà trọ'}
+        open={houseDetailOpen}
+        onCancel={() => {
+          setHouseDetailOpen(false);
+          setSelectedHouse(null);
+        }}
+        footer={null}
+        width={800}
+      >
+        {houseDetailLoading ? (
+          <div style={{ textAlign: 'center', padding: '24px 0' }}>
+            <Spin />
+          </div>
+        ) : (
+          <>
+            <Descriptions bordered size="small" column={1}>
+              <Descriptions.Item label="Tên nhà trọ">
+                {selectedHouse?.name || 'N/A'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Địa chỉ">
+                {selectedHouse?.address_line || 'N/A'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Phường/Xã">
+                {selectedHouse?.ward || 'N/A'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Quận/Huyện">
+                {selectedHouse?.district || 'N/A'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Số tầng">
+                {selectedHouse?.floor_count ?? 'N/A'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Ngày tạo">
+                {selectedHouse?.created_at ? new Date(selectedHouse.created_at).toLocaleDateString('vi-VN') : 'N/A'}
+              </Descriptions.Item>
+            </Descriptions>
+
+            <div style={{ marginTop: 16 }}>
+              <strong>Hình ảnh</strong>
+              <div style={{ marginTop: 8 }}>
+                {(selectedHouse?.images || []).length === 0 ? (
+                  <div>Chưa có ảnh</div>
+                ) : (
+                  <Image.PreviewGroup>
+                    {(selectedHouse?.images || []).map((img, index) => {
+                      const url = resolveImageUrl(img.image_url || img.imageUrl);
+                      return (
+                        <Image
+                          key={img.image_id || img.imageId || index}
+                          src={url}
+                          width={120}
+                          height={90}
+                          style={{ objectFit: 'cover', marginRight: 8, marginBottom: 8 }}
+                        />
+                      );
+                    })}
+                  </Image.PreviewGroup>
+                )}
+              </div>
+            </div>
+
+            <div style={{ marginTop: 16, textAlign: 'right' }}>
+              <Button
+                type="primary"
+                onClick={() => {
+                  if (selectedHouse?.house_id) {
+                    navigate(`/app/rooms?house=${selectedHouse.house_id}`);
+                  }
+                }}
+              >
+                Xem phòng
+              </Button>
+            </div>
+          </>
+        )}
+      </Modal>
     </div>
   );
 };
