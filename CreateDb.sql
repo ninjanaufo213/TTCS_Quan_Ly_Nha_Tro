@@ -1,4 +1,4 @@
-﻿﻿CREATE DATABASE MotelManagement;
+﻿CREATE DATABASE MotelManagement;
 GO
 
 USE MotelManagement;
@@ -58,7 +58,7 @@ CREATE TABLE Houses (
 CREATE TABLE House_Images (
     image_id INT IDENTITY(1,1) PRIMARY KEY,
     house_id INT NOT NULL,
-    image_url VARCHAR(MAX) NOT NULL,
+    image_url LONGTEXT NOT NULL,
     is_thumbnail BIT DEFAULT 0,
     created_at DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (house_id) REFERENCES Houses(house_id) ON DELETE CASCADE
@@ -80,7 +80,7 @@ CREATE TABLE Rooms (
 CREATE TABLE Room_Images (
     image_id INT IDENTITY(1,1) PRIMARY KEY,
     room_id INT NOT NULL,
-    image_url VARCHAR(MAX) NOT NULL,
+    image_url LONGTEXT NOT NULL,
     is_thumbnail BIT DEFAULT 0,
     created_at DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (room_id) REFERENCES Rooms(room_id) ON DELETE CASCADE
@@ -90,7 +90,7 @@ CREATE TABLE Assets (
     asset_id INT IDENTITY(1,1) PRIMARY KEY,
     room_id INT NOT NULL,
     name NVARCHAR(255) NOT NULL,
-    image_url VARCHAR(MAX),
+    image_url LONGTEXT,
     created_at DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (room_id) REFERENCES Rooms(room_id) ON DELETE CASCADE
 );

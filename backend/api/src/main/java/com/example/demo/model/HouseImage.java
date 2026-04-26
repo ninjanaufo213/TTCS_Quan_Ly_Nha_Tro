@@ -23,7 +23,7 @@ public class HouseImage {
     @JoinColumn(name = "house_id", nullable = false)
     private House house;
 
-    @Column(columnDefinition = "TEXT", nullable = false) 
+    @Column(columnDefinition = "LONGTEXT", nullable = false) 
     private String imageUrl;
 
     @Column(name = "is_thumbnail")
