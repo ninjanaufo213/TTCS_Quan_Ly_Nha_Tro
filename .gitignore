@@ -9,3 +9,5 @@ deps.txt
 test_response.txt
 *_err.txt
 .system_generated/
+application.properties
+backend/api/src/main/resources/application.properties

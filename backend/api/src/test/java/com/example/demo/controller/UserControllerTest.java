@@ -4,6 +4,7 @@ import com.example.demo.dto.ChangePasswordRequest;
 import com.example.demo.dto.UpdateProfileRequest;
 import com.example.demo.model.Tenant;
 import com.example.demo.model.User;
+import com.example.demo.config.TestFileStorageConfig;
 import com.example.demo.repository.LandlordRepository;
 import com.example.demo.repository.TenantRepository;
 import com.example.demo.repository.UserRepository;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -26,6 +28,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(UserController.class)
+@Import(TestFileStorageConfig.class)
 public class UserControllerTest {
 
     @Autowired

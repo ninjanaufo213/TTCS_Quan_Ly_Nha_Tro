@@ -179,6 +179,14 @@ public class RentedRoomService {
         if (request.getContractUrl() != null) {
             rentedRoom.setContractUrl(request.getContractUrl());
         }
+        if (request.getTenantId() != null) {
+            Tenant tenant = tenantRepository.findById(request.getTenantId())
+                    .orElseThrow(() -> new IllegalArgumentException("Khách thuê không tồn tại!"));
+            rentedRoom.setTenant(tenant);
+        } else if (request.getTenantName() != null && request.getTenantPhone() != null) {
+            Tenant tenant = createTenantFromRequest(request);
+            rentedRoom.setTenant(tenant);
+        }
 
         RentedRoom updated = rentedRoomRepository.save(rentedRoom);
 

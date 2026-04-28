@@ -1,16 +1,15 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.ListingResponse;
+import com.example.demo.config.TestFileStorageConfig;
 import com.example.demo.service.ListingService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -19,6 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AdminListingController.class)
+@Import(TestFileStorageConfig.class)
 public class AdminListingControllerTest {
 
     @Autowired
