@@ -26,6 +26,7 @@ public class ListingResponse {
     @AllArgsConstructor
     @Builder
     public static class RoomInfo {
+        private String name;
         private BigDecimal price;
         private String district;
         private String ward;

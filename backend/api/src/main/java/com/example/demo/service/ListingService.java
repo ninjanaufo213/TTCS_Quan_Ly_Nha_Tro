@@ -13,15 +13,33 @@ import java.util.Optional;
 public class ListingService {
 
     private final ListingRepository listingRepository;
+    private final com.example.demo.repository.RoomRepository roomRepository;
 
-    public ListingService(ListingRepository listingRepository) {
+    public ListingService(ListingRepository listingRepository, com.example.demo.repository.RoomRepository roomRepository) {
         this.listingRepository = listingRepository;
+        this.roomRepository = roomRepository;
     }
 
     public List<ListingResponse> getAllListings() {
         return listingRepository.findAll().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    public ListingResponse createListing(com.example.demo.dto.ListingRequest request) {
+        com.example.demo.model.Room room = roomRepository.findById(request.getRoomId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phòng"));
+
+        Listing listing = Listing.builder()
+                .room(room)
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .isPublished(false) // Wait for admin approval
+                .viewsCount(0)
+                .build();
+
+        listing = listingRepository.save(listing);
+        return mapToResponse(listing);
     }
 
     public List<ListingResponse> getPendingListings() {
@@ -52,6 +70,13 @@ public class ListingService {
         return mapToResponse(listing);
     }
 
+    public void deleteListing(Integer id) {
+        if (!listingRepository.existsById(id)) {
+            throw new IllegalArgumentException("Không tìm thấy tin đăng");
+        }
+        listingRepository.deleteById(id);
+    }
+
     private ListingResponse mapToResponse(Listing listing) {
         ListingResponse.RoomInfo roomInfo = null;
         if (listing.getRoom() != null) {
@@ -64,6 +89,7 @@ public class ListingService {
                 address = listing.getRoom().getHouse().getAddressLine();
             }
             roomInfo = ListingResponse.RoomInfo.builder()
+                    .name(listing.getRoom().getName())
                     .price(listing.getRoom().getPrice())
                     .district(district)
                     .ward(ward)
