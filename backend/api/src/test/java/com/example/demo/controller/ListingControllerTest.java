@@ -21,10 +21,10 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 
 @WebMvcTest(
-    controllers = LandlordListingController.class,
+    controllers = ListingController.class,
     excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = com.example.demo.config.WebConfig.class)
 )
-public class LandlordListingControllerTest {
+public class ListingControllerTest {
 
     @Autowired
     private MockMvc mockMvc;

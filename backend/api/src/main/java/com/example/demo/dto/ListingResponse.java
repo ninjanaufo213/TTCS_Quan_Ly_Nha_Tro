@@ -28,8 +28,10 @@ public class ListingResponse {
     public static class RoomInfo {
         private String name;
         private BigDecimal price;
+        private Double area;
         private String district;
         private String ward;
         private String address;
+        private java.util.List<String> imageUrls;
     }
 }

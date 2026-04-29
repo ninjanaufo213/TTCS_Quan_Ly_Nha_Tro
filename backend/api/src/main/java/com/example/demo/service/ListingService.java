@@ -26,6 +26,12 @@ public class ListingService {
                 .collect(Collectors.toList());
     }
 
+    public List<ListingResponse> getPublishedListings() {
+        return listingRepository.findByIsPublished(true).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     public ListingResponse createListing(com.example.demo.dto.ListingRequest request) {
         com.example.demo.model.Room room = roomRepository.findById(request.getRoomId())
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phòng"));
@@ -88,12 +94,21 @@ public class ListingService {
                 ward = listing.getRoom().getHouse().getWard();
                 address = listing.getRoom().getHouse().getAddressLine();
             }
+            java.util.List<String> imageUrls = new java.util.ArrayList<>();
+            if (listing.getRoom().getImages() != null) {
+                imageUrls = listing.getRoom().getImages().stream()
+                        .map(com.example.demo.model.RoomImage::getImageUrl)
+                        .collect(java.util.stream.Collectors.toList());
+            }
+
             roomInfo = ListingResponse.RoomInfo.builder()
                     .name(listing.getRoom().getName())
                     .price(listing.getRoom().getPrice())
+                    .area(listing.getRoom().getArea())
                     .district(district)
                     .ward(ward)
                     .address(address)
+                    .imageUrls(imageUrls)
                     .build();
         }
 

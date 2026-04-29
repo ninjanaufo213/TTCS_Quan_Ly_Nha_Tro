@@ -26,6 +26,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/authService';
+import { listingService } from '../../services/listingService';
 import '../../styles/HomePage.css';
 
 const HomePage = () => {
@@ -82,23 +83,38 @@ const HomePage = () => {
   ];
 
   useEffect(() => {
-    // Trigger entrance animation immediately
     setIsLoaded(true);
-
-    // Load listings from API
-    // const fetchListings = async () => {
-    //   try {
-    //     const response = await fetch('/api/rooms');
-    //     const data = await response.json();
-    //     setListings(data);
-    //   } catch (error) {
-    //     console.error('Error fetching listings:', error);
-    //   }
-    // };
-    // fetchListings();
-
-    // Tạm thời để trống, chưa có API
-    setListings([]);
+    const fetchListings = async () => {
+      try {
+        const data = await listingService.getPublicListings();
+        // Map API response sang cấu trúc card
+        const mapped = data.map(l => ({
+          id: l.listing_id || l.listingId,
+          title: l.title,
+          price: l.room?.price || 0,
+          area: l.room?.area || null,
+          district: l.room?.district || '',
+          province: l.room?.ward || '',
+          description: l.description,
+          images: (l.room?.image_urls && l.room.image_urls.length > 0) ? l.room.image_urls : (
+            (l.room?.imageUrls && l.room.imageUrls.length > 0) ? l.room.imageUrls : [
+              'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400'
+            ]
+          ),
+          totalImages: (l.room?.image_urls?.length) || (l.room?.imageUrls?.length) || 1,
+          hasVideo: false,
+          phone: '',
+          createdAt: l.created_at || l.createdAt
+            ? new Date(l.created_at || l.createdAt).toLocaleDateString('vi-VN')
+            : '',
+        }));
+        setListings(mapped);
+      } catch (err) {
+        console.error('Lỗi tải bài đăng:', err);
+        setListings([]);
+      }
+    };
+    fetchListings();
   }, []);
 
   useEffect(() => {
@@ -194,10 +210,6 @@ const HomePage = () => {
 
             {/* Footer */}
             <div className="listing-footer">
-              <div className="owner-info">
-                <Avatar icon={<PhoneOutlined />} />
-                <span className="owner-name">{listing.owner}</span>
-              </div>
               <div className="actions">
                 <Button
                   type="link"

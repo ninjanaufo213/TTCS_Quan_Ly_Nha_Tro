@@ -1,6 +1,14 @@
 import api from './api';
+import axios from 'axios';
+
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
 export const listingService = {
+  getPublicListings: async () => {
+    const response = await axios.get(`${BASE_URL}/listings`);
+    return response.data;
+  },
+
   createListing: async (data) => {
     const response = await api.post('/landlord/listings', data);
     return response.data;
