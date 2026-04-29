@@ -5,6 +5,7 @@ import { App as AntdApp } from 'antd';
 import viVN from 'antd/locale/vi_VN';
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
+import TenantLayout from './components/TenantLayout';
 import Login from './pages/public/Login';
 import HomePage from './pages/public/HomePage';
 import Dashboard from './pages/landlord/Dashboard';
@@ -19,12 +20,35 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import RoomApproval from './pages/admin/RoomApproval';
 import UserManagement from './pages/admin/UserManagement';
 import AreaStats from './pages/admin/AreaStats';
+import TenantRoomInfo from './pages/tenant/TenantRoomInfo';
+import TenantContractInfo from './pages/tenant/TenantContractInfo';
+import TenantServicesInfo from './pages/tenant/TenantServicesInfo';
+import TenantAssetsInfo from './pages/tenant/TenantAssetsInfo';
 import authService from './services/authService';
 
-// Protected Route Component (any authenticated user)
-const ProtectedRoute = ({ children }) => {
+// Landlord Route Component (block TENANT)
+const LandlordRoute = ({ children }) => {
     if (!authService.isAuthenticated()) {
         return <Navigate to="/login" replace />;
+    }
+    const role = authService.getUserRole();
+    if (role === 'tenant' || role === 'TENANT') {
+        return <Navigate to="/tenant/my-rental" replace />;
+    }
+    if (role === 'admin' || role === 'ADMIN') {
+        return <Navigate to="/admin/dashboard" replace />;
+    }
+    return children;
+};
+
+// Tenant Route Component (only TENANT)
+const TenantRoute = ({ children }) => {
+    if (!authService.isAuthenticated()) {
+        return <Navigate to="/login" replace />;
+    }
+    const role = authService.getUserRole();
+    if (role !== 'tenant' && role !== 'TENANT') {
+        return <Navigate to="/app/dashboard" replace />;
     }
     return children;
 };
@@ -36,6 +60,7 @@ const AdminRoute = ({ children }) => {
     }
     const role = authService.getUserRole();
     if (role !== 'admin' && role !== 'ADMIN') {
+        if (role === 'tenant' || role === 'TENANT') return <Navigate to="/tenant/my-rental" replace />;
         return <Navigate to="/app/dashboard" replace />;
     }
     return children;
@@ -48,12 +73,20 @@ const PublicRoute = ({ children }) => {
         if (role === 'admin' || role === 'ADMIN') {
             return <Navigate to="/admin/dashboard" replace />;
         } else if (role === 'tenant' || role === 'TENANT') {
-            return <Navigate to="/" replace />;
+            return <Navigate to="/tenant/my-rental" replace />;
         } else {
             return <Navigate to="/app/dashboard" replace />;
         }
     }
     return children;
+};
+
+const LandlordAppIndexRedirect = () => {
+    const role = authService.getUserRole();
+    if (role === 'tenant' || role === 'TENANT') {
+        return <Navigate to="/tenant/my-rental" replace />;
+    }
+    return <Navigate to="/app/dashboard" replace />;
 };
 
 function App() {
@@ -86,12 +119,12 @@ function App() {
                         <Route
                             path="/app"
                             element={
-                                <ProtectedRoute>
+                                <LandlordRoute>
                                     <Layout />
-                                </ProtectedRoute>
+                                </LandlordRoute>
                             }
                         >
-                            <Route index element={<Navigate to="/app/dashboard" replace />} />
+                            <Route index element={<LandlordAppIndexRedirect />} />
                             <Route path="dashboard" element={<Dashboard />} />
                             <Route path="houses" element={<Houses />} />
                             <Route path="rooms" element={<Rooms />} />
@@ -99,6 +132,22 @@ function App() {
                             <Route path="invoices" element={<Invoices />} />
                             <Route path="reports" element={<Reports />} />
                             <Route path="profile" element={<Profile />} />
+                        </Route>
+
+                        {/* Tenant routes */}
+                        <Route
+                            path="/tenant"
+                            element={
+                                <TenantRoute>
+                                    <TenantLayout />
+                                </TenantRoute>
+                            }
+                        >
+                            <Route index element={<Navigate to="/tenant/room-info" replace />} />
+                            <Route path="room-info" element={<TenantRoomInfo />} />
+                            <Route path="contract" element={<TenantContractInfo />} />
+                            <Route path="services" element={<TenantServicesInfo />} />
+                            <Route path="assets" element={<TenantAssetsInfo />} />
                         </Route>
 
                         {/* Admin routes */}

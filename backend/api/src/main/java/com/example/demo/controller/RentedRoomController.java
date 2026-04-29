@@ -38,6 +38,29 @@ public class RentedRoomController {
     }
 
     /**
+     * Lấy hợp đồng còn hiệu lực của tenant hiện tại (dựa theo header X-User-Email)
+     */
+    @GetMapping("/me/active")
+    public ResponseEntity<?> getMyActiveRentedRooms() {
+        try {
+            List<RentedRoomResponse> rentedRooms = rentedRoomService.getMyActiveRentedRooms();
+            return ResponseEntity.ok(rentedRooms);
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
      * Lấy hợp đồng theo phòng
      */
     @GetMapping("/room/{roomId}")

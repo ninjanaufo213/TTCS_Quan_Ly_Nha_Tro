@@ -252,20 +252,24 @@ const HomePage = () => {
                 
                 return (
                   <>
-                    <Button type="link" onClick={() => {
-                      navigate((role === 'admin' || role === 'ADMIN') ? '/admin/dashboard' : '/app/dashboard');
-                    }}>Quản lý</Button>
-                    
-                    {isTenant ? (
+                    {!isTenant && (
                       <Button
-                        type="default"
-                        shape="circle"
-                        icon={<UserOutlined />}
-                        onClick={() => navigate('/app/profile')}
-                        title="Trang cá nhân"
-                        style={{ marginLeft: 8 }}
-                      />
-                    ) : (
+                        type="link"
+                        onClick={() => {
+                          navigate((role === 'admin' || role === 'ADMIN') ? '/admin/dashboard' : '/app/dashboard');
+                        }}
+                      >
+                        Quản lý
+                      </Button>
+                    )}
+
+                    {isTenant && (
+                      <Button type="primary" onClick={() => navigate('/tenant/room-info')}>
+                        Phòng trọ của bạn
+                      </Button>
+                    )}
+
+                    {!isTenant && (
                       <Button
                         type="primary"
                         className="post-button"

@@ -6,6 +6,11 @@ export const rentedRoomService = {
     return response.data;
   },
 
+  getMyActive: async () => {
+    const response = await api.get('/rented-rooms/me/active');
+    return response.data;
+  },
+
   getByRoom: async (roomId) => {
     const response = await api.get(`/rented-rooms/room/${roomId}`);
     return response.data;

@@ -27,6 +27,7 @@ public class RentedRoomService {
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
     private final RoomService roomService;
+    private final AuthService authService;
 
     /**
      * Lấy tất cả hợp đồng
@@ -34,6 +35,24 @@ public class RentedRoomService {
     public List<RentedRoomResponse> getAllRentedRooms() {
         syncExpiredContractsAndRoomAvailability();
         return rentedRoomRepository.findAll().stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Lấy hợp đồng còn hiệu lực của tenant hiện tại (dựa theo header X-User-Email)
+     */
+    public List<RentedRoomResponse> getMyActiveRentedRooms() {
+        syncExpiredContractsAndRoomAvailability();
+
+        Integer userId = authService.getCurrentUserId();
+        Tenant tenant = tenantRepository.findByUser_UserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thông tin người thuê (TENANT)!"));
+
+        LocalDate today = LocalDate.now();
+        return rentedRoomRepository.findByTenant_TenantId(tenant.getTenantId()).stream()
+                .filter(rr -> Boolean.TRUE.equals(rr.getIsActive()))
+                .filter(rr -> rr.getEndDate() == null || !rr.getEndDate().isBefore(today))
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
@@ -458,4 +477,3 @@ public class RentedRoomService {
         }
     }
 }
-
