@@ -27,6 +27,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { rentedRoomService } from '../../services/rentedRoomService';
 import { roomService } from '../../services/roomService';
 import { houseService } from '../../services/houseService';
+import { tenantService } from '../../services/tenantService';
 import dayjs from 'dayjs';
 
 const { Option } = Select;
@@ -57,6 +58,8 @@ const Contracts = () => {
   const houseId = searchParams.get('house');
   const action = searchParams.get('action');
   const [roomsAll, setRoomsAll] = useState([]);
+  const [tenantOptions, setTenantOptions] = useState([]);
+  const [tenantLoading, setTenantLoading] = useState(false);
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -138,6 +141,12 @@ const Contracts = () => {
       syncMonthlyRentFromRoom(rid);
     }
   }, [modalVisible, editingContract, roomsMap, form]);
+
+  useEffect(() => {
+    if (modalVisible) {
+      loadTenants();
+    }
+  }, [modalVisible]);
 
   useEffect(() => {
     // Load all rooms for name mapping
@@ -238,6 +247,18 @@ const Contracts = () => {
     setSearchParams(newParams);
   };
 
+  const loadTenants = async (search = '') => {
+    try {
+      setTenantLoading(true);
+      const data = await tenantService.lookup(search);
+      setTenantOptions(Array.isArray(data) ? data : []);
+    } catch (error) {
+      message.error('Lỗi khi tải danh sách khách thuê!');
+    } finally {
+      setTenantLoading(false);
+    }
+  };
+
   const handleEdit = (record) => {
     setEditingContract(record);
     // Load rooms for the house if available
@@ -249,6 +270,9 @@ const Contracts = () => {
     }
     form.setFieldsValue({
       ...record,
+      tenant_id: record.tenant_id,
+      tenant_name: record.tenant_name,
+      tenant_phone: record.tenant_phone,
       start_date: dayjs(record.start_date),
       end_date: dayjs(record.end_date),
     });
@@ -721,20 +745,44 @@ const Contracts = () => {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                name="tenant_name"
-                label="Tên khách thuê"
-                rules={[{ required: true, message: 'Vui lòng nhập tên khách thuê!' }]}
+                name="tenant_id"
+                label="Số điện thoại (khách thuê)"
+                rules={[{ required: true, message: 'Vui lòng chọn số điện thoại khách thuê!' }]}
               >
-                <Input placeholder="Nhập tên khách thuê" />
+                <Select
+                  showSearch
+                  placeholder="Chọn số điện thoại"
+                  loading={tenantLoading}
+                  optionFilterProp="label"
+                  onSearch={(value) => loadTenants(value)}
+                  onChange={(value) => {
+                    const selected = tenantOptions.find(t => t.tenant_id === value);
+                    if (selected) {
+                      form.setFieldsValue({
+                        tenant_name: selected.fullname,
+                        tenant_phone: selected.phone,
+                      });
+                    } else {
+                      form.setFieldsValue({ tenant_name: undefined, tenant_phone: undefined });
+                    }
+                  }}
+                  filterOption={false}
+                  allowClear
+                >
+                  {tenantOptions.map(t => (
+                    <Option key={t.tenant_id} value={t.tenant_id} label={t.phone || ''}>
+                      {t.phone || 'N/A'} {t.fullname ? `- ${t.fullname}` : ''}
+                    </Option>
+                  ))}
+                </Select>
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item
-                name="tenant_phone"
-                label="Số điện thoại"
-                rules={[{ required: true, message: 'Vui lòng nhập số điện thoại!' }]}
-              >
-                <Input placeholder="Nhập số điện thoại" />
+              <Form.Item name="tenant_name" label="Tên khách thuê">
+                <Input placeholder="Tên khách thuê" disabled />
+              </Form.Item>
+              <Form.Item name="tenant_phone" hidden>
+                <Input />
               </Form.Item>
             </Col>
           </Row>

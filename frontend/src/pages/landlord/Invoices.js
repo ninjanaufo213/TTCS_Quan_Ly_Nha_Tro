@@ -31,6 +31,7 @@ import { invoiceService } from '../../services/invoiceService';
 import { rentedRoomService } from '../../services/rentedRoomService';
 import { roomService } from '../../services/roomService';
 import { houseService } from '../../services/houseService';
+import { tenantService } from '../../services/tenantService';
 import dayjs from 'dayjs';
 
 const { Option } = Select;
@@ -74,6 +75,10 @@ const Invoices = () => {
   const [electricityUnitPrice, setElectricityUnitPrice] = useState(3500); // Giá điện/kWh mặc định
   const [roomsAll, setRoomsAll] = useState([]);
   const [housesAll, setHousesAll] = useState([]);
+  const [tenantOptions, setTenantOptions] = useState([]);
+  const [tenantLoading, setTenantLoading] = useState(false);
+  const [filterTenantId, setFilterTenantId] = useState(null);
+  const [modalTenantId, setModalTenantId] = useState(null);
   const selectedRrId = Form.useWatch('rr_id', form);
   const watchIsPaid = Form.useWatch('is_paid', form);
   const watchPrice = Form.useWatch('price', form);
@@ -136,6 +141,18 @@ const Invoices = () => {
     return contracts.find(c => c.rr_id === Number(selectedRrId)) || null;
   }, [contracts, selectedRrId]);
 
+  const selectedTenant = useMemo(() => {
+    if (!modalTenantId) return null;
+    return (
+      tenantOptions.find(t => t.tenant_id === modalTenantId)
+      || contracts.find(c => c.tenant_id === modalTenantId)
+      || null
+    );
+  }, [modalTenantId, tenantOptions, contracts]);
+
+  const selectedTenantName = selectedContract?.tenant_name || selectedTenant?.tenant_name || selectedTenant?.fullname || '';
+  const selectedTenantPhone = selectedContract?.tenant_phone || selectedTenant?.tenant_phone || selectedTenant?.phone || '';
+
   const activeContracts = useMemo(() => {
     const today = dayjs().startOf('day');
     return contracts.filter((contract) => {
@@ -155,6 +172,16 @@ const Invoices = () => {
       return contractHouseId === filterHouseId;
     });
   }, [activeContracts, filterHouseId, roomsMap]);
+
+  const contractsForFilters = useMemo(() => {
+    if (!filterTenantId) return contractsForSelectedHouse;
+    return contractsForSelectedHouse.filter((contract) => contract.tenant_id === filterTenantId);
+  }, [contractsForSelectedHouse, filterTenantId]);
+
+  const contractsForModal = useMemo(() => {
+    if (!modalTenantId) return contractsForSelectedHouse;
+    return contractsForSelectedHouse.filter((contract) => contract.tenant_id === modalTenantId);
+  }, [contractsForSelectedHouse, modalTenantId]);
 
   const computedElectricityUsage = useMemo(() => {
     const prev = Number(watchPrevElectricity || 0);
@@ -247,6 +274,11 @@ const Invoices = () => {
     }
   };
 
+  const filteredInvoices = useMemo(() => {
+    if (!filterTenantId) return invoices;
+    return invoices.filter((inv) => contractsMap[inv.rr_id]?.tenant_id === filterTenantId);
+  }, [invoices, contractsMap, filterTenantId]);
+
   const handleTableChange = (pagination) => {
     setPagination(pagination);
   };
@@ -254,9 +286,14 @@ const Invoices = () => {
   const handleCreate = async () => {
     setEditingInvoice(null);
     form.resetFields();
+    setModalTenantId(null);
     
     if (contractId) {
       const cid = Number(contractId);
+      const contract = contracts.find(c => c.rr_id === cid);
+      if (contract?.tenant_id) {
+        setModalTenantId(contract.tenant_id);
+      }
       form.setFieldsValue({ rr_id: cid });
       await prefillByContract(cid);
     }
@@ -383,18 +420,39 @@ const Invoices = () => {
   );
 
   const handleContractChange = async (rrId) => {
+    const contract = contracts.find(c => c.rr_id === Number(rrId));
+    if (contract?.tenant_id) {
+      setModalTenantId(contract.tenant_id);
+    }
     await prefillByContract(rrId);
   };
+
+  const loadTenants = async (search = '') => {
+    try {
+      setTenantLoading(true);
+      const data = await tenantService.lookup(search);
+      setTenantOptions(Array.isArray(data) ? data : []);
+    } catch (error) {
+      message.error('Lỗi khi tải danh sách khách thuê!');
+    } finally {
+      setTenantLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!modalVisible) return;
+    loadTenants();
+  }, [modalVisible]);
 
   useEffect(() => {
     if (!filterHouseId || !contractId) return;
 
     const selectedContractId = Number(contractId);
-    const stillVisible = contractsForSelectedHouse.some((contract) => contract.rr_id === selectedContractId);
+    const stillVisible = contractsForFilters.some((contract) => contract.rr_id === selectedContractId);
     if (!stillVisible) {
       setSearchParams({});
     }
-  }, [filterHouseId, contractId, contractsForSelectedHouse, setSearchParams]);
+  }, [filterHouseId, contractId, contractsForFilters, setSearchParams]);
 
   useEffect(() => {
     if (!modalVisible) return;
@@ -559,6 +617,7 @@ const Invoices = () => {
     setFilterMonth(null);
     setFilterHouseId(null);
     setFilterPaid(null);
+    setFilterTenantId(null);
     setSearchParams({});
   };
 
@@ -587,6 +646,28 @@ const Invoices = () => {
                 </Select>
               </div>
 
+              <div style={{ flex: '1 1 200px', minWidth: '150px' }}>
+                <div style={{ color: '#888', marginBottom: '8px', fontSize: '13px' }}>Số điện thoại</div>
+                <Select
+                  showSearch
+                  placeholder="Chọn số điện thoại"
+                  loading={tenantLoading}
+                  optionFilterProp="label"
+                  onSearch={(value) => loadTenants(value)}
+                  onChange={(value) => setFilterTenantId(value ?? null)}
+                  filterOption={false}
+                  allowClear
+                  style={{ width: '100%' }}
+                  value={filterTenantId ?? undefined}
+                >
+                  {tenantOptions.map(t => (
+                    <Option key={t.tenant_id} value={t.tenant_id} label={t.phone || ''}>
+                      {t.phone || 'N/A'} {t.fullname ? `- ${t.fullname}` : ''}
+                    </Option>
+                  ))}
+                </Select>
+              </div>
+
               <div style={{ flex: '1 1 180px', minWidth: '150px' }}>
                 <div style={{ color: '#888', marginBottom: '8px', fontSize: '13px' }}>Trạng thái</div>
                 <Select placeholder="Tất cả" allowClear value={filterPaid === null ? undefined : filterPaid} onChange={(v) => setFilterPaid(typeof v === 'boolean' ? v : null)} style={{ width: '100%' }}
@@ -597,7 +678,7 @@ const Invoices = () => {
                 <div style={{ color: '#888', marginBottom: '8px', fontSize: '13px' }}>Chọn hợp đồng</div>
                 <Select placeholder="Chọn hợp đồng" allowClear style={{ width: '100%' }} value={contractId ? Number(contractId) : undefined}
                   onChange={(value) => { if (value) setSearchParams({ contract: value }); else setSearchParams({}); }}>
-                  {contractsForSelectedHouse.map(contract => (
+                  {contractsForFilters.map(contract => (
                     <Option key={contract.rr_id} value={contract.rr_id}>
                       {contract.tenant_name} - {contract.room?.name || roomsMap[contract.room_id]?.name || 'N/A'}
                     </Option>
@@ -612,20 +693,67 @@ const Invoices = () => {
           </div>
         </Card>
 
-        <Table columns={columns} dataSource={invoices} rowKey="invoice_id" loading={loading} pagination={pagination} onChange={handleTableChange} />
+        <Table columns={columns} dataSource={filteredInvoices} rowKey="invoice_id" loading={loading} pagination={pagination} onChange={handleTableChange} />
       </Card>
 
       {/* Modal tạo/sửa hóa đơn */}
       <Modal title={editingInvoice ? 'Sửa hóa đơn' : 'Tạo hóa đơn mới'} open={modalVisible} onCancel={() => setModalVisible(false)} footer={null} width={900}>
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
+          <Form.Item label="Số điện thoại (khách thuê)" required>
+            <Select
+              showSearch
+              placeholder="Chọn số điện thoại"
+              loading={tenantLoading}
+              optionFilterProp="label"
+              onSearch={(value) => loadTenants(value)}
+              onChange={async (value) => {
+                setModalTenantId(value ?? null);
+                if (!value) {
+                  form.setFieldsValue({ rr_id: undefined });
+                  return;
+                }
+                const matches = contractsForSelectedHouse.filter(c => c.tenant_id === value);
+                if (matches.length === 1) {
+                  form.setFieldsValue({ rr_id: matches[0].rr_id });
+                  await prefillByContract(matches[0].rr_id);
+                }
+              }}
+              filterOption={false}
+              allowClear
+              value={modalTenantId ?? undefined}
+            >
+              {tenantOptions.map(t => (
+                <Option key={t.tenant_id} value={t.tenant_id} label={t.phone || ''}>
+                  {t.phone || 'N/A'} {t.fullname ? `- ${t.fullname}` : ''}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+
           <Form.Item name="rr_id" label="Hợp đồng" rules={[{ required: true, message: 'Vui lòng chọn hợp đồng!' }]}>
             <Select placeholder="Chọn hợp đồng" disabled={!!contractId} onChange={handleContractChange}>
-              {contractsForSelectedHouse.map(contract => (
+              {contractsForModal.map(contract => (
                 <Option key={contract.rr_id} value={contract.rr_id}>
                   {contract.tenant_name} - {contract.room?.name || roomsMap[contract.room_id]?.name || 'N/A'} - {getContractHouseName(contract, roomsMap, housesMap)}
                 </Option>
               ))}
             </Select>
+          </Form.Item>
+
+          <Form.Item label="Khách thuê">
+            <Input
+              value={selectedTenantName}
+              placeholder="Chọn số điện thoại để xem khách thuê"
+              disabled
+            />
+          </Form.Item>
+
+          <Form.Item label="Số điện thoại">
+            <Input
+              value={selectedTenantPhone}
+              placeholder="Chọn số điện thoại để xem chi tiết"
+              disabled
+            />
           </Form.Item>
 
           <Form.Item label="Nhà trọ">
