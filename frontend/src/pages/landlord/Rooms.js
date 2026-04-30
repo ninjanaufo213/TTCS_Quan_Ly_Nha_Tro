@@ -14,14 +14,18 @@ import {
   Tag,
   Row,
   Col,
-  Upload
+  Upload,
+  Image,
+  Spin,
+  Descriptions
 } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   HomeOutlined,
-  FileTextOutlined
+  FileTextOutlined,
+  EyeOutlined
 } from '@ant-design/icons';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { roomService } from '../../services/roomService';
@@ -43,6 +47,11 @@ const Rooms = () => {
   const [editingRoom, setEditingRoom] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [imageFileList, setImageFileList] = useState([]);
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+  const [imagePreviewLoading, setImagePreviewLoading] = useState(false);
+  const [imagePreviewRoom, setImagePreviewRoom] = useState(null);
+  const [imagePreviewDetail, setImagePreviewDetail] = useState(null);
+  const [imagePreviewImages, setImagePreviewImages] = useState([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const [pagination, setPagination] = useState({
     current: 1,
@@ -195,6 +204,27 @@ const Rooms = () => {
     }
   };
 
+  const handleViewImages = async (record) => {
+    setImagePreviewRoom(record);
+    setImagePreviewDetail(record);
+    setImagePreviewOpen(true);
+
+    const existingImages = Array.isArray(record.images) ? record.images : [];
+    setImagePreviewImages(existingImages);
+
+    setImagePreviewLoading(true);
+    try {
+      const detail = await roomService.getById(record.room_id);
+      setImagePreviewDetail(detail);
+      setImagePreviewImages(Array.isArray(detail?.images) ? detail.images : existingImages);
+    } catch (error) {
+      console.error('Load room images error:', error);
+      message.error('Lỗi khi tải ảnh phòng!');
+    } finally {
+      setImagePreviewLoading(false);
+    }
+  };
+
    const handleViewAssets = (record) => {
      setSelectedRoom(record);
      fetchAssets(record.room_id);
@@ -251,7 +281,7 @@ const Rooms = () => {
       title: 'Hành động',
       key: 'action',
       align: 'center',
-      width: 280,
+      width: 340,
       render: (_, record) => (
         <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 8 }}>
           <Button
@@ -260,6 +290,13 @@ const Rooms = () => {
             onClick={() => handleViewAssets(record)}
           >
             Tài sản
+          </Button>
+          <Button
+            type="link"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewImages(record)}
+          >
+            Xem phòng
           </Button>
           <Button
             type="link"
@@ -507,6 +544,75 @@ const Rooms = () => {
              }
            }}
          />
+       </Modal>
+
+       <Modal
+         title={imagePreviewRoom?.name ? `Ảnh phòng - ${imagePreviewRoom.name}` : 'Ảnh phòng'}
+         open={imagePreviewOpen}
+         onCancel={() => {
+           setImagePreviewOpen(false);
+           setImagePreviewRoom(null);
+           setImagePreviewDetail(null);
+           setImagePreviewImages([]);
+         }}
+         footer={null}
+         width={900}
+       >
+         {imagePreviewLoading ? (
+           <div style={{ textAlign: 'center', padding: '24px 0' }}>
+             <Spin />
+           </div>
+         ) : (
+           <div>
+             <Descriptions bordered size="small" column={1} style={{ marginBottom: 16 }}>
+              {(() => {
+                const detail = imagePreviewDetail || imagePreviewRoom;
+                const houseName = detail?.house?.name || housesById[detail?.house_id]?.name || 'N/A';
+                return (
+                  <>
+                    <Descriptions.Item label="Tên phòng">
+                      {detail?.name || 'N/A'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Giá thuê">
+                      {detail?.price != null ? `${Number(detail.price).toLocaleString()} VNĐ` : 'N/A'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Sức chứa">
+                      {detail?.capacity != null ? `${detail.capacity} người` : 'N/A'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Trạng thái">
+                      {detail?.is_available === true ? 'Trống' : detail?.is_available === false ? 'Đã thuê' : 'N/A'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Nhà trọ">
+                      {houseName}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Mô tả">
+                      {detail?.description || 'N/A'}
+                    </Descriptions.Item>
+                  </>
+                );
+              })()}
+            </Descriptions>
+
+             {imagePreviewImages.length === 0 ? (
+               <div>Phòng này chưa có ảnh.</div>
+             ) : (
+               <Image.PreviewGroup>
+                 {imagePreviewImages.map((img, index) => {
+                   const url = resolveImageUrl(img.image_url || img.imageUrl);
+                   return (
+                     <Image
+                       key={img.image_id || img.imageId || index}
+                       src={url}
+                       width={160}
+                       height={120}
+                       style={{ objectFit: 'cover', marginRight: 8, marginBottom: 8 }}
+                     />
+                   );
+                 })}
+               </Image.PreviewGroup>
+             )}
+           </div>
+         )}
        </Modal>
     </div>
   );
