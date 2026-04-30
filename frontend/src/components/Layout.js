@@ -9,7 +9,8 @@ import {
   BankOutlined,
   ShopOutlined,
   FileTextOutlined,
-  DollarOutlined
+  DollarOutlined,
+  NotificationOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { authService } from '../services/authService';
@@ -57,6 +58,11 @@ const Layout = ({ children }) => {
       key: '/app/rooms',
       icon: <ShopOutlined />,
       label: 'Quản lý phòng trọ',
+    },
+    {
+      key: '/app/listings',
+      icon: <NotificationOutlined />,
+      label: 'Quản lý bài đăng',
     },
     {
       key: '/app/contracts',

@@ -43,6 +43,7 @@ public class RoomControllerTest {
                 "Room 101",
                 new BigDecimal("1500000"),
                 2,
+                25.0,
                 true,
                 "A nice room",
                 LocalDateTime.now(),

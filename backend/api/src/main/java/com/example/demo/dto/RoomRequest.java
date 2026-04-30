@@ -7,6 +7,7 @@ public record RoomRequest(
         String name,
         BigDecimal price,
         Integer capacity,
+        Double area,
         Boolean is_available,
         String description
 ) {}

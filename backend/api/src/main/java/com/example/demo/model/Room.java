@@ -37,6 +37,9 @@ public class Room {
     @Column
     private Integer capacity = 1;
 
+    @Column
+    private Double area;
+
     @Column(name = "is_available")
     private Boolean isAvailable;
 

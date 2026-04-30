@@ -10,6 +10,7 @@ public record RoomResponse(
         String name,
         BigDecimal price,
         Integer capacity,
+        Double area,
         Boolean isAvailable,
         String description,
         LocalDateTime createdAt,

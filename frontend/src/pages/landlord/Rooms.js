@@ -220,6 +220,12 @@ const Rooms = () => {
       render: (value) => `${value} người`,
     },
     {
+      title: 'Diện tích',
+      dataIndex: 'area',
+      key: 'area',
+      render: (value) => value ? `${value} m²` : 'N/A',
+    },
+    {
       title: 'Giá thuê',
       dataIndex: 'price',
       key: 'price',
@@ -405,7 +411,20 @@ const Rooms = () => {
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col span={8}>
+              <Form.Item
+                name="area"
+                label="Diện tích (m²)"
+                rules={[{ required: true, message: 'Vui lòng nhập diện tích!' }]}
+              >
+                <InputNumber
+                  min={0}
+                  style={{ width: '100%' }}
+                  placeholder="m²"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
               <Form.Item
                 name="price"
                 label="Giá thuê (VNĐ)"

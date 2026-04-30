@@ -107,6 +107,7 @@ public class RoomService {
                 .name(request.name())
                 .price(request.price())
                 .capacity(request.capacity() != null ? request.capacity() : 1)
+                .area(request.area())
                 .isAvailable(request.is_available() != null ? request.is_available() : true)
                 .description(request.description())
                 .build();
@@ -143,6 +144,7 @@ public class RoomService {
         room.setName(request.name());
         room.setPrice(request.price());
         room.setCapacity(request.capacity() != null ? request.capacity() : 1);
+        room.setArea(request.area());
         if (request.is_available() != null) {
             room.setIsAvailable(request.is_available());
         }
@@ -215,6 +217,7 @@ public class RoomService {
                 room.getName(),
                 room.getPrice(),
                 room.getCapacity(),
+                room.getArea(),
                 room.getIsAvailable(),
                 room.getDescription(),
                 room.getCreatedAt(),
