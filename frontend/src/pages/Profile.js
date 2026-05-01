@@ -1,9 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Form, Input, Button, Typography, Descriptions, App } from 'antd';
+import { Card, Form, Input, Button, Typography, Descriptions, App, Select } from 'antd';
 import { UserOutlined, MailOutlined, PhoneOutlined, LockOutlined } from '@ant-design/icons';
 import { authService } from '../services/authService';
 
 const { Title } = Typography;
+const { Option } = Select;
+
+const BANK_OPTIONS = [
+  { label: 'MB Bank', code: '970422' },
+  { label: 'Vietcombank', code: '970436' },
+  { label: 'BIDV', code: '970418' },
+  { label: 'VietinBank', code: '970415' },
+  { label: 'Techcombank', code: '970407' },
+  { label: 'ACB', code: '970416' },
+  { label: 'Sacombank', code: '970403' },
+  { label: 'VPBank', code: '970432' },
+  { label: 'TPBank', code: '970423' },
+  { label: 'SHB', code: '970443' },
+  { label: 'Agribank', code: '970405' },
+  { label: 'Eximbank', code: '970431' },
+  { label: 'OCB', code: '970448' },
+];
 
 const Profile = () => {
   const [form] = Form.useForm();
@@ -22,6 +39,10 @@ const Profile = () => {
         fullname: u.fullname,
         phone: u.phone,
         email: u.email,
+        bank_name: u.bank_name || u.bankName,
+        bank_account_number: u.bank_account_number || u.bankAccountNumber,
+        bank_account_name: u.bank_account_name || u.bankAccountName,
+        bank_code: u.bank_code || u.bankCode,
       });
     } catch (e) {
       message.error('Không tải được thông tin người dùng');
@@ -41,6 +62,10 @@ const Profile = () => {
       await authService.updateProfile({
         fullname: values.fullname,
         phone: values.phone,
+        bank_name: values.bank_name,
+        bank_account_number: values.bank_account_number,
+        bank_account_name: values.bank_account_name,
+        bank_code: values.bank_code,
       });
       message.success('Cập nhật thông tin thành công');
       await loadUser();
@@ -118,6 +143,36 @@ const Profile = () => {
           >
             <Input prefix={<MailOutlined />} placeholder="Email" disabled readOnly />
           </Form.Item>
+
+          {(user?.role?.authority === 'landlord' || user?.role?.authority === 'LANDLORD') && (
+            <>
+              <Form.Item name="bank_name" label="Ngân hàng">
+                <Select
+                  placeholder="Chọn ngân hàng"
+                  allowClear
+                  onChange={(value) => {
+                    const matched = BANK_OPTIONS.find((item) => item.label === value);
+                    form.setFieldsValue({ bank_code: matched ? matched.code : undefined });
+                  }}
+                >
+                  {BANK_OPTIONS.map((item) => (
+                    <Option key={item.code} value={item.label}>
+                      {item.label}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+              <Form.Item name="bank_account_number" label="Số tài khoản">
+                <Input placeholder="Nhập số tài khoản" />
+              </Form.Item>
+              <Form.Item name="bank_account_name" label="Tên chủ tài khoản">
+                <Input placeholder="VD: NGUYEN VAN A" />
+              </Form.Item>
+              <Form.Item name="bank_code" hidden>
+                <Input />
+              </Form.Item>
+            </>
+          )}
 
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={loading}>

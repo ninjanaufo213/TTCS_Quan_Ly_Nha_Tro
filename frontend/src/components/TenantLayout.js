@@ -55,6 +55,11 @@ export default function TenantLayout() {
       label: 'Điện / nước / wifi',
     },
     {
+      key: '/tenant/invoices',
+      icon: <FileTextOutlined />,
+      label: 'Hóa đơn & thanh toán',
+    },
+    {
       key: '/tenant/assets',
       icon: <AppstoreOutlined />,
       label: 'Tài sản trong phòng',

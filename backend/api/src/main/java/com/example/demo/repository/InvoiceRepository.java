@@ -13,5 +13,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Integer> {
     List<Invoice> findByRentedRoom_Room_House_Landlord_LandlordIdOrderByDueDateDescCreatedAtDesc(Integer landlordId);
 
     List<Invoice> findByRentedRoom_Room_House_Landlord_LandlordIdAndIsPaidFalseOrderByDueDateAsc(Integer landlordId);
+
+    List<Invoice> findByRentedRoom_Tenant_TenantIdOrderByDueDateDescCreatedAtDesc(Integer tenantId);
 }
 

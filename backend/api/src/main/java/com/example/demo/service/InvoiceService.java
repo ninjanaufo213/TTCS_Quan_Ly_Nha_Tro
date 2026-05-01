@@ -32,6 +32,10 @@ public class InvoiceService {
     private static final String ITEM_INTERNET = "INTERNET";
     private static final String ITEM_GENERAL = "GENERAL";
     private static final String ITEM_ELECTRICITY = "ELECTRICITY";
+    private static final String PROOF_NONE = "NONE";
+    private static final String PROOF_PENDING = "PENDING";
+    private static final String PROOF_APPROVED = "APPROVED";
+    private static final String PROOF_REJECTED = "REJECTED";
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceItemRepository invoiceItemRepository;
@@ -72,6 +76,14 @@ public class InvoiceService {
         return toResponse(invoice);
     }
 
+    public List<InvoiceResponse> getMyInvoices() {
+        Integer tenantId = authService.getCurrentTenantId();
+        return invoiceRepository.findByRentedRoom_Tenant_TenantIdOrderByDueDateDescCreatedAtDesc(tenantId)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
     public InvoiceResponse createInvoice(InvoiceRequest request) {
         if (request.getRrId() == null) {
             throw new IllegalArgumentException("Vui lòng chọn hợp đồng!");
@@ -89,6 +101,7 @@ public class InvoiceService {
                 .isPaid(request.getPaymentDate() != null || Boolean.TRUE.equals(request.getIsPaid()))
                 .paymentDate(request.getPaymentDate())
                 .totalAmount(amounts.totalAmount())
+                .proofStatus(PROOF_NONE)
                 .build();
 
         Invoice savedInvoice = invoiceRepository.save(invoice);
@@ -127,8 +140,49 @@ public class InvoiceService {
         Invoice invoice = getInvoiceAndCheckOwnership(invoiceId);
         invoice.setIsPaid(true);
         invoice.setPaymentDate(LocalDateTime.now());
+        invoice.setProofStatus(PROOF_APPROVED);
         Invoice savedInvoice = invoiceRepository.save(invoice);
         return toResponse(savedInvoice);
+    }
+
+    public InvoiceResponse submitPaymentProof(Integer invoiceId, String proofUrl, String note) {
+        Invoice invoice = getInvoiceAndCheckTenantOwnership(invoiceId);
+        if (PROOF_APPROVED.equalsIgnoreCase(invoice.getProofStatus())) {
+            throw new IllegalArgumentException("Hóa đơn đã được duyệt thanh toán.");
+        }
+        invoice.setProofUrl(proofUrl);
+        invoice.setProofNote(note);
+        invoice.setProofStatus(PROOF_PENDING);
+        invoice.setProofSubmittedAt(LocalDateTime.now());
+        invoice.setIsPaid(false);
+        invoice.setPaymentDate(null);
+        return toResponse(invoiceRepository.save(invoice));
+    }
+
+    public InvoiceResponse approvePaymentProof(Integer invoiceId, String reviewNote) {
+        Invoice invoice = getInvoiceAndCheckOwnership(invoiceId);
+        if (invoice.getProofUrl() == null || invoice.getProofUrl().isBlank()) {
+            throw new IllegalArgumentException("Hóa đơn chưa có minh chứng thanh toán.");
+        }
+        invoice.setProofStatus(PROOF_APPROVED);
+        invoice.setProofReviewNote(reviewNote);
+        invoice.setProofReviewedAt(LocalDateTime.now());
+        invoice.setIsPaid(true);
+        invoice.setPaymentDate(LocalDateTime.now());
+        return toResponse(invoiceRepository.save(invoice));
+    }
+
+    public InvoiceResponse rejectPaymentProof(Integer invoiceId, String reviewNote) {
+        Invoice invoice = getInvoiceAndCheckOwnership(invoiceId);
+        if (invoice.getProofUrl() == null || invoice.getProofUrl().isBlank()) {
+            throw new IllegalArgumentException("Hóa đơn chưa có minh chứng thanh toán.");
+        }
+        invoice.setProofStatus(PROOF_REJECTED);
+        invoice.setProofReviewNote(reviewNote);
+        invoice.setProofReviewedAt(LocalDateTime.now());
+        invoice.setIsPaid(false);
+        invoice.setPaymentDate(null);
+        return toResponse(invoiceRepository.save(invoice));
     }
 
     public void deleteInvoice(Integer invoiceId) {
@@ -275,6 +329,8 @@ public class InvoiceService {
         RentedRoom rentedRoom = invoice.getRentedRoom();
         Tenant tenant = rentedRoom != null ? rentedRoom.getTenant() : null;
         Room room = rentedRoom != null ? rentedRoom.getRoom() : null;
+        com.example.demo.model.House house = room != null ? room.getHouse() : null;
+        com.example.demo.model.Landlord landlord = house != null ? house.getLandlord() : null;
 
         InvoiceResponse.InvoiceRoom invoiceRoom = room == null
                 ? null
@@ -308,10 +364,38 @@ public class InvoiceService {
                 .totalAmount(invoice.getTotalAmount())
                 .isPaid(Boolean.TRUE.equals(invoice.getIsPaid()))
                 .paymentDate(invoice.getPaymentDate())
+                .proofStatus(Optional.ofNullable(invoice.getProofStatus()).orElse(PROOF_NONE))
+                .proofUrl(invoice.getProofUrl())
+                .proofNote(invoice.getProofNote())
+                .proofSubmittedAt(invoice.getProofSubmittedAt())
+                .proofReviewedAt(invoice.getProofReviewedAt())
+                .proofReviewNote(invoice.getProofReviewNote())
+                .bankAccountNumber(landlord != null ? landlord.getBankAccountNumber() : null)
+                .bankName(landlord != null ? landlord.getBankName() : null)
+                .bankAccountName(landlord != null ? landlord.getBankAccountName() : null)
+                .bankCode(landlord != null ? landlord.getBankCode() : null)
                 .dueDate(invoice.getDueDate())
                 .createdAt(invoice.getCreatedAt())
                 .updatedAt(invoice.getUpdatedAt())
                 .build();
+    }
+
+    private Invoice getInvoiceAndCheckTenantOwnership(Integer invoiceId) {
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new IllegalArgumentException("Hóa đơn không tồn tại!"));
+
+        Integer tenantId = authService.getCurrentTenantId();
+        Integer ownerId = Optional.of(invoice)
+                .map(Invoice::getRentedRoom)
+                .map(RentedRoom::getTenant)
+                .map(Tenant::getTenantId)
+                .orElse(null);
+
+        if (!Objects.equals(tenantId, ownerId)) {
+            throw new IllegalArgumentException("Bạn không có quyền thao tác hóa đơn này!");
+        }
+
+        return invoice;
     }
 
     private Invoice getInvoiceAndCheckOwnership(Integer invoiceId) {

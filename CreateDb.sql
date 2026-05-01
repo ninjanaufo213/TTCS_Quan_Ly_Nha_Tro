@@ -25,6 +25,8 @@ CREATE TABLE Landlords (
     brand_name NVARCHAR(255),
     bank_account_number VARCHAR(50),
     bank_name NVARCHAR(100),
+    bank_account_name NVARCHAR(100),
+    bank_code VARCHAR(20),
     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
 
@@ -181,6 +183,12 @@ CREATE TABLE Invoices (
     total_amount DECIMAL(18,0) NOT NULL,
     is_paid BIT DEFAULT 0,
     payment_date DATETIME,
+    proof_status VARCHAR(20),
+    proof_url VARCHAR(MAX),
+    proof_note VARCHAR(MAX),
+    proof_submitted_at DATETIME,
+    proof_reviewed_at DATETIME,
+    proof_review_note VARCHAR(MAX),
     due_date DATE NOT NULL,
     created_at DATETIME DEFAULT GETDATE(),
     updated_at DATETIME DEFAULT GETDATE(),

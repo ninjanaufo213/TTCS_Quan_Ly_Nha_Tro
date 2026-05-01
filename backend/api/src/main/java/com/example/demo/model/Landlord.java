@@ -32,6 +32,12 @@ public class Landlord {
     @Column(name = "bank_name", length = 100)
     private String bankName;
 
+    @Column(name = "bank_account_name", length = 100)
+    private String bankAccountName;
+
+    @Column(name = "bank_code", length = 20)
+    private String bankCode;
+
     @OneToMany(mappedBy = "landlord", cascade = CascadeType.ALL)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

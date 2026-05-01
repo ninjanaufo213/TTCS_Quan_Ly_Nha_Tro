@@ -38,10 +38,12 @@ public class UserController {
         User user = userOpt.get();
         
         String fullname = "No Name";
+        Landlord landlordProfile = null;
         if ("TENANT".equalsIgnoreCase(user.getRole()) && user.getTenant() != null) {
             fullname = user.getTenant().getFullname();
         } else if (user.getLandlord() != null) {
-            fullname = user.getLandlord().getBrandName();
+            landlordProfile = user.getLandlord();
+            fullname = landlordProfile.getBrandName();
         }
 
         UserResponse response = UserResponse.builder()
@@ -50,6 +52,10 @@ public class UserController {
                 .phone(user.getPhone())
                 .role(new UserResponse.RoleWrapper(user.getRole()))
                 .fullname(fullname)
+                .bankAccountNumber(landlordProfile != null ? landlordProfile.getBankAccountNumber() : null)
+                .bankName(landlordProfile != null ? landlordProfile.getBankName() : null)
+                .bankAccountName(landlordProfile != null ? landlordProfile.getBankAccountName() : null)
+                .bankCode(landlordProfile != null ? landlordProfile.getBankCode() : null)
                 .is_active(user.getIsActive())
                 .created_at(user.getCreatedAt())
                 .build();
@@ -85,6 +91,23 @@ public class UserController {
                 landlord.setBrandName(request.getFullname());
                 landlordRepository.save(landlord);
             }
+        }
+
+        if (user.getLandlord() != null) {
+            Landlord landlord = user.getLandlord();
+            if (request.getBankAccountNumber() != null) {
+                landlord.setBankAccountNumber(request.getBankAccountNumber());
+            }
+            if (request.getBankName() != null) {
+                landlord.setBankName(request.getBankName());
+            }
+            if (request.getBankAccountName() != null) {
+                landlord.setBankAccountName(request.getBankAccountName());
+            }
+            if (request.getBankCode() != null) {
+                landlord.setBankCode(request.getBankCode());
+            }
+            landlordRepository.save(landlord);
         }
         
         return ResponseEntity.ok(java.util.Map.of("success", true, "message", "Cập nhật thành công"));

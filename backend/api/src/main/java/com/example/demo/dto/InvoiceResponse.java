@@ -55,6 +55,36 @@ public class InvoiceResponse {
     @JsonProperty("payment_date")
     private LocalDateTime paymentDate;
 
+    @JsonProperty("proof_status")
+    private String proofStatus;
+
+    @JsonProperty("proof_url")
+    private String proofUrl;
+
+    @JsonProperty("proof_note")
+    private String proofNote;
+
+    @JsonProperty("proof_submitted_at")
+    private LocalDateTime proofSubmittedAt;
+
+    @JsonProperty("proof_reviewed_at")
+    private LocalDateTime proofReviewedAt;
+
+    @JsonProperty("proof_review_note")
+    private String proofReviewNote;
+
+    @JsonProperty("bank_account_number")
+    private String bankAccountNumber;
+
+    @JsonProperty("bank_name")
+    private String bankName;
+
+    @JsonProperty("bank_account_name")
+    private String bankAccountName;
+
+    @JsonProperty("bank_code")
+    private String bankCode;
+
     @JsonProperty("due_date")
     private LocalDate dueDate;
 

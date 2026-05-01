@@ -72,6 +72,10 @@ const Invoices = () => {
   const [form] = Form.useForm();
   const [viewInvoiceModal, setViewInvoiceModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [proofModalOpen, setProofModalOpen] = useState(false);
+  const [proofAction, setProofAction] = useState(null);
+  const [proofInvoice, setProofInvoice] = useState(null);
+  const [proofNote, setProofNote] = useState('');
   const [electricityUnitPrice, setElectricityUnitPrice] = useState(3500); // Giá điện/kWh mặc định
   const [roomsAll, setRoomsAll] = useState([]);
   const [housesAll, setHousesAll] = useState([]);
@@ -360,6 +364,33 @@ const Invoices = () => {
     }
   };
 
+  const openProofReview = (record, action) => {
+    setProofInvoice(record);
+    setProofAction(action);
+    setProofNote('');
+    setProofModalOpen(true);
+  };
+
+  const submitProofReview = async () => {
+    if (!proofInvoice || !proofAction) return;
+    try {
+      const invoiceId = proofInvoice.invoice_id;
+      if (proofAction === 'approve') {
+        await invoiceService.approveProof(invoiceId, proofNote);
+        message.success('Đã duyệt minh chứng thanh toán.');
+      } else {
+        await invoiceService.declineProof(invoiceId, proofNote);
+        message.success('Đã từ chối minh chứng.');
+      }
+      setProofModalOpen(false);
+      setProofInvoice(null);
+      setProofAction(null);
+      if (contractId) fetchInvoicesByContract(contractId); else fetchAllInvoices();
+    } catch (error) {
+      message.error(error?.response?.data?.detail || 'Không thể cập nhật minh chứng.');
+    }
+  };
+
   const handleDelete = async (id) => {
     try {
       await invoiceService.delete(id);
@@ -594,12 +625,31 @@ const Invoices = () => {
       render: (isPaid) => (<Tag color={isPaid ? 'green' : 'red'}>{isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'}</Tag>),
     },
     {
+      title: 'Minh chứng', dataIndex: 'proof_status', key: 'proof_status',
+      render: (status) => {
+        const value = (status || 'NONE').toUpperCase();
+        if (value === 'PENDING') return <Tag color="orange">Chờ duyệt</Tag>;
+        if (value === 'APPROVED') return <Tag color="green">Đã duyệt</Tag>;
+        if (value === 'REJECTED') return <Tag color="red">Từ chối</Tag>;
+        return <Tag>Chưa gửi</Tag>;
+      },
+    },
+    {
       title: 'Hành động', key: 'action', align: 'center', width: 360,
       render: (_, record) => (
         <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 8 }}>
           <Button type="link" icon={<EyeOutlined />} onClick={() => handleViewInvoice(record)}>Xem</Button>
           <Button type="link" icon={<FilePdfOutlined />} onClick={() => handleExportPDF(record)}>PDF</Button>
           <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>Sửa</Button>
+          {record.proof_url && (
+            <Button type="link" href={record.proof_url} target="_blank" rel="noreferrer">Minh chứng</Button>
+          )}
+          {record.proof_status === 'PENDING' && (
+            <>
+              <Button type="link" onClick={() => openProofReview(record, 'approve')}>Duyệt</Button>
+              <Button type="link" danger onClick={() => openProofReview(record, 'decline')}>Từ chối</Button>
+            </>
+          )}
           {!record.is_paid && (
             <Popconfirm title="Xác nhận thanh toán hóa đơn này?" onConfirm={() => handlePay(record.invoice_id)} okText="Có" cancelText="Không">
               <Button type="link" icon={<CheckOutlined />}>Thanh toán</Button>
@@ -879,12 +929,25 @@ const Invoices = () => {
               <Row gutter={[16, 16]}>
                 <Col span={12}><div><strong>Mã hóa đơn:</strong> #{selectedInvoice.invoice_id}</div></Col>
                 <Col span={12}><div><strong>Trạng thái:</strong> <Tag color={selectedInvoice.is_paid ? 'green' : 'red'}>{selectedInvoice.is_paid ? 'Đã thanh toán' : 'Chưa thanh toán'}</Tag></div></Col>
+                <Col span={12}><div><strong>Minh chứng:</strong> {(() => {
+                  const value = (selectedInvoice.proof_status || 'NONE').toUpperCase();
+                  if (value === 'PENDING') return <Tag color="orange">Chờ duyệt</Tag>;
+                  if (value === 'APPROVED') return <Tag color="green">Đã duyệt</Tag>;
+                  if (value === 'REJECTED') return <Tag color="red">Từ chối</Tag>;
+                  return <Tag>Chưa gửi</Tag>;
+                })()}</div></Col>
+                {selectedInvoice.proof_url && (
+                  <Col span={12}><div><strong>File minh chứng:</strong> <a href={selectedInvoice.proof_url} target="_blank" rel="noreferrer">Xem</a></div></Col>
+                )}
                 <Col span={12}><div><strong>Khách thuê:</strong> {selectedInvoice.rented_room?.tenant_name || 'N/A'}</div></Col>
                 <Col span={12}><div><strong>Phòng:</strong> {getRoomName(selectedInvoice, roomsMap, contractsMap)}</div></Col>
                 <Col span={12}><div><strong>Nhà trọ:</strong> {getHouseName(selectedInvoice, roomsMap, contractsMap, housesMap)}</div></Col>
                 <Col span={12}><div><strong>Ngày đến hạn:</strong> {new Date(selectedInvoice.due_date).toLocaleDateString('vi-VN')}</div></Col>
                 {selectedInvoice.payment_date && (
                   <Col span={12}><div><strong>Ngày thanh toán:</strong> {new Date(selectedInvoice.payment_date).toLocaleDateString('vi-VN')}</div></Col>
+                )}
+                {selectedInvoice.proof_review_note && (
+                  <Col span={24}><div><strong>Ghi chú duyệt:</strong> {selectedInvoice.proof_review_note}</div></Col>
                 )}
               </Row>
             </Card>
@@ -937,6 +1000,21 @@ const Invoices = () => {
             </Card>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        open={proofModalOpen}
+        title={proofAction === 'approve' ? 'Duyệt minh chứng' : 'Từ chối minh chứng'}
+        onCancel={() => setProofModalOpen(false)}
+        onOk={submitProofReview}
+        okText={proofAction === 'approve' ? 'Duyệt' : 'Từ chối'}
+        cancelText="Hủy"
+      >
+        <Form layout="vertical">
+          <Form.Item label="Ghi chú (tuỳ chọn)">
+            <Input.TextArea rows={3} value={proofNote} onChange={(e) => setProofNote(e.target.value)} />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );

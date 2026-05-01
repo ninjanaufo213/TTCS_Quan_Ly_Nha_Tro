@@ -25,6 +25,7 @@ import TenantRoomInfo from './pages/tenant/TenantRoomInfo';
 import TenantContractInfo from './pages/tenant/TenantContractInfo';
 import TenantServicesInfo from './pages/tenant/TenantServicesInfo';
 import TenantAssetsInfo from './pages/tenant/TenantAssetsInfo';
+import TenantInvoices from './pages/tenant/TenantInvoices';
 import authService from './services/authService';
 
 // Landlord Route Component (block TENANT)
@@ -150,6 +151,7 @@ function App() {
                             <Route path="contract" element={<TenantContractInfo />} />
                             <Route path="services" element={<TenantServicesInfo />} />
                             <Route path="assets" element={<TenantAssetsInfo />} />
+                            <Route path="invoices" element={<TenantInvoices />} />
                         </Route>
 
                         {/* Admin routes */}
