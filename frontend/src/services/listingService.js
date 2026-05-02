@@ -9,6 +9,11 @@ export const listingService = {
     return response.data;
   },
 
+  searchPublicListings: async (params) => {
+    const response = await axios.get(`${BASE_URL}/listings/search`, { params });
+    return response.data;
+  },
+
   createListing: async (data) => {
     const response = await api.post('/landlord/listings', data);
     return response.data;

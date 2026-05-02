@@ -590,11 +590,17 @@
   font-size: 15px;
   padding: 8px 12px;
   border-radius: 8px;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, border-color 0.2s;
+  border: 1px solid transparent;
 }
 
 .filter-item:hover {
   background-color: #f8fafc;
+}
+
+.filter-item.active {
+  background-color: #eff6ff;
+  border-color: #93c5fd;
 }
 
 .filter-icon {
@@ -603,7 +609,8 @@
   transition: all 0.2s;
 }
 
-.filter-item:hover .filter-icon {
+.filter-item:hover .filter-icon,
+.filter-item.active .filter-icon {
   color: #2563eb;
   transform: translateX(4px);
 }
@@ -615,7 +622,8 @@
   transition: color 0.2s ease;
 }
 
-.filter-item:hover .filter-link {
+.filter-item:hover .filter-link,
+.filter-item.active .filter-link {
   color: #2563eb;
 }
 

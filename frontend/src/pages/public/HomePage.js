@@ -36,9 +36,14 @@ const HomePage = () => {
   const [savedListings, setSavedListings] = useState(new Set());
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [selectedPriceRange, setSelectedPriceRange] = useState(null);
+  const [selectedAreaRange, setSelectedAreaRange] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Listings data - will be populated from API
   const [listings, setListings] = useState([]);
+  const [filteredListings, setFilteredListings] = useState([]);
 
   const provinces = [
     { label: 'Tất cả', value: 'all' },
@@ -68,7 +73,7 @@ const HomePage = () => {
     { label: 'Trên 90 m²', value: [90, Infinity] }
   ];
 
-  const newListings = listings.slice(0, 3);
+  const newListings = filteredListings.slice(0, 3);
 
   const menuCategories = [
     { key: 'rooms', label: 'Phòng trọ' },
@@ -84,18 +89,30 @@ const HomePage = () => {
 
   useEffect(() => {
     setIsLoaded(true);
-    const fetchListings = async () => {
+  }, []);
+
+  useEffect(() => {
+    const keyword = searchKeyword.trim();
+    const params = {
+      keyword: keyword || undefined,
+      district: selectedProvince !== 'all' ? selectedProvince : undefined,
+      minPrice: selectedPriceRange ? selectedPriceRange[0] : undefined,
+      maxPrice: selectedPriceRange ? selectedPriceRange[1] : undefined,
+      minArea: selectedAreaRange ? selectedAreaRange[0] : undefined,
+      maxArea: selectedAreaRange ? selectedAreaRange[1] : undefined,
+    };
+
+    const timeoutId = setTimeout(async () => {
       try {
-        const data = await listingService.getPublicListings();
-        // Map API response sang cấu trúc card
+        const data = await listingService.searchPublicListings(params);
         const mapped = data.map(l => ({
           id: l.listing_id || l.listingId,
-          title: l.title,
+          title: l.title || '',
           price: l.room?.price || 0,
-          area: l.room?.area || null,
+          area: l.room?.area ?? null,
           district: l.room?.district || '',
           province: l.room?.ward || '',
-          description: l.description,
+          description: l.description || '',
           images: (l.room?.image_urls && l.room.image_urls.length > 0) ? l.room.image_urls : (
             (l.room?.imageUrls && l.room.imageUrls.length > 0) ? l.room.imageUrls : [
               'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400'
@@ -109,13 +126,16 @@ const HomePage = () => {
             : '',
         }));
         setListings(mapped);
+        setFilteredListings(mapped);
       } catch (err) {
         console.error('Lỗi tải bài đăng:', err);
         setListings([]);
+        setFilteredListings([]);
       }
-    };
-    fetchListings();
-  }, []);
+    }, 350);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchKeyword, selectedProvince, selectedPriceRange, selectedAreaRange]);
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll);
@@ -249,9 +269,17 @@ const HomePage = () => {
             placeholder="Tìm kiếm theo khu vực, tên đường..."
             prefix={<SearchOutlined style={{ color: '#94a3b8' }}/>}
             className="search-input"
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            allowClear
           />
 
-          <Button type="default" icon={<FilterOutlined />} className="filter-button">
+          <Button 
+            type="default" 
+            icon={<FilterOutlined />} 
+            className="filter-button"
+            onClick={() => setShowFilters(!showFilters)}
+          >
             Bộ lọc
           </Button>
 
@@ -335,7 +363,7 @@ const HomePage = () => {
             {/* Page Title */}
             <section className="page-title animate-fade-in-up">
               <h1>Kênh thông tin Phòng Trọ số 1 Việt Nam</h1>
-              <p>Có {listings.length} tin đăng cho thuê phù hợp với bạn</p>
+              <p>Có {filteredListings.length} tin đăng cho thuê phù hợp với bạn</p>
             </section>
 
             {/* Province Selection */}
@@ -346,7 +374,13 @@ const HomePage = () => {
                   <Button
                     key={prov.value}
                     className={`province-btn ${selectedProvince === prov.value ? 'active' : ''}`}
-                    onClick={() => setSelectedProvince(prov.value)}
+                    onClick={() => {
+                      setSelectedProvince(prov.value);
+                      if (prov.value === 'all') {
+                        setSelectedPriceRange(null);
+                        setSelectedAreaRange(null);
+                      }
+                    }}
                   >
                     {prov.label}
                   </Button>
@@ -380,8 +414,8 @@ const HomePage = () => {
 
             {/* Listings */}
             <section className="listings-section">
-              {listings.length > 0 ? (
-                  listings.map((listing, index) => renderListingCard(listing, index))
+              {filteredListings.length > 0 ? (
+                  filteredListings.map((listing, index) => renderListingCard(listing, index))
               ) : (
                   <div className="animate-fade-in-up" style={{ animationDelay: '300ms' }}>
                      <Empty description="Không có tin đăng nào phù hợp" />
@@ -397,9 +431,17 @@ const HomePage = () => {
               <h3 className="filter-title">Lọc theo giá</h3>
               <div className="filter-links">
                 {priceRanges.map((range, idx) => (
-                  <div key={idx} className="filter-item">
+                  <div 
+                    key={idx} 
+                    className={`filter-item ${selectedPriceRange === range.value ? 'active' : ''}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setSelectedPriceRange(selectedPriceRange === range.value ? null : range.value);
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <ArrowRightOutlined className="filter-icon" />
-                    <a href="#" className="filter-link">
+                    <a href="#" className="filter-link" onClick={(e) => e.preventDefault()}>
                       {range.label}
                     </a>
                   </div>
@@ -412,9 +454,17 @@ const HomePage = () => {
               <h3 className="filter-title">Lọc theo diện tích</h3>
               <div className="filter-links">
                 {areaRanges.map((range, idx) => (
-                  <div key={idx} className="filter-item">
+                  <div 
+                    key={idx} 
+                    className={`filter-item ${selectedAreaRange === range.value ? 'active' : ''}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setSelectedAreaRange(selectedAreaRange === range.value ? null : range.value);
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <ArrowRightOutlined className="filter-icon" />
-                    <a href="#" className="filter-link">
+                    <a href="#" className="filter-link" onClick={(e) => e.preventDefault()}>
                       {range.label}
                     </a>
                   </div>
