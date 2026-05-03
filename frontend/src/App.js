@@ -8,6 +8,7 @@ import AdminLayout from './components/AdminLayout';
 import TenantLayout from './components/TenantLayout';
 import Login from './pages/public/Login';
 import HomePage from './pages/public/HomePage';
+import ListingDetail from './pages/public/ListingDetail';
 import Dashboard from './pages/landlord/Dashboard';
 import Houses from './pages/landlord/Houses';
 import Rooms from './pages/landlord/Rooms';
@@ -99,6 +100,7 @@ function App() {
                         {/* HomePage as default home page */}
                         <Route path="/" element={<HomePage />} />
                         <Route path="/home" element={<HomePage />} />
+                        <Route path="/listings/:id" element={<ListingDetail />} />
                         <Route
                             path="/login"
                             element={

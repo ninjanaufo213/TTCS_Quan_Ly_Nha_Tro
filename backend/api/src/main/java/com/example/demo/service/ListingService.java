@@ -32,6 +32,12 @@ public class ListingService {
                 .collect(Collectors.toList());
     }
 
+    public ListingResponse getListingById(Integer id) {
+        Listing listing = listingRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bài đăng với id: " + id));
+        return mapToResponse(listing);
+    }
+
     public ListingResponse createListing(com.example.demo.dto.ListingRequest request) {
         com.example.demo.model.Room room = roomRepository.findById(request.getRoomId())
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phòng"));
@@ -102,6 +108,7 @@ public class ListingService {
             }
 
             roomInfo = ListingResponse.RoomInfo.builder()
+                    .roomId(listing.getRoom().getRoomId())
                     .name(listing.getRoom().getName())
                     .price(listing.getRoom().getPrice())
                     .area(listing.getRoom().getArea())

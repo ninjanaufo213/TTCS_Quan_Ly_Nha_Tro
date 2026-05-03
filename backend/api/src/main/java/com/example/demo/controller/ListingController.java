@@ -26,6 +26,16 @@ public class ListingController {
         return ResponseEntity.ok(listingService.getPublishedListings());
     }
 
+    @GetMapping("/api/listings/{id}")
+    public ResponseEntity<?> getListingById(@PathVariable Integer id) {
+        try {
+            ListingResponse response = listingService.getListingById(id);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("detail", e.getMessage()));
+        }
+    }
+
     // --- LANDLORD ENDPOINTS ---
     @GetMapping("/api/landlord/listings")
     public ResponseEntity<List<ListingResponse>> getMyListings() {
