@@ -159,7 +159,12 @@ export default function TenantInvoices() {
         title: 'Thanh toán',
         dataIndex: 'is_paid',
         key: 'is_paid',
-        render: (value) => (value ? <Tag color="green">Đã thanh toán</Tag> : <Tag color="red">Chưa thanh toán</Tag>),
+        render: (value, record) => {
+          const proofStatus = (record?.proof_status || 'NONE').toUpperCase();
+          if (proofStatus === 'PENDING') return <Tag color="orange">Chờ duyệt</Tag>;
+          if (proofStatus === 'REJECTED') return <Tag color="red">Bị từ chối</Tag>;
+          return value ? <Tag color="green">Đã thanh toán</Tag> : <Tag color="red">Chưa thanh toán</Tag>;
+        },
       },
       {
         title: 'Minh chứng',
@@ -176,7 +181,7 @@ export default function TenantInvoices() {
               type="primary"
               icon={<QrcodeOutlined />}
               onClick={() => openPayModal(record)}
-              disabled={record?.proof_status?.toUpperCase?.() === 'APPROVED'}
+              disabled={['PENDING', 'APPROVED'].includes(record?.proof_status?.toUpperCase?.() || '')}
             >
               Thanh toán
             </Button>

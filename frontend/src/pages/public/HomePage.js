@@ -105,26 +105,34 @@ const HomePage = () => {
     const timeoutId = setTimeout(async () => {
       try {
         const data = await listingService.searchPublicListings(params);
-        const mapped = data.map(l => ({
-          id: l.listing_id || l.listingId,
-          title: l.title || '',
-          price: l.room?.price || 0,
-          area: l.room?.area ?? null,
-          district: l.room?.district || '',
-          province: l.room?.ward || '',
-          description: l.description || '',
-          images: (l.room?.image_urls && l.room.image_urls.length > 0) ? l.room.image_urls : (
-            (l.room?.imageUrls && l.room.imageUrls.length > 0) ? l.room.imageUrls : [
+        const mapped = data.map(l => {
+          const room = l.room || {};
+          const roomName = room.name || '';
+          const houseName = room.houseName || '';
+          const title = roomName && houseName ? `${roomName} - ${houseName}` : (l.title || roomName || '');
+          const addressLine = [room.address, room.ward, room.district].filter(Boolean).join(', ');
+          const images = (room.image_urls && room.image_urls.length > 0) ? room.image_urls : (
+            (room.imageUrls && room.imageUrls.length > 0) ? room.imageUrls : [
               'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400'
             ]
-          ),
-          totalImages: (l.room?.image_urls?.length) || (l.room?.imageUrls?.length) || 1,
-          hasVideo: false,
-          phone: '',
-          createdAt: l.created_at || l.createdAt
-            ? new Date(l.created_at || l.createdAt).toLocaleDateString('vi-VN')
-            : '',
-        }));
+          );
+
+          return {
+            id: l.listing_id || l.listingId,
+            title,
+            roomName,
+            houseName,
+            addressLine,
+            price: room.price || 0,
+            area: room.area ?? null,
+            description: l.description || room.description || '',
+            images,
+            totalImages: images.length,
+            createdAt: l.created_at || l.createdAt
+              ? new Date(l.created_at || l.createdAt).toLocaleDateString('vi-VN')
+              : '',
+          };
+        });
         setListings(mapped);
         setFilteredListings(mapped);
       } catch (err) {
@@ -174,6 +182,7 @@ const HomePage = () => {
         key={listing.id} 
         className="listing-card animate-fade-in-up" 
         style={{ animationDelay: `${(index % 8) * 100}ms` }}
+        onClick={() => navigate(`/listing/${listing.id}`)}
     >
       <Row gutter={24}>
         {/* Images Section */}
@@ -182,24 +191,10 @@ const HomePage = () => {
             {/* Main large image */}
             <div className="main-image">
               <img src={listing.images[0]} alt="Main" />
-              {listing.hasVideo && (
-                <div className="video-badge">
-                  <PlayCircleOutlined style={{ fontSize: 32, color: 'white' }} />
-                </div>
-              )}
               <Badge
                 count={`${listing.totalImages}`}
                 className="image-count"
               />
-            </div>
-
-            {/* Small images grid */}
-            <div className="small-images-grid">
-              {listing.images.slice(1, 4).map((img, idx) => (
-                <div key={idx} className="small-image">
-                  <img src={img} alt={`Small ${idx}`} />
-                </div>
-              ))}
             </div>
           </div>
         </Col>
@@ -209,24 +204,23 @@ const HomePage = () => {
           <div className="listing-content">
             {/* Title */}
             <div className="listing-title">
-              <StarFilled style={{ color: '#fbbf24', fontSize: '18px', marginTop: '4px' }} />
               <span>{listing.title}</span>
+            </div>
+
+            <div className="listing-address">
+              <EnvironmentOutlined style={{ marginRight: '6px' }} />
+              {listing.addressLine || 'Chưa có địa chỉ'}
             </div>
 
             {/* Meta info */}
             <div className="listing-meta">
               <span className="price">{formatPrice(listing.price)}/tháng</span>
               <span className="divider">•</span>
-              <span className="area">{listing.area} m²</span>
-              <span className="divider">•</span>
-              <span className="location">
-                <EnvironmentOutlined style={{ marginRight: '4px' }}/>
-                {listing.district}, {listing.province}
-              </span>
+              <span className="area">{listing.area || '-'} m²</span>
             </div>
 
             {/* Description */}
-            <p className="listing-description">{listing.description}</p>
+            <p className="listing-description">{listing.description || 'Chưa có mô tả.'}</p>
 
             {/* Footer */}
             <div className="listing-footer">
@@ -240,15 +234,21 @@ const HomePage = () => {
                       <HeartOutlined style={{ fontSize: '20px' }}/>
                     )
                   }
-                  onClick={() => toggleSavedListing(listing.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleSavedListing(listing.id);
+                  }}
                 />
                 <Button
                   type="primary"
                   shape="round"
                   className="phone-button"
-                  icon={<PhoneOutlined />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/listing/${listing.id}`);
+                  }}
                 >
-                  {listing.phone}
+                  Xem chi tiết
                 </Button>
               </div>
             </div>

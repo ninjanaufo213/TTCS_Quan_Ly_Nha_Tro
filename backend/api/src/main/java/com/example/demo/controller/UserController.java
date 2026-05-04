@@ -29,14 +29,28 @@ public class UserController {
         this.landlordRepository = landlordRepository;
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(@RequestHeader(value = "X-User-Email", required = false) String userEmail) {
+        if (userEmail == null || userEmail.isBlank()) {
+            return ResponseEntity.status(401).body(java.util.Map.of("detail", "Thiếu header X-User-Email"));
+        }
+        Optional<User> userOpt = userRepository.findByEmail(userEmail);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(404).body(java.util.Map.of("detail", "User không tìm thấy"));
+        }
+        return ResponseEntity.ok(buildUserResponse(userOpt.get()));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUserProfile(@PathVariable Integer id) {
         Optional<User> userOpt = userRepository.findById(id);
         if (userOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        User user = userOpt.get();
-        
+        return ResponseEntity.ok(buildUserResponse(userOpt.get()));
+    }
+
+    private UserResponse buildUserResponse(User user) {
         String fullname = "No Name";
         Landlord landlordProfile = null;
         if ("TENANT".equalsIgnoreCase(user.getRole()) && user.getTenant() != null) {
@@ -46,7 +60,7 @@ public class UserController {
             fullname = landlordProfile.getBrandName();
         }
 
-        UserResponse response = UserResponse.builder()
+        return UserResponse.builder()
                 .owner_id(user.getUserId())
                 .email(user.getEmail())
                 .phone(user.getPhone())
@@ -59,8 +73,6 @@ public class UserController {
                 .is_active(user.getIsActive())
                 .created_at(user.getCreatedAt())
                 .build();
-                
-        return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/{id}")

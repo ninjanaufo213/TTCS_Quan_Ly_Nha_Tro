@@ -28,6 +28,8 @@ import { rentedRoomService } from '../../services/rentedRoomService';
 import { roomService } from '../../services/roomService';
 import { houseService } from '../../services/houseService';
 import { tenantService } from '../../services/tenantService';
+import { contractRequestService } from '../../services/contractRequestService';
+import { viewingService } from '../../services/viewingService';
 import dayjs from 'dayjs';
 
 const { Option } = Select;
@@ -50,6 +52,7 @@ const Contracts = () => {
   });
   const [modalVisible, setModalVisible] = useState(false);
   const [editingContract, setEditingContract] = useState(null);
+  const [requestMode, setRequestMode] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [form] = Form.useForm();
   const navigate = useNavigate();
@@ -57,6 +60,11 @@ const Contracts = () => {
   const roomId = searchParams.get('room');
   const houseId = searchParams.get('house');
   const action = searchParams.get('action');
+  const viewingId = searchParams.get('viewingId');
+  const tenantNameParam = searchParams.get('tenantName');
+  const tenantPhoneParam = searchParams.get('tenantPhone');
+  const isRequestMode = action === 'request' && !!viewingId;
+
   const [roomsAll, setRoomsAll] = useState([]);
   const [tenantOptions, setTenantOptions] = useState([]);
   const [tenantLoading, setTenantLoading] = useState(false);
@@ -132,6 +140,53 @@ const Contracts = () => {
       setModalVisible(true);
     }
   }, [action, roomId, houseId, modalVisible, form, roomsMap]);
+
+  useEffect(() => {
+    if (isRequestMode && roomId && !modalVisible) {
+      const rid = parseInt(roomId, 10);
+      const targetRoom = roomsMap[rid] || roomsAll.find(r => r.room_id === rid);
+      setEditingContract(null);
+      setRequestMode(true);
+      form.resetFields();
+      if (targetRoom?.house_id) {
+        form.setFieldsValue({ house_id: targetRoom.house_id });
+      }
+      if (rid) {
+        form.setFieldsValue({ room_id: rid });
+        syncMonthlyRentFromRoom(rid);
+      }
+      form.setFieldsValue({
+        tenant_name: tenantNameParam || undefined,
+        tenant_phone: tenantPhoneParam || undefined,
+      });
+      setModalVisible(true);
+    }
+  }, [isRequestMode, roomId, modalVisible, form, roomsMap, roomsAll, tenantNameParam, tenantPhoneParam]);
+
+  useEffect(() => {
+    if (!requestMode || !roomId || !modalVisible) return;
+
+    const ensureHouseLinked = async () => {
+      const existingHouseId = form.getFieldValue('house_id');
+      if (existingHouseId) return;
+
+      try {
+        const room = await roomService.getById(Number(roomId));
+        if (room?.house_id) {
+          form.setFieldsValue({
+            house_id: room.house_id,
+            room_id: room.room_id ?? Number(roomId),
+          });
+          fetchRooms(room.house_id);
+          syncMonthlyRentFromRoom(room.room_id ?? Number(roomId));
+        }
+      } catch (_) {
+        // Ignore lookup failure; user can still select house manually if needed
+      }
+    };
+
+    ensureHouseLinked();
+  }, [requestMode, roomId, modalVisible, form]);
 
   useEffect(() => {
     // Khi modal đang mở và dữ liệu phòng vừa tải xong, đồng bộ lại tiền thuê theo phòng đã chọn
@@ -215,6 +270,7 @@ const Contracts = () => {
   };
 
   const handleCreate = () => {
+    setRequestMode(false);
     if (roomId) {
       const rid = parseInt(roomId, 10);
       const targetRoom = roomsMap[rid];
@@ -241,9 +297,13 @@ const Contracts = () => {
 
   const handleModalClose = () => {
     setModalVisible(false);
+    setRequestMode(false);
     // Clear action param from URL so it doesn't auto-open again
     const newParams = new URLSearchParams(searchParams);
     newParams.delete('action');
+    newParams.delete('viewingId');
+    newParams.delete('tenantName');
+    newParams.delete('tenantPhone');
     setSearchParams(newParams);
   };
 
@@ -319,7 +379,13 @@ const Contracts = () => {
         end_date: values.end_date.format('YYYY-MM-DD'),
       };
 
-      if (editingContract) {
+      if (requestMode && viewingId) {
+        delete submitData.tenant_id;
+        delete submitData.tenant_name;
+        delete submitData.tenant_phone;
+        await contractRequestService.createForViewing(Number(viewingId), submitData);
+        message.success('Đã gửi yêu cầu hợp đồng cho người thuê!');
+      } else if (editingContract) {
         await rentedRoomService.update(editingContract.rr_id, submitData);
         message.success('Cập nhật hợp đồng thành công!');
       } else {
@@ -690,6 +756,11 @@ const Contracts = () => {
             }
           }}
         >
+          {requestMode && (
+            <div style={{ marginBottom: 16, color: '#666' }}>
+              Hợp đồng sẽ được gửi cho người thuê xác nhận.
+            </div>
+          )}
           <Row gutter={16}>
             <Col span={24}>
               <Form.Item
@@ -699,6 +770,7 @@ const Contracts = () => {
               >
                 <Select
                   placeholder="Chọn nhà trọ"
+                  disabled={requestMode}
                   onChange={(value) => {
                     // Load rooms when house changes
                     if (value) {
@@ -727,7 +799,7 @@ const Contracts = () => {
               >
                 <Select
                   placeholder="Chọn phòng"
-                  disabled={!!roomId || !!editingContract}
+                  disabled={requestMode || !!roomId || !!editingContract}
                   onChange={(value) => {
                     syncMonthlyRentFromRoom(value);
                   }}
@@ -743,49 +815,66 @@ const Contracts = () => {
           </Row>
 
           <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="tenant_id"
-                label="Số điện thoại (khách thuê)"
-                rules={[{ required: true, message: 'Vui lòng chọn số điện thoại khách thuê!' }]}
-              >
-                <Select
-                  showSearch
-                  placeholder="Chọn số điện thoại"
-                  loading={tenantLoading}
-                  optionFilterProp="label"
-                  onSearch={(value) => loadTenants(value)}
-                  onChange={(value) => {
-                    const selected = tenantOptions.find(t => t.tenant_id === value);
-                    if (selected) {
-                      form.setFieldsValue({
-                        tenant_name: selected.fullname,
-                        tenant_phone: selected.phone,
-                      });
-                    } else {
-                      form.setFieldsValue({ tenant_name: undefined, tenant_phone: undefined });
-                    }
-                  }}
-                  filterOption={false}
-                  allowClear
-                >
-                  {tenantOptions.map(t => (
-                    <Option key={t.tenant_id} value={t.tenant_id} label={t.phone || ''}>
-                      {t.phone || 'N/A'} {t.fullname ? `- ${t.fullname}` : ''}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="tenant_name" label="Tên khách thuê">
-                <Input placeholder="Tên khách thuê" disabled />
-              </Form.Item>
-              <Form.Item name="tenant_phone" hidden>
-                <Input />
-              </Form.Item>
-            </Col>
-          </Row>
+            {requestMode ? (
+              <>
+                <Col span={12}>
+                  <Form.Item name="tenant_phone" label="Số điện thoại (khách thuê)">
+                    <Input placeholder="Số điện thoại" disabled />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="tenant_name" label="Tên khách thuê">
+                    <Input placeholder="Tên khách thuê" disabled />
+                  </Form.Item>
+                </Col>
+              </>
+            ) : (
+              <>
+                <Col span={12}>
+                  <Form.Item
+                    name="tenant_id"
+                    label="Số điện thoại (khách thuê)"
+                    rules={[{ required: true, message: 'Vui lòng chọn số điện thoại khách thuê!' }]}
+                  >
+                    <Select
+                      showSearch
+                      placeholder="Chọn số điện thoại"
+                      loading={tenantLoading}
+                      optionFilterProp="label"
+                      onSearch={(value) => loadTenants(value)}
+                      onChange={(value) => {
+                        const selected = tenantOptions.find(t => t.tenant_id === value);
+                        if (selected) {
+                          form.setFieldsValue({
+                            tenant_name: selected.fullname,
+                            tenant_phone: selected.phone,
+                          });
+                        } else {
+                          form.setFieldsValue({ tenant_name: undefined, tenant_phone: undefined });
+                        }
+                      }}
+                      filterOption={false}
+                      allowClear
+                    >
+                      {tenantOptions.map(t => (
+                        <Option key={t.tenant_id} value={t.tenant_id} label={t.phone || ''}>
+                          {t.phone || 'N/A'} {t.fullname ? `- ${t.fullname}` : ''}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="tenant_name" label="Tên khách thuê">
+                    <Input placeholder="Tên khách thuê" disabled />
+                  </Form.Item>
+                  <Form.Item name="tenant_phone" hidden>
+                    <Input />
+                  </Form.Item>
+                </Col>
+              </>
+            )}
+           </Row>
 
           <Row gutter={16}>
             <Col span={8}>

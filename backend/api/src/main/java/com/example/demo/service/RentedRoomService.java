@@ -28,13 +28,16 @@ public class RentedRoomService {
     private final UserRepository userRepository;
     private final RoomService roomService;
     private final AuthService authService;
+    private final ViewingService viewingService;
 
     /**
      * Lấy tất cả hợp đồng
      */
     public List<RentedRoomResponse> getAllRentedRooms() {
         syncExpiredContractsAndRoomAvailability();
-        return rentedRoomRepository.findAll().stream()
+
+        Integer landlordId = authService.getCurrentLandlordId();
+        return rentedRoomRepository.findByRoom_House_Landlord_LandlordId(landlordId).stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
@@ -124,6 +127,7 @@ public class RentedRoomService {
         createContractServices(saved, request);
 
         refreshRoomAvailability(room.getRoomId());
+        viewingService.cancelScheduledByRoom(room.getRoomId());
 
         return convertToResponse(saved);
     }

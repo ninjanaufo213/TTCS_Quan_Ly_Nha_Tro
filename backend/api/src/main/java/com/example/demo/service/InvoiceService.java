@@ -7,6 +7,7 @@ import com.example.demo.model.InvoiceItem;
 import com.example.demo.model.RentedRoom;
 import com.example.demo.model.Room;
 import com.example.demo.model.Tenant;
+import com.example.demo.model.User;
 import com.example.demo.repository.InvoiceItemRepository;
 import com.example.demo.repository.InvoiceRepository;
 import com.example.demo.repository.RentedRoomRepository;
@@ -41,6 +42,7 @@ public class InvoiceService {
     private final InvoiceItemRepository invoiceItemRepository;
     private final RentedRoomRepository rentedRoomRepository;
     private final AuthService authService;
+    private final NotificationService notificationService;
 
     public List<InvoiceResponse> getAllInvoices(String month, Integer houseId, Integer roomId, Boolean isPaid) {
         Integer landlordId = authService.getCurrentLandlordId();
@@ -65,7 +67,7 @@ public class InvoiceService {
     public List<InvoiceResponse> getPendingInvoices() {
         Integer landlordId = authService.getCurrentLandlordId();
         return invoiceRepository
-                .findByRentedRoom_Room_House_Landlord_LandlordIdAndIsPaidFalseOrderByDueDateAsc(landlordId)
+                .findByRentedRoom_Room_House_Landlord_LandlordIdAndProofStatusOrderByDueDateAsc(landlordId, PROOF_PENDING)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -98,14 +100,16 @@ public class InvoiceService {
         Invoice invoice = Invoice.builder()
                 .rentedRoom(rentedRoom)
                 .dueDate(request.getDueDate().toLocalDate())
-                .isPaid(request.getPaymentDate() != null || Boolean.TRUE.equals(request.getIsPaid()))
-                .paymentDate(request.getPaymentDate())
+                .isPaid(false)
+                .paymentDate(null)
                 .totalAmount(amounts.totalAmount())
                 .proofStatus(PROOF_NONE)
                 .build();
 
         Invoice savedInvoice = invoiceRepository.save(invoice);
         recreateItems(savedInvoice, amounts);
+
+        notifyTenantOnInvoiceCreated(savedInvoice);
 
         return toResponse(savedInvoice);
     }
@@ -141,7 +145,9 @@ public class InvoiceService {
         invoice.setIsPaid(true);
         invoice.setPaymentDate(LocalDateTime.now());
         invoice.setProofStatus(PROOF_APPROVED);
+        invoice.setProofReviewedAt(LocalDateTime.now());
         Invoice savedInvoice = invoiceRepository.save(invoice);
+        notifyTenantOnProofApproved(savedInvoice);
         return toResponse(savedInvoice);
     }
 
@@ -154,9 +160,13 @@ public class InvoiceService {
         invoice.setProofNote(note);
         invoice.setProofStatus(PROOF_PENDING);
         invoice.setProofSubmittedAt(LocalDateTime.now());
+        invoice.setProofReviewedAt(null);
+        invoice.setProofReviewNote(null);
         invoice.setIsPaid(false);
         invoice.setPaymentDate(null);
-        return toResponse(invoiceRepository.save(invoice));
+        Invoice savedInvoice = invoiceRepository.save(invoice);
+        notifyLandlordOnProofSubmitted(savedInvoice);
+        return toResponse(savedInvoice);
     }
 
     public InvoiceResponse approvePaymentProof(Integer invoiceId, String reviewNote) {
@@ -169,7 +179,9 @@ public class InvoiceService {
         invoice.setProofReviewedAt(LocalDateTime.now());
         invoice.setIsPaid(true);
         invoice.setPaymentDate(LocalDateTime.now());
-        return toResponse(invoiceRepository.save(invoice));
+        Invoice savedInvoice = invoiceRepository.save(invoice);
+        notifyTenantOnProofApproved(savedInvoice);
+        return toResponse(savedInvoice);
     }
 
     public InvoiceResponse rejectPaymentProof(Integer invoiceId, String reviewNote) {
@@ -182,7 +194,9 @@ public class InvoiceService {
         invoice.setProofReviewedAt(LocalDateTime.now());
         invoice.setIsPaid(false);
         invoice.setPaymentDate(null);
-        return toResponse(invoiceRepository.save(invoice));
+        Invoice savedInvoice = invoiceRepository.save(invoice);
+        notifyTenantOnProofRejected(savedInvoice);
+        return toResponse(savedInvoice);
     }
 
     public void deleteInvoice(Integer invoiceId) {
@@ -378,6 +392,102 @@ public class InvoiceService {
                 .createdAt(invoice.getCreatedAt())
                 .updatedAt(invoice.getUpdatedAt())
                 .build();
+    }
+
+    private void notifyTenantOnInvoiceCreated(Invoice invoice) {
+        User tenantUser = Optional.ofNullable(invoice)
+                .map(Invoice::getRentedRoom)
+                .map(RentedRoom::getTenant)
+                .map(Tenant::getUser)
+                .orElse(null);
+        User landlordUser = Optional.ofNullable(invoice)
+                .map(Invoice::getRentedRoom)
+                .map(RentedRoom::getRoom)
+                .map(Room::getHouse)
+                .map(com.example.demo.model.House::getLandlord)
+                .map(com.example.demo.model.Landlord::getUser)
+                .orElse(null);
+
+        notificationService.notifyUser(
+                tenantUser,
+                landlordUser,
+                "Hóa đơn mới",
+                "Chủ trọ đã tạo hóa đơn mới. Vui lòng thanh toán trước hạn.",
+                "INVOICE_CREATED",
+                invoice != null ? invoice.getInvoiceId() : null
+        );
+    }
+
+    private void notifyLandlordOnProofSubmitted(Invoice invoice) {
+        User tenantUser = Optional.ofNullable(invoice)
+                .map(Invoice::getRentedRoom)
+                .map(RentedRoom::getTenant)
+                .map(Tenant::getUser)
+                .orElse(null);
+        User landlordUser = Optional.ofNullable(invoice)
+                .map(Invoice::getRentedRoom)
+                .map(RentedRoom::getRoom)
+                .map(Room::getHouse)
+                .map(com.example.demo.model.House::getLandlord)
+                .map(com.example.demo.model.Landlord::getUser)
+                .orElse(null);
+
+        notificationService.notifyUser(
+                landlordUser,
+                tenantUser,
+                "Minh chứng thanh toán",
+                "Người thuê đã gửi minh chứng thanh toán. Vui lòng duyệt.",
+                "INVOICE_PROOF_SUBMITTED",
+                invoice != null ? invoice.getInvoiceId() : null
+        );
+    }
+
+    private void notifyTenantOnProofApproved(Invoice invoice) {
+        User tenantUser = Optional.ofNullable(invoice)
+                .map(Invoice::getRentedRoom)
+                .map(RentedRoom::getTenant)
+                .map(Tenant::getUser)
+                .orElse(null);
+        User landlordUser = Optional.ofNullable(invoice)
+                .map(Invoice::getRentedRoom)
+                .map(RentedRoom::getRoom)
+                .map(Room::getHouse)
+                .map(com.example.demo.model.House::getLandlord)
+                .map(com.example.demo.model.Landlord::getUser)
+                .orElse(null);
+
+        notificationService.notifyUser(
+                tenantUser,
+                landlordUser,
+                "Thanh toán được duyệt",
+                "Chủ trọ đã duyệt thanh toán hóa đơn của bạn.",
+                "INVOICE_PROOF_APPROVED",
+                invoice != null ? invoice.getInvoiceId() : null
+        );
+    }
+
+    private void notifyTenantOnProofRejected(Invoice invoice) {
+        User tenantUser = Optional.ofNullable(invoice)
+                .map(Invoice::getRentedRoom)
+                .map(RentedRoom::getTenant)
+                .map(Tenant::getUser)
+                .orElse(null);
+        User landlordUser = Optional.ofNullable(invoice)
+                .map(Invoice::getRentedRoom)
+                .map(RentedRoom::getRoom)
+                .map(Room::getHouse)
+                .map(com.example.demo.model.House::getLandlord)
+                .map(com.example.demo.model.Landlord::getUser)
+                .orElse(null);
+
+        notificationService.notifyUser(
+                tenantUser,
+                landlordUser,
+                "Thanh toán bị từ chối",
+                "Chủ trọ đã từ chối minh chứng thanh toán. Vui lòng gửi lại.",
+                "INVOICE_PROOF_REJECTED",
+                invoice != null ? invoice.getInvoiceId() : null
+        );
     }
 
     private Invoice getInvoiceAndCheckTenantOwnership(Integer invoiceId) {

@@ -1,21 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import {
   Card, Table, Button, Modal, Form, Input, Select, Space,
-  Tag, App, Badge, Row, Col, Statistic, Typography, Empty, Popconfirm
+  Tag, App, Typography, Empty, Popconfirm, Row, Col
 } from 'antd';
 import {
   PlusOutlined,
   EyeOutlined,
   DeleteOutlined,
-  ClockCircleOutlined,
-  CheckCircleOutlined,
   FileTextOutlined,
   SearchOutlined
 } from '@ant-design/icons';
 import { listingService } from '../../services/listingService';
 import { roomService } from '../../services/roomService';
+import { houseService } from '../../services/houseService';
 
-const { TextArea } = Input;
 const { Option } = Select;
 const { Search } = Input;
 const { Text } = Typography;
@@ -24,16 +22,17 @@ const Listings = () => {
   const { message } = App.useApp();
   const [listings, setListings] = useState([]);
   const [rooms, setRooms] = useState([]);
+  const [housesById, setHousesById] = useState({});
   const [loading, setLoading] = useState(false);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [detailModal, setDetailModal] = useState({ open: false, record: null });
-  const [statusFilter, setStatusFilter] = useState('all');
   const [searchText, setSearchText] = useState('');
   const [form] = Form.useForm();
 
   useEffect(() => {
     fetchListings();
     fetchRooms();
+    fetchHouses();
   }, []);
 
   const fetchListings = async () => {
@@ -58,14 +57,41 @@ const Listings = () => {
     }
   };
 
+  const fetchHouses = async () => {
+    try {
+      const data = await houseService.getAll();
+      const mapped = Array.isArray(data)
+        ? data.reduce((acc, house) => {
+          acc[house.house_id] = house;
+          return acc;
+        }, {})
+        : {};
+      setHousesById(mapped);
+    } catch (error) {
+      console.error('Fetch houses error:', error);
+    }
+  };
+
   const handleCreateListing = async (values) => {
     try {
+      const selectedRoom = rooms.find(room => room.room_id === values.roomId);
+      const house = selectedRoom ? housesById[selectedRoom.house_id] : null;
+      const roomName = selectedRoom?.name || '';
+      const houseName = house?.name || '';
+      const title = roomName && houseName ? `${roomName} - ${houseName}` : roomName;
+      const addressLine = [house?.address_line || house?.addressLine, house?.ward, house?.district].filter(Boolean).join(', ');
+      const descriptionLines = [
+        addressLine ? `Dia chi: ${addressLine}` : null,
+        selectedRoom?.area ? `Dien tich: ${selectedRoom.area} m2` : null,
+        selectedRoom?.description ? `Mo ta: ${selectedRoom.description}` : null
+      ].filter(Boolean);
+
       await listingService.createListing({
         room_id: values.roomId,
-        title: values.title,
-        description: values.description
+        title,
+        description: descriptionLines.join('\n')
       });
-      message.success('Đăng bài thành công! Bài đăng đang chờ admin duyệt.');
+      message.success('Đăng bài thành công!');
       setCreateModalVisible(false);
       form.resetFields();
       fetchListings();
@@ -91,13 +117,9 @@ const Listings = () => {
     const mapped = {
       ...l,
       listingId: l.listing_id || l.listingId,
-      isPublished: l.is_published ?? l.isPublished,
       viewsCount: l.views_count || l.viewsCount || 0,
       createdAt: l.created_at || l.createdAt
     };
-
-    if (statusFilter === 'pending' && mapped.isPublished) return false;
-    if (statusFilter === 'approved' && !mapped.isPublished) return false;
 
     if (searchText.trim()) {
       const lower = searchText.toLowerCase();
@@ -107,13 +129,9 @@ const Listings = () => {
   }).map(l => ({
     ...l,
     listingId: l.listing_id || l.listingId,
-    isPublished: l.is_published ?? l.isPublished,
     viewsCount: l.views_count || l.viewsCount || 0,
     createdAt: l.created_at || l.createdAt
   }));
-
-  const pendingCount = filteredListings.filter(l => !l.isPublished).length;
-  const approvedCount = filteredListings.filter(l => l.isPublished).length;
 
   const columns = [
     {
@@ -155,15 +173,6 @@ const Listings = () => {
         record.createdAt ? new Date(record.createdAt).toLocaleDateString('vi-VN') : '—',
     },
     {
-      title: 'Trạng thái',
-      key: 'status',
-      width: 140,
-      render: (_, record) =>
-        record.isPublished
-          ? <Badge status="success" text={<Tag color="success">Đã duyệt</Tag>} />
-          : <Badge status="warning" text={<Tag color="warning">Chờ duyệt</Tag>} />,
-    },
-    {
       title: 'Hành động',
       key: 'action',
       width: 200,
@@ -195,48 +204,6 @@ const Listings = () => {
 
   return (
     <div>
-      <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
-        <Col span={8}>
-          <Card
-            style={{ borderRadius: 12, background: '#fffbe6', border: '1px solid #ffe58f' }}
-            styles={{ body: { padding: '16px 20px' } }}
-          >
-            <Statistic
-              title="Chờ duyệt"
-              value={pendingCount}
-              prefix={<ClockCircleOutlined style={{ color: '#f5a623' }} />}
-              valueStyle={{ color: '#f5a623', fontWeight: 700 }}
-            />
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card
-            style={{ borderRadius: 12, background: '#f6ffed', border: '1px solid #b7eb8f' }}
-            styles={{ body: { padding: '16px 20px' } }}
-          >
-            <Statistic
-              title="Đã duyệt"
-              value={approvedCount}
-              prefix={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
-              valueStyle={{ color: '#52c41a', fontWeight: 700 }}
-            />
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card
-            style={{ borderRadius: 12, background: '#e6f4ff', border: '1px solid #91caff' }}
-            styles={{ body: { padding: '16px 20px' } }}
-          >
-            <Statistic
-              title="Tổng bài đăng"
-              value={listings.length}
-              prefix={<FileTextOutlined style={{ color: '#1677ff' }} />}
-              valueStyle={{ color: '#1677ff', fontWeight: 700 }}
-            />
-          </Card>
-        </Col>
-      </Row>
-
       <Card
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -253,16 +220,6 @@ const Listings = () => {
               allowClear
               style={{ width: 200 }}
               onChange={e => setSearchText(e.target.value)}
-            />
-            <Select
-              defaultValue="all"
-              style={{ width: 140 }}
-              onChange={setStatusFilter}
-              options={[
-                { label: 'Tất cả', value: 'all' },
-                { label: 'Chờ duyệt', value: 'pending' },
-                { label: 'Đã duyệt', value: 'approved' },
-              ]}
             />
             <Button type="primary" icon={<PlusOutlined />} onClick={() => {
               form.resetFields();
@@ -318,25 +275,6 @@ const Listings = () => {
             </Select>
           </Form.Item>
 
-          <Form.Item
-            name="title"
-            label="Tiêu đề bài đăng"
-            rules={[{ required: true, message: 'Vui lòng nhập tiêu đề!' }]}
-          >
-            <Input placeholder="Nhập tiêu đề (VD: Cho thuê phòng trọ giá rẻ)" />
-          </Form.Item>
-
-          <Form.Item
-            name="description"
-            label="Mô tả chi tiết"
-            rules={[{ required: true, message: 'Vui lòng nhập mô tả chi tiết!' }]}
-          >
-            <TextArea
-              rows={5}
-              placeholder="Mô tả chi tiết phòng trọ, tiện ích, nội quy..."
-            />
-          </Form.Item>
-
           <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
             <Space>
               <Button onClick={() => setCreateModalVisible(false)}>
@@ -371,11 +309,6 @@ const Listings = () => {
           <>
             <div style={{ marginBottom: 16 }}>
               <Text strong style={{ fontSize: 18 }}>{detailModal.record.title}</Text>
-              <div style={{ marginTop: 8 }}>
-                <Tag color={detailModal.record.isPublished ? 'success' : 'warning'}>
-                  {detailModal.record.isPublished ? '✅ Đã duyệt' : '⏳ Chờ duyệt'}
-                </Tag>
-              </div>
             </div>
             <div style={{ background: '#fafafa', padding: 16, borderRadius: 8, marginBottom: 12 }}>
               <Row gutter={16}>

@@ -10,7 +10,9 @@ import {
   ShopOutlined,
   FileTextOutlined,
   DollarOutlined,
-  NotificationOutlined
+  NotificationOutlined,
+  CalendarOutlined,
+  BellOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { authService } from '../services/authService';
@@ -65,6 +67,11 @@ const Layout = ({ children }) => {
       label: 'Quản lý bài đăng',
     },
     {
+      key: '/app/viewings',
+      icon: <CalendarOutlined />,
+      label: 'Lịch xem phòng',
+    },
+    {
       key: '/app/contracts',
       icon: <FileTextOutlined />,
       label: 'Hợp đồng thuê',
@@ -78,6 +85,11 @@ const Layout = ({ children }) => {
       key: '/app/reports',
       icon: <FileTextOutlined />,
       label: 'Báo cáo & AI',
+    },
+    {
+      key: '/app/notifications',
+      icon: <BellOutlined />,
+      label: 'Thông báo',
     },
   ];
 

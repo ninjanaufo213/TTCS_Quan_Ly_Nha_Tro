@@ -15,10 +15,14 @@ public class ListingService {
 
     private final ListingRepository listingRepository;
     private final com.example.demo.repository.RoomRepository roomRepository;
+    private final AuthService authService;
 
-    public ListingService(ListingRepository listingRepository, com.example.demo.repository.RoomRepository roomRepository) {
+    public ListingService(ListingRepository listingRepository,
+                          com.example.demo.repository.RoomRepository roomRepository,
+                          AuthService authService) {
         this.listingRepository = listingRepository;
         this.roomRepository = roomRepository;
+        this.authService = authService;
     }
 
     public List<ListingResponse> getAllListings() {
@@ -27,36 +31,58 @@ public class ListingService {
                 .collect(Collectors.toList());
     }
 
-    public List<ListingResponse> getPublishedListings() {
-        return listingRepository.findByIsPublished(true).stream()
+    public List<ListingResponse> getListingsForCurrentLandlord() {
+        Integer landlordId = authService.getCurrentLandlordId();
+        return listingRepository.findByRoom_House_Landlord_LandlordId(landlordId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
-    public List<ListingResponse> searchPublishedListings(
-            String keyword,
-            String district,
-            String ward,
-            BigDecimal minPrice,
-            BigDecimal maxPrice,
-            Double minArea,
-            Double maxArea
-    ) {
+    public List<ListingResponse> getPublishedListings() {
+        return listingRepository.findByIsPublished(true).stream()
+                .filter(listing -> listing.getRoom() != null && Boolean.TRUE.equals(listing.getRoom().getIsAvailable()))
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<ListingResponse> searchPublishedListings(String keyword,
+                                                         String district,
+                                                         String ward,
+                                                         BigDecimal minPrice,
+                                                         BigDecimal maxPrice,
+                                                         Double minArea,
+                                                         Double maxArea) {
         return listingRepository.searchPublishedListings(keyword, district, ward, minPrice, maxPrice, minArea, maxArea)
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
+    public ListingResponse getPublicListingById(Integer id) {
+        Listing listing = listingRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tin đăng"));
+        if (!Boolean.TRUE.equals(listing.getIsPublished())) {
+            throw new IllegalArgumentException("Tin đăng chưa được hiển thị");
+        }
+        if (listing.getRoom() == null || !Boolean.TRUE.equals(listing.getRoom().getIsAvailable())) {
+            throw new IllegalArgumentException("Phòng đã được thuê hoặc không khả dụng");
+        }
+        return mapToResponse(listing);
+    }
+
     public ListingResponse createListing(com.example.demo.dto.ListingRequest request) {
         com.example.demo.model.Room room = roomRepository.findById(request.getRoomId())
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phòng"));
+
+        if (!Boolean.TRUE.equals(room.getIsAvailable())) {
+            throw new IllegalArgumentException("Phòng này đã được thuê, không thể đăng tin");
+        }
 
         Listing listing = Listing.builder()
                 .room(room)
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .isPublished(false) // Wait for admin approval
+                .isPublished(true)
                 .viewsCount(0)
                 .build();
 
@@ -105,10 +131,22 @@ public class ListingService {
             String district = "";
             String ward = "";
             String address = "";
+            String houseName = "";
+            Integer houseId = null;
+            String landlordName = "";
+            String landlordPhone = "";
             if (listing.getRoom().getHouse() != null) {
                 district = listing.getRoom().getHouse().getDistrict();
                 ward = listing.getRoom().getHouse().getWard();
                 address = listing.getRoom().getHouse().getAddressLine();
+                houseName = listing.getRoom().getHouse().getName();
+                houseId = listing.getRoom().getHouse().getHouseId();
+                if (listing.getRoom().getHouse().getLandlord() != null) {
+                    landlordName = listing.getRoom().getHouse().getLandlord().getBrandName();
+                    if (listing.getRoom().getHouse().getLandlord().getUser() != null) {
+                        landlordPhone = listing.getRoom().getHouse().getLandlord().getUser().getPhone();
+                    }
+                }
             }
             java.util.List<String> imageUrls = new java.util.ArrayList<>();
             if (listing.getRoom().getImages() != null) {
@@ -118,12 +156,20 @@ public class ListingService {
             }
 
             roomInfo = ListingResponse.RoomInfo.builder()
+                    .roomId(listing.getRoom().getRoomId())
+                    .houseId(houseId)
+                    .houseName(houseName)
                     .name(listing.getRoom().getName())
                     .price(listing.getRoom().getPrice())
                     .area(listing.getRoom().getArea())
+                    .capacity(listing.getRoom().getCapacity())
+                    .isAvailable(listing.getRoom().getIsAvailable())
+                    .description(listing.getRoom().getDescription())
                     .district(district)
                     .ward(ward)
                     .address(address)
+                    .landlordName(landlordName)
+                    .landlordPhone(landlordPhone)
                     .imageUrls(imageUrls)
                     .build();
         }

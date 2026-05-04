@@ -4,9 +4,10 @@ import {
   HomeOutlined,
   FileTextOutlined,
   ThunderboltOutlined,
-  AppstoreOutlined,
   LogoutOutlined,
   UserOutlined,
+  BellOutlined,
+  CalendarOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from '@ant-design/icons';
@@ -60,9 +61,19 @@ export default function TenantLayout() {
       label: 'Hóa đơn & thanh toán',
     },
     {
-      key: '/tenant/assets',
-      icon: <AppstoreOutlined />,
-      label: 'Tài sản trong phòng',
+      key: '/tenant/viewings',
+      icon: <CalendarOutlined />,
+      label: 'Lịch xem phòng',
+    },
+    {
+      key: '/tenant/contract-requests',
+      icon: <FileTextOutlined />,
+      label: 'Xác nhận hợp đồng',
+    },
+    {
+      key: '/tenant/notifications',
+      icon: <BellOutlined />,
+      label: 'Thông báo',
     },
   ];
 

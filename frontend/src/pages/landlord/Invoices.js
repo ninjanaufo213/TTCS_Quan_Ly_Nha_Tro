@@ -20,7 +20,6 @@ import {
 import { 
   PlusOutlined, 
   EditOutlined, 
-  CheckOutlined,
   FilePdfOutlined,
   EyeOutlined,
   DeleteOutlined,
@@ -354,16 +353,6 @@ const Invoices = () => {
     setModalVisible(true);
   };
 
-  const handlePay = async (id) => {
-    try {
-      await invoiceService.pay(id);
-      message.success('Thanh toán thành công!');
-      if (contractId) fetchInvoicesByContract(contractId); else fetchAllInvoices();
-    } catch (error) {
-      message.error('Lỗi khi thanh toán!');
-    }
-  };
-
   const openProofReview = (record, action) => {
     setProofInvoice(record);
     setProofAction(action);
@@ -622,7 +611,12 @@ const Invoices = () => {
     { title: 'Ngày đến hạn', dataIndex: 'due_date', key: 'due_date', render: (date) => new Date(date).toLocaleDateString('vi-VN') },
     {
       title: 'Trạng thái', dataIndex: 'is_paid', key: 'is_paid',
-      render: (isPaid) => (<Tag color={isPaid ? 'green' : 'red'}>{isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'}</Tag>),
+      render: (isPaid, record) => {
+        const proofStatus = (record?.proof_status || 'NONE').toUpperCase();
+        if (proofStatus === 'PENDING') return <Tag color="orange">Chờ duyệt</Tag>;
+        if (proofStatus === 'REJECTED') return <Tag color="red">Bị từ chối</Tag>;
+        return <Tag color={isPaid ? 'green' : 'red'}>{isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'}</Tag>;
+      },
     },
     {
       title: 'Minh chứng', dataIndex: 'proof_status', key: 'proof_status',
@@ -649,11 +643,6 @@ const Invoices = () => {
               <Button type="link" onClick={() => openProofReview(record, 'approve')}>Duyệt</Button>
               <Button type="link" danger onClick={() => openProofReview(record, 'decline')}>Từ chối</Button>
             </>
-          )}
-          {!record.is_paid && (
-            <Popconfirm title="Xác nhận thanh toán hóa đơn này?" onConfirm={() => handlePay(record.invoice_id)} okText="Có" cancelText="Không">
-              <Button type="link" icon={<CheckOutlined />}>Thanh toán</Button>
-            </Popconfirm>
           )}
           <Popconfirm title="Bạn có chắc muốn xóa hóa đơn này?" onConfirm={() => handleDelete(record.invoice_id)} okText="Xóa" okButtonProps={{ danger: true }} cancelText="Hủy">
             <Button type="link" danger icon={<DeleteOutlined />}>Xóa</Button>

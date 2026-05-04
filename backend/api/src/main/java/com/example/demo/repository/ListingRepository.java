@@ -13,11 +13,14 @@ import java.util.List;
 public interface ListingRepository extends JpaRepository<Listing, Integer> {
     List<Listing> findByIsPublished(Boolean isPublished);
 
+    List<Listing> findByRoom_House_Landlord_LandlordId(Integer landlordId);
+
     @Query("""
             select l from Listing l
             join l.room r
             join r.house h
             where l.isPublished = true
+              and r.isAvailable = true
               and (:keyword is null or :keyword = '' or
                    lower(l.title) like lower(concat('%', :keyword, '%')) or
                    lower(l.description) like lower(concat('%', :keyword, '%')) or

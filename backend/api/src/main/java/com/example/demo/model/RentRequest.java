@@ -5,9 +5,9 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "rent_requests")
@@ -30,11 +30,11 @@ public class RentRequest {
     @JoinColumn(name = "room_id", nullable = false)
     private Room room;
 
-    @Column(name = "expected_start_date")
-    private LocalDate expectedStartDate;
+    @Column(name = "visit_date")
+    private LocalDate visitDate;
 
-    @Column(name = "deposit_amount", precision = 18, scale = 0)
-    private BigDecimal depositAmount;
+    @Column(name = "visit_time")
+    private LocalTime visitTime;
 
     @Column(length = 50)
     private String status;

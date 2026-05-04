@@ -324,6 +324,7 @@
   padding: 16px;
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
+  cursor: pointer;
 }
 
 .listing-card:hover {
@@ -475,6 +476,14 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   flex: 1;
+}
+
+.listing-address {
+  font-size: 14px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* LISTING FOOTER */
@@ -754,12 +763,5 @@
   }
   .images-container {
     flex-direction: column;
-  }
-  .small-images-grid {
-    flex-direction: row;
-    width: 100%;
-  }
-  .small-image {
-    height: 90px;
   }
 }

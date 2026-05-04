@@ -41,10 +41,19 @@ public class ListingController {
         );
     }
 
+    @GetMapping("/api/listings/{id}")
+    public ResponseEntity<?> getListingDetail(@PathVariable Integer id) {
+        try {
+            return ResponseEntity.ok(listingService.getPublicListingById(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("detail", e.getMessage()));
+        }
+    }
+
     // --- LANDLORD ENDPOINTS ---
     @GetMapping("/api/landlord/listings")
     public ResponseEntity<List<ListingResponse>> getMyListings() {
-        return ResponseEntity.ok(listingService.getAllListings());
+        return ResponseEntity.ok(listingService.getListingsForCurrentLandlord());
     }
 
     @PostMapping("/api/landlord/listings")
