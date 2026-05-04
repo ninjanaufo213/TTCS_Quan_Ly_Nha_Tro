@@ -26,6 +26,21 @@ public class ListingController {
         return ResponseEntity.ok(listingService.getPublishedListings());
     }
 
+    @GetMapping("/api/listings/search")
+    public ResponseEntity<List<ListingResponse>> searchPublishedListings(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String district,
+            @RequestParam(required = false) String ward,
+            @RequestParam(required = false) java.math.BigDecimal minPrice,
+            @RequestParam(required = false) java.math.BigDecimal maxPrice,
+            @RequestParam(required = false) Double minArea,
+            @RequestParam(required = false) Double maxArea
+    ) {
+        return ResponseEntity.ok(
+                listingService.searchPublishedListings(keyword, district, ward, minPrice, maxPrice, minArea, maxArea)
+        );
+    }
+
     // --- LANDLORD ENDPOINTS ---
     @GetMapping("/api/landlord/listings")
     public ResponseEntity<List<ListingResponse>> getMyListings() {

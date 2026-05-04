@@ -5,9 +5,10 @@ import com.example.demo.model.Listing;
 import com.example.demo.repository.ListingRepository;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ListingService {
@@ -28,6 +29,21 @@ public class ListingService {
 
     public List<ListingResponse> getPublishedListings() {
         return listingRepository.findByIsPublished(true).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<ListingResponse> searchPublishedListings(
+            String keyword,
+            String district,
+            String ward,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            Double minArea,
+            Double maxArea
+    ) {
+        return listingRepository.searchPublishedListings(keyword, district, ward, minPrice, maxPrice, minArea, maxArea)
+                .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
