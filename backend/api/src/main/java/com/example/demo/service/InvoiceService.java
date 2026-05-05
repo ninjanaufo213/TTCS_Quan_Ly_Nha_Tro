@@ -7,6 +7,7 @@ import com.example.demo.model.InvoiceItem;
 import com.example.demo.model.RentedRoom;
 import com.example.demo.model.Room;
 import com.example.demo.model.Tenant;
+import com.example.demo.model.User;
 import com.example.demo.repository.InvoiceItemRepository;
 import com.example.demo.repository.InvoiceRepository;
 import com.example.demo.repository.RentedRoomRepository;
@@ -32,11 +33,16 @@ public class InvoiceService {
     private static final String ITEM_INTERNET = "INTERNET";
     private static final String ITEM_GENERAL = "GENERAL";
     private static final String ITEM_ELECTRICITY = "ELECTRICITY";
+    private static final String PROOF_NONE = "NONE";
+    private static final String PROOF_PENDING = "PENDING";
+    private static final String PROOF_APPROVED = "APPROVED";
+    private static final String PROOF_REJECTED = "REJECTED";
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceItemRepository invoiceItemRepository;
     private final RentedRoomRepository rentedRoomRepository;
     private final AuthService authService;
+    private final NotificationService notificationService;
 
     public List<InvoiceResponse> getAllInvoices(String month, Integer houseId, Integer roomId, Boolean isPaid) {
         Integer landlordId = authService.getCurrentLandlordId();
@@ -61,7 +67,7 @@ public class InvoiceService {
     public List<InvoiceResponse> getPendingInvoices() {
         Integer landlordId = authService.getCurrentLandlordId();
         return invoiceRepository
-                .findByRentedRoom_Room_House_Landlord_LandlordIdAndIsPaidFalseOrderByDueDateAsc(landlordId)
+                .findByRentedRoom_Room_House_Landlord_LandlordIdAndProofStatusOrderByDueDateAsc(landlordId, PROOF_PENDING)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -70,6 +76,14 @@ public class InvoiceService {
     public InvoiceResponse getInvoiceById(Integer invoiceId) {
         Invoice invoice = getInvoiceAndCheckOwnership(invoiceId);
         return toResponse(invoice);
+    }
+
+    public List<InvoiceResponse> getMyInvoices() {
+        Integer tenantId = authService.getCurrentTenantId();
+        return invoiceRepository.findByRentedRoom_Tenant_TenantIdOrderByDueDateDescCreatedAtDesc(tenantId)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
     public InvoiceResponse createInvoice(InvoiceRequest request) {
@@ -86,13 +100,16 @@ public class InvoiceService {
         Invoice invoice = Invoice.builder()
                 .rentedRoom(rentedRoom)
                 .dueDate(request.getDueDate().toLocalDate())
-                .isPaid(request.getPaymentDate() != null || Boolean.TRUE.equals(request.getIsPaid()))
-                .paymentDate(request.getPaymentDate())
+                .isPaid(false)
+                .paymentDate(null)
                 .totalAmount(amounts.totalAmount())
+                .proofStatus(PROOF_NONE)
                 .build();
 
         Invoice savedInvoice = invoiceRepository.save(invoice);
         recreateItems(savedInvoice, amounts);
+
+        notifyTenantOnInvoiceCreated(savedInvoice);
 
         return toResponse(savedInvoice);
     }
@@ -127,7 +144,58 @@ public class InvoiceService {
         Invoice invoice = getInvoiceAndCheckOwnership(invoiceId);
         invoice.setIsPaid(true);
         invoice.setPaymentDate(LocalDateTime.now());
+        invoice.setProofStatus(PROOF_APPROVED);
+        invoice.setProofReviewedAt(LocalDateTime.now());
         Invoice savedInvoice = invoiceRepository.save(invoice);
+        notifyTenantOnProofApproved(savedInvoice);
+        return toResponse(savedInvoice);
+    }
+
+    public InvoiceResponse submitPaymentProof(Integer invoiceId, String proofUrl, String note) {
+        Invoice invoice = getInvoiceAndCheckTenantOwnership(invoiceId);
+        if (PROOF_APPROVED.equalsIgnoreCase(invoice.getProofStatus())) {
+            throw new IllegalArgumentException("Hóa đơn đã được duyệt thanh toán.");
+        }
+        invoice.setProofUrl(proofUrl);
+        invoice.setProofNote(note);
+        invoice.setProofStatus(PROOF_PENDING);
+        invoice.setProofSubmittedAt(LocalDateTime.now());
+        invoice.setProofReviewedAt(null);
+        invoice.setProofReviewNote(null);
+        invoice.setIsPaid(false);
+        invoice.setPaymentDate(null);
+        Invoice savedInvoice = invoiceRepository.save(invoice);
+        notifyLandlordOnProofSubmitted(savedInvoice);
+        return toResponse(savedInvoice);
+    }
+
+    public InvoiceResponse approvePaymentProof(Integer invoiceId, String reviewNote) {
+        Invoice invoice = getInvoiceAndCheckOwnership(invoiceId);
+        if (invoice.getProofUrl() == null || invoice.getProofUrl().isBlank()) {
+            throw new IllegalArgumentException("Hóa đơn chưa có minh chứng thanh toán.");
+        }
+        invoice.setProofStatus(PROOF_APPROVED);
+        invoice.setProofReviewNote(reviewNote);
+        invoice.setProofReviewedAt(LocalDateTime.now());
+        invoice.setIsPaid(true);
+        invoice.setPaymentDate(LocalDateTime.now());
+        Invoice savedInvoice = invoiceRepository.save(invoice);
+        notifyTenantOnProofApproved(savedInvoice);
+        return toResponse(savedInvoice);
+    }
+
+    public InvoiceResponse rejectPaymentProof(Integer invoiceId, String reviewNote) {
+        Invoice invoice = getInvoiceAndCheckOwnership(invoiceId);
+        if (invoice.getProofUrl() == null || invoice.getProofUrl().isBlank()) {
+            throw new IllegalArgumentException("Hóa đơn chưa có minh chứng thanh toán.");
+        }
+        invoice.setProofStatus(PROOF_REJECTED);
+        invoice.setProofReviewNote(reviewNote);
+        invoice.setProofReviewedAt(LocalDateTime.now());
+        invoice.setIsPaid(false);
+        invoice.setPaymentDate(null);
+        Invoice savedInvoice = invoiceRepository.save(invoice);
+        notifyTenantOnProofRejected(savedInvoice);
         return toResponse(savedInvoice);
     }
 
@@ -275,6 +343,8 @@ public class InvoiceService {
         RentedRoom rentedRoom = invoice.getRentedRoom();
         Tenant tenant = rentedRoom != null ? rentedRoom.getTenant() : null;
         Room room = rentedRoom != null ? rentedRoom.getRoom() : null;
+        com.example.demo.model.House house = room != null ? room.getHouse() : null;
+        com.example.demo.model.Landlord landlord = house != null ? house.getLandlord() : null;
 
         InvoiceResponse.InvoiceRoom invoiceRoom = room == null
                 ? null
@@ -308,10 +378,134 @@ public class InvoiceService {
                 .totalAmount(invoice.getTotalAmount())
                 .isPaid(Boolean.TRUE.equals(invoice.getIsPaid()))
                 .paymentDate(invoice.getPaymentDate())
+                .proofStatus(Optional.ofNullable(invoice.getProofStatus()).orElse(PROOF_NONE))
+                .proofUrl(invoice.getProofUrl())
+                .proofNote(invoice.getProofNote())
+                .proofSubmittedAt(invoice.getProofSubmittedAt())
+                .proofReviewedAt(invoice.getProofReviewedAt())
+                .proofReviewNote(invoice.getProofReviewNote())
+                .bankAccountNumber(landlord != null ? landlord.getBankAccountNumber() : null)
+                .bankName(landlord != null ? landlord.getBankName() : null)
+                .bankAccountName(landlord != null ? landlord.getBankAccountName() : null)
+                .bankCode(landlord != null ? landlord.getBankCode() : null)
                 .dueDate(invoice.getDueDate())
                 .createdAt(invoice.getCreatedAt())
                 .updatedAt(invoice.getUpdatedAt())
                 .build();
+    }
+
+    private void notifyTenantOnInvoiceCreated(Invoice invoice) {
+        User tenantUser = Optional.ofNullable(invoice)
+                .map(Invoice::getRentedRoom)
+                .map(RentedRoom::getTenant)
+                .map(Tenant::getUser)
+                .orElse(null);
+        User landlordUser = Optional.ofNullable(invoice)
+                .map(Invoice::getRentedRoom)
+                .map(RentedRoom::getRoom)
+                .map(Room::getHouse)
+                .map(com.example.demo.model.House::getLandlord)
+                .map(com.example.demo.model.Landlord::getUser)
+                .orElse(null);
+
+        notificationService.notifyUser(
+                tenantUser,
+                landlordUser,
+                "Hóa đơn mới",
+                "Chủ trọ đã tạo hóa đơn mới. Vui lòng thanh toán trước hạn.",
+                "INVOICE_CREATED",
+                invoice != null ? invoice.getInvoiceId() : null
+        );
+    }
+
+    private void notifyLandlordOnProofSubmitted(Invoice invoice) {
+        User tenantUser = Optional.ofNullable(invoice)
+                .map(Invoice::getRentedRoom)
+                .map(RentedRoom::getTenant)
+                .map(Tenant::getUser)
+                .orElse(null);
+        User landlordUser = Optional.ofNullable(invoice)
+                .map(Invoice::getRentedRoom)
+                .map(RentedRoom::getRoom)
+                .map(Room::getHouse)
+                .map(com.example.demo.model.House::getLandlord)
+                .map(com.example.demo.model.Landlord::getUser)
+                .orElse(null);
+
+        notificationService.notifyUser(
+                landlordUser,
+                tenantUser,
+                "Minh chứng thanh toán",
+                "Người thuê đã gửi minh chứng thanh toán. Vui lòng duyệt.",
+                "INVOICE_PROOF_SUBMITTED",
+                invoice != null ? invoice.getInvoiceId() : null
+        );
+    }
+
+    private void notifyTenantOnProofApproved(Invoice invoice) {
+        User tenantUser = Optional.ofNullable(invoice)
+                .map(Invoice::getRentedRoom)
+                .map(RentedRoom::getTenant)
+                .map(Tenant::getUser)
+                .orElse(null);
+        User landlordUser = Optional.ofNullable(invoice)
+                .map(Invoice::getRentedRoom)
+                .map(RentedRoom::getRoom)
+                .map(Room::getHouse)
+                .map(com.example.demo.model.House::getLandlord)
+                .map(com.example.demo.model.Landlord::getUser)
+                .orElse(null);
+
+        notificationService.notifyUser(
+                tenantUser,
+                landlordUser,
+                "Thanh toán được duyệt",
+                "Chủ trọ đã duyệt thanh toán hóa đơn của bạn.",
+                "INVOICE_PROOF_APPROVED",
+                invoice != null ? invoice.getInvoiceId() : null
+        );
+    }
+
+    private void notifyTenantOnProofRejected(Invoice invoice) {
+        User tenantUser = Optional.ofNullable(invoice)
+                .map(Invoice::getRentedRoom)
+                .map(RentedRoom::getTenant)
+                .map(Tenant::getUser)
+                .orElse(null);
+        User landlordUser = Optional.ofNullable(invoice)
+                .map(Invoice::getRentedRoom)
+                .map(RentedRoom::getRoom)
+                .map(Room::getHouse)
+                .map(com.example.demo.model.House::getLandlord)
+                .map(com.example.demo.model.Landlord::getUser)
+                .orElse(null);
+
+        notificationService.notifyUser(
+                tenantUser,
+                landlordUser,
+                "Thanh toán bị từ chối",
+                "Chủ trọ đã từ chối minh chứng thanh toán. Vui lòng gửi lại.",
+                "INVOICE_PROOF_REJECTED",
+                invoice != null ? invoice.getInvoiceId() : null
+        );
+    }
+
+    private Invoice getInvoiceAndCheckTenantOwnership(Integer invoiceId) {
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new IllegalArgumentException("Hóa đơn không tồn tại!"));
+
+        Integer tenantId = authService.getCurrentTenantId();
+        Integer ownerId = Optional.of(invoice)
+                .map(Invoice::getRentedRoom)
+                .map(RentedRoom::getTenant)
+                .map(Tenant::getTenantId)
+                .orElse(null);
+
+        if (!Objects.equals(tenantId, ownerId)) {
+            throw new IllegalArgumentException("Bạn không có quyền thao tác hóa đơn này!");
+        }
+
+        return invoice;
     }
 
     private Invoice getInvoiceAndCheckOwnership(Integer invoiceId) {

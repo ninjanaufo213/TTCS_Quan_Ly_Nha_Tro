@@ -27,12 +27,19 @@ public class ListingResponse {
     @Builder
     public static class RoomInfo {
         private Integer roomId;
+        private Integer houseId;
+        private String houseName;
         private String name;
         private BigDecimal price;
         private Double area;
+        private Integer capacity;
+        private Boolean isAvailable;
+        private String description;
         private String district;
         private String ward;
         private String address;
+        private String landlordName;
+        private String landlordPhone;
         private java.util.List<String> imageUrls;
     }
 }

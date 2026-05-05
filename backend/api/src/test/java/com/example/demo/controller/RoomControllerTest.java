@@ -61,9 +61,9 @@ public class RoomControllerTest {
                 .andExpect(jsonPath("$.price").value(1500000))
                 .andExpect(jsonPath("$.images").isArray())
                 .andExpect(jsonPath("$.images.length()").value(2))
-                .andExpect(jsonPath("$.images[0].imageId").value(1))
-                .andExpect(jsonPath("$.images[0].imageUrl").value("http://example.com/image1.jpg"))
-                .andExpect(jsonPath("$.images[1].imageId").value(2));
+                .andExpect(jsonPath("$.images[0].image_id").value(1))
+                .andExpect(jsonPath("$.images[0].image_url").value("http://example.com/image1.jpg"))
+                .andExpect(jsonPath("$.images[1].image_id").value(2));
     }
 
     @Test

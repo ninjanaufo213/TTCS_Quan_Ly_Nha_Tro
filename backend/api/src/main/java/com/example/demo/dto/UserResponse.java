@@ -16,6 +16,10 @@ public class UserResponse {
     private String phone;
     private RoleWrapper role;
     private String fullname;
+    private String bankAccountNumber;
+    private String bankName;
+    private String bankAccountName;
+    private String bankCode;
     private Boolean is_active;
     private LocalDateTime created_at;
     

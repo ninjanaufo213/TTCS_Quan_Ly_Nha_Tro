@@ -90,6 +90,10 @@ public class AuthService {
             Landlord landlord = Landlord.builder()
                     .user(user)
                     .brandName(request.getFullname())
+                    .bankAccountNumber(request.getBankAccountNumber())
+                    .bankName(request.getBankName())
+                    .bankAccountName(request.getBankAccountName())
+                    .bankCode(request.getBankCode())
                     .build();
             landlordRepository.save(landlord);
         }
@@ -156,6 +160,42 @@ public class AuthService {
             return userOpt.get().getUserId();
         } catch (Exception e) {
             throw new IllegalStateException("Lỗi khi lấy thông tin user: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get current tenant ID from request header
+     * Expected header: X-User-Email
+     */
+    public Integer getCurrentTenantId() {
+        try {
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes == null) {
+                throw new IllegalStateException("Không thể lấy request context");
+            }
+
+            HttpServletRequest request = attributes.getRequest();
+            String userEmail = request.getHeader("X-User-Email");
+
+            if (userEmail == null || userEmail.isEmpty()) {
+                throw new IllegalStateException("Header X-User-Email không tìm thấy");
+            }
+
+            Optional<User> userOpt = userRepository.findByEmail(userEmail);
+            if (userOpt.isEmpty()) {
+                throw new IllegalStateException("User không tìm thấy");
+            }
+
+            User user = userOpt.get();
+            Optional<Tenant> tenantOpt = tenantRepository.findByUser_UserId(user.getUserId());
+
+            if (tenantOpt.isEmpty()) {
+                throw new IllegalStateException("Tenant không tìm thấy");
+            }
+
+            return tenantOpt.get().getTenantId();
+        } catch (Exception e) {
+            throw new IllegalStateException("Lỗi khi lấy thông tin tenant: " + e.getMessage());
         }
     }
 }

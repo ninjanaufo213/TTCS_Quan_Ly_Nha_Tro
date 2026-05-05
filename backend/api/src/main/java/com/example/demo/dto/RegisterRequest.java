@@ -15,4 +15,8 @@ public class RegisterRequest {
     private String email;
     private String password;
     private String role; // LANDLORD or TENANT
+    private String bankAccountNumber;
+    private String bankName;
+    private String bankAccountName;
+    private String bankCode;
 }

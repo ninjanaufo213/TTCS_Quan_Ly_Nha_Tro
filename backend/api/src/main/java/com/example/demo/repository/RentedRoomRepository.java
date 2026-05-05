@@ -10,6 +10,7 @@ import java.util.List;
 @Repository
 public interface RentedRoomRepository extends JpaRepository<RentedRoom, Integer> {
     List<RentedRoom> findByRoom_RoomId(Integer roomId);
+    List<RentedRoom> findByRoom_House_Landlord_LandlordId(Integer landlordId);
     List<RentedRoom> findByTenant_TenantId(Integer tenantId);
     List<RentedRoom> findByIsActiveTrue();
     List<RentedRoom> findByIsActiveFalse();
@@ -22,4 +23,3 @@ public interface RentedRoomRepository extends JpaRepository<RentedRoom, Integer>
     );
     boolean existsByRoom_RoomIdAndIsActiveTrueAndRrIdNot(Integer roomId, Integer rrId);
 }
-

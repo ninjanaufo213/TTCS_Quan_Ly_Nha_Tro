@@ -1,5 +1,11 @@
 import api from './api';
 
+const normalizeUserInfo = (userInfo, freshUser) => {
+    const merged = { ...userInfo, ...freshUser };
+    const normalizedId = merged?.userId ?? merged?.owner_id ?? userInfo?.userId ?? userInfo?.owner_id;
+    return { ...merged, userId: normalizedId };
+};
+
 export const authService = {
     login: async(email, password) => {
         const response = await api.post('/auth/login', {
@@ -36,12 +42,13 @@ export const authService = {
 
     updateProfile: async(updateData) => {
         const userInfo = authService.getUserInfo();
-        if (!userInfo || !userInfo.userId) throw new Error("User ID is missing");
-        const response = await api.patch(`/users/${userInfo.userId}`, updateData);
+        const userId = userInfo?.userId ?? userInfo?.owner_id;
+        if (!userId) throw new Error("User ID is missing");
+        const response = await api.patch(`/users/${userId}`, updateData);
         // Refresh cache with new profile data
         const updatedUser = response.data;
         // Keep the old token/userId properties intact
-        const newUserInfo = { ...userInfo, ...updatedUser };
+        const newUserInfo = normalizeUserInfo(userInfo, updatedUser);
         localStorage.setItem('user_info', JSON.stringify(newUserInfo));
         return newUserInfo;
     },
@@ -49,8 +56,9 @@ export const authService = {
     // Đổi mật khẩu người dùng hiện tại
     changePassword: async(oldPassword, newPassword) => {
         const userInfo = authService.getUserInfo();
-        if (!userInfo || !userInfo.userId) throw new Error("User ID is missing");
-        const response = await api.patch(`/users/${userInfo.userId}/password`, {
+        const userId = userInfo?.userId ?? userInfo?.owner_id;
+        if (!userId) throw new Error("User ID is missing");
+        const response = await api.patch(`/users/${userId}/password`, {
             old_password: oldPassword,
             new_password: newPassword,
         });
@@ -65,15 +73,23 @@ export const authService = {
 
     getCurrentUser: async() => {
         const userInfo = authService.getUserInfo();
-        if (!userInfo || !userInfo.userId) throw new Error("User ID is missing");
-        
-        const response = await api.get(`/users/${userInfo.userId}`);
+        const userId = userInfo?.userId ?? userInfo?.owner_id;
+
+        let response;
+        if (userId) {
+            try {
+                response = await api.get(`/users/${userId}`);
+            } catch (err) {
+                response = await api.get('/users/me');
+            }
+        } else {
+            response = await api.get('/users/me');
+        }
+
         const freshUser = response.data;
-        
-        // Merge with existing info to keep userId if it was formatted differently
-        const newUserInfo = { ...userInfo, ...freshUser };
+        const newUserInfo = normalizeUserInfo(userInfo, freshUser);
         localStorage.setItem('user_info', JSON.stringify(newUserInfo));
-        return freshUser;
+        return newUserInfo;
     },
 
     getUserInfo: () => {

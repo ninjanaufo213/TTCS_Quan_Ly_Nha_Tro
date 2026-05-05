@@ -2,11 +2,13 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.InvoiceRequest;
 import com.example.demo.dto.InvoiceResponse;
+import com.example.demo.service.FileStorageService;
 import com.example.demo.service.InvoiceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +21,7 @@ import java.util.Map;
 public class InvoiceController {
 
     private final InvoiceService invoiceService;
+    private final FileStorageService fileStorageService;
 
     @GetMapping("/")
     public ResponseEntity<?> getAllInvoices(
@@ -71,6 +74,18 @@ public class InvoiceController {
         }
     }
 
+    @GetMapping("/my")
+    public ResponseEntity<?> getMyInvoices() {
+        try {
+            List<InvoiceResponse> invoices = invoiceService.getMyInvoices();
+            return ResponseEntity.ok(invoices);
+        } catch (IllegalArgumentException e) {
+            return buildError(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi khi tải hóa đơn của bạn: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/")
     public ResponseEntity<?> createInvoice(@RequestBody InvoiceRequest request) {
         try {
@@ -104,6 +119,53 @@ public class InvoiceController {
             return buildError(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (Exception e) {
             return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi khi thanh toán hóa đơn: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/proof")
+    public ResponseEntity<?> submitPaymentProof(
+            @PathVariable("id") Integer id,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "note", required = false) String note
+    ) {
+        try {
+            String fileUrl = fileStorageService.store("payment-proofs", file);
+            InvoiceResponse invoice = invoiceService.submitPaymentProof(id, fileUrl, note);
+            return ResponseEntity.ok(invoice);
+        } catch (IllegalArgumentException e) {
+            return buildError(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi khi gửi minh chứng: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/proof/approve")
+    public ResponseEntity<?> approvePaymentProof(
+            @PathVariable("id") Integer id,
+            @RequestParam(value = "note", required = false) String note
+    ) {
+        try {
+            InvoiceResponse invoice = invoiceService.approvePaymentProof(id, note);
+            return ResponseEntity.ok(invoice);
+        } catch (IllegalArgumentException e) {
+            return buildError(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi khi duyệt thanh toán: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/proof/decline")
+    public ResponseEntity<?> declinePaymentProof(
+            @PathVariable("id") Integer id,
+            @RequestParam(value = "note", required = false) String note
+    ) {
+        try {
+            InvoiceResponse invoice = invoiceService.rejectPaymentProof(id, note);
+            return ResponseEntity.ok(invoice);
+        } catch (IllegalArgumentException e) {
+            return buildError(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi khi từ chối thanh toán: " + e.getMessage());
         }
     }
 

@@ -26,11 +26,25 @@ public class ListingController {
         return ResponseEntity.ok(listingService.getPublishedListings());
     }
 
+    @GetMapping("/api/listings/search")
+    public ResponseEntity<List<ListingResponse>> searchPublishedListings(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String district,
+            @RequestParam(required = false) String ward,
+            @RequestParam(required = false) java.math.BigDecimal minPrice,
+            @RequestParam(required = false) java.math.BigDecimal maxPrice,
+            @RequestParam(required = false) Double minArea,
+            @RequestParam(required = false) Double maxArea
+    ) {
+        return ResponseEntity.ok(
+                listingService.searchPublishedListings(keyword, district, ward, minPrice, maxPrice, minArea, maxArea)
+        );
+    }
+
     @GetMapping("/api/listings/{id}")
-    public ResponseEntity<?> getListingById(@PathVariable Integer id) {
+    public ResponseEntity<?> getListingDetail(@PathVariable Integer id) {
         try {
-            ListingResponse response = listingService.getListingById(id);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(listingService.getPublicListingById(id));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("detail", e.getMessage()));
         }
@@ -39,7 +53,7 @@ public class ListingController {
     // --- LANDLORD ENDPOINTS ---
     @GetMapping("/api/landlord/listings")
     public ResponseEntity<List<ListingResponse>> getMyListings() {
-        return ResponseEntity.ok(listingService.getAllListings());
+        return ResponseEntity.ok(listingService.getListingsForCurrentLandlord());
     }
 
     @PostMapping("/api/landlord/listings")

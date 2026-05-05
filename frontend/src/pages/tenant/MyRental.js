@@ -67,15 +67,6 @@ export default function MyRental() {
     []
   );
 
-  const demoAssets = useMemo(
-    () => [
-      { assetId: 1, name: 'Máy lạnh', imageUrl: null },
-      { assetId: 2, name: 'Tủ lạnh mini', imageUrl: null },
-      { assetId: 3, name: 'Giường + nệm', imageUrl: null },
-    ],
-    []
-  );
-
   const demoInvoices = useMemo(
     () => [
       { invoiceId: 9901, title: 'Hóa đơn Tháng 3/2026', fromDate: '2026-03-01', toDate: '2026-03-31', totalAmount: 3120000, status: 'PENDING' },
@@ -176,29 +167,6 @@ export default function MyRental() {
             <Text type="secondary">
               Gợi ý: phần “Hóa đơn” (nếu có) sẽ thể hiện số điện/nước tiêu thụ theo từng tháng.
             </Text>
-          </Card>
-        </Col>
-
-        <Col xs={24} lg={12}>
-          <Card title="Tài sản trong phòng" bordered>
-            <List
-              dataSource={demoAssets}
-              locale={{ emptyText: 'Chưa có tài sản (demo UI).' }}
-              renderItem={(item) => (
-                <List.Item>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <Text strong>{item?.name || '-'}</Text>
-                    {item?.imageUrl ? (
-                      <Link href={item.imageUrl} target="_blank" rel="noreferrer">
-                        Xem hình ảnh
-                      </Link>
-                    ) : (
-                      <Text type="secondary">Không có hình</Text>
-                    )}
-                  </div>
-                </List.Item>
-              )}
-            />
           </Card>
         </Col>
 

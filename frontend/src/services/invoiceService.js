@@ -21,6 +21,11 @@ export const invoiceService = {
     return response.data;
   },
 
+  getMy: async () => {
+    const response = await api.get('/invoices/my');
+    return response.data;
+  },
+
   create: async (invoiceData) => {
     const response = await api.post('/invoices/', invoiceData);
     return response.data;
@@ -33,6 +38,30 @@ export const invoiceService = {
 
   pay: async (id) => {
     const response = await api.post(`/invoices/${id}/pay`);
+    return response.data;
+  },
+
+  submitProof: async (id, file, note) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (note) formData.append('note', note);
+    const response = await api.post(`/invoices/${id}/proof`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  approveProof: async (id, note) => {
+    const formData = new FormData();
+    if (note) formData.append('note', note);
+    const response = await api.post(`/invoices/${id}/proof/approve`, formData);
+    return response.data;
+  },
+
+  declineProof: async (id, note) => {
+    const formData = new FormData();
+    if (note) formData.append('note', note);
+    const response = await api.post(`/invoices/${id}/proof/decline`, formData);
     return response.data;
   },
 

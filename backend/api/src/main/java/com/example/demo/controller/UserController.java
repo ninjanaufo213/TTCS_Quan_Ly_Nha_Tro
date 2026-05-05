@@ -29,32 +29,50 @@ public class UserController {
         this.landlordRepository = landlordRepository;
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(@RequestHeader(value = "X-User-Email", required = false) String userEmail) {
+        if (userEmail == null || userEmail.isBlank()) {
+            return ResponseEntity.status(401).body(java.util.Map.of("detail", "Thiếu header X-User-Email"));
+        }
+        Optional<User> userOpt = userRepository.findByEmail(userEmail);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(404).body(java.util.Map.of("detail", "User không tìm thấy"));
+        }
+        return ResponseEntity.ok(buildUserResponse(userOpt.get()));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUserProfile(@PathVariable Integer id) {
         Optional<User> userOpt = userRepository.findById(id);
         if (userOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        User user = userOpt.get();
-        
+        return ResponseEntity.ok(buildUserResponse(userOpt.get()));
+    }
+
+    private UserResponse buildUserResponse(User user) {
         String fullname = "No Name";
+        Landlord landlordProfile = null;
         if ("TENANT".equalsIgnoreCase(user.getRole()) && user.getTenant() != null) {
             fullname = user.getTenant().getFullname();
         } else if (user.getLandlord() != null) {
-            fullname = user.getLandlord().getBrandName();
+            landlordProfile = user.getLandlord();
+            fullname = landlordProfile.getBrandName();
         }
 
-        UserResponse response = UserResponse.builder()
+        return UserResponse.builder()
                 .owner_id(user.getUserId())
                 .email(user.getEmail())
                 .phone(user.getPhone())
                 .role(new UserResponse.RoleWrapper(user.getRole()))
                 .fullname(fullname)
+                .bankAccountNumber(landlordProfile != null ? landlordProfile.getBankAccountNumber() : null)
+                .bankName(landlordProfile != null ? landlordProfile.getBankName() : null)
+                .bankAccountName(landlordProfile != null ? landlordProfile.getBankAccountName() : null)
+                .bankCode(landlordProfile != null ? landlordProfile.getBankCode() : null)
                 .is_active(user.getIsActive())
                 .created_at(user.getCreatedAt())
                 .build();
-                
-        return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/{id}")
@@ -85,6 +103,23 @@ public class UserController {
                 landlord.setBrandName(request.getFullname());
                 landlordRepository.save(landlord);
             }
+        }
+
+        if (user.getLandlord() != null) {
+            Landlord landlord = user.getLandlord();
+            if (request.getBankAccountNumber() != null) {
+                landlord.setBankAccountNumber(request.getBankAccountNumber());
+            }
+            if (request.getBankName() != null) {
+                landlord.setBankName(request.getBankName());
+            }
+            if (request.getBankAccountName() != null) {
+                landlord.setBankAccountName(request.getBankAccountName());
+            }
+            if (request.getBankCode() != null) {
+                landlord.setBankCode(request.getBankCode());
+            }
+            landlordRepository.save(landlord);
         }
         
         return ResponseEntity.ok(java.util.Map.of("success", true, "message", "Cập nhật thành công"));

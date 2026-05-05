@@ -37,6 +37,24 @@ public class Invoice {
     @Column(name = "payment_date")
     private LocalDateTime paymentDate;
 
+    @Column(name = "proof_status", length = 20)
+    private String proofStatus;
+
+    @Column(name = "proof_url", columnDefinition = "TEXT")
+    private String proofUrl;
+
+    @Column(name = "proof_note", columnDefinition = "TEXT")
+    private String proofNote;
+
+    @Column(name = "proof_submitted_at")
+    private LocalDateTime proofSubmittedAt;
+
+    @Column(name = "proof_reviewed_at")
+    private LocalDateTime proofReviewedAt;
+
+    @Column(name = "proof_review_note", columnDefinition = "TEXT")
+    private String proofReviewNote;
+
     @Column(name = "due_date", nullable = false)
     private LocalDate dueDate;
 

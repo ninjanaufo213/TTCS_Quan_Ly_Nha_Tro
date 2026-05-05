@@ -10,7 +10,17 @@ const api = axios.create({
 // Add auth token and user email to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
-  const userEmail = localStorage.getItem('user_email');
+  const storedEmail = localStorage.getItem('user_email');
+  let userEmail = storedEmail;
+
+  if (!userEmail) {
+    try {
+      const userInfo = JSON.parse(localStorage.getItem('user_info') || 'null');
+      userEmail = userInfo?.email || null;
+    } catch (e) {
+      userEmail = null;
+    }
+  }
 
   if (token) config.headers.Authorization = `Bearer ${token}`;
   if (userEmail) config.headers['X-User-Email'] = userEmail;

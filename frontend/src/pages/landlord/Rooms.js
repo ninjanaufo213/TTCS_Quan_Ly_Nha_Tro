@@ -23,15 +23,12 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  HomeOutlined,
   FileTextOutlined,
   EyeOutlined
 } from '@ant-design/icons';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { roomService } from '../../services/roomService';
 import { houseService } from '../../services/houseService';
-import { assetService } from '../../services/assetService';
-import AssetManagement from '../../components/AssetManagement';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -40,12 +37,9 @@ const Rooms = () => {
   const { message } = App.useApp(); // Use hook to get message
   const [rooms, setRooms] = useState([]);
   const [houses, setHouses] = useState([]);
-  const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [assetModalVisible, setAssetModalVisible] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
-  const [selectedRoom, setSelectedRoom] = useState(null);
   const [imageFileList, setImageFileList] = useState([]);
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [imagePreviewLoading, setImagePreviewLoading] = useState(false);
@@ -118,15 +112,6 @@ const Rooms = () => {
       message.error('Lỗi khi tải danh sách phòng!');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchAssets = async (roomId) => {
-    try {
-      const data = await assetService.getByRoom(roomId);
-      setAssets(data);
-    } catch (error) {
-      message.error('Lỗi khi tải danh sách tài sản!');
     }
   };
 
@@ -225,12 +210,6 @@ const Rooms = () => {
     }
   };
 
-   const handleViewAssets = (record) => {
-     setSelectedRoom(record);
-     fetchAssets(record.room_id);
-     setAssetModalVisible(true);
-   };
-
   const housesById = useMemo(() => {
     const m = {};
     houses.forEach(h => { m[h.house_id] = h; });
@@ -284,13 +263,6 @@ const Rooms = () => {
       width: 340,
       render: (_, record) => (
         <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 8 }}>
-          <Button
-            type="link"
-            icon={<HomeOutlined />}
-            onClick={() => handleViewAssets(record)}
-          >
-            Tài sản
-          </Button>
           <Button
             type="link"
             icon={<EyeOutlined />}
@@ -527,27 +499,7 @@ const Rooms = () => {
       </Modal>
 
        <Modal
-         title={`Quản lý tài sản phòng ${selectedRoom?.name}`}
-         open={assetModalVisible}
-         onCancel={() => setAssetModalVisible(false)}
-         footer={null}
-         width={1100}
-         styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }}
-       >
-         <AssetManagement 
-           roomId={selectedRoom?.room_id}
-           roomName={selectedRoom?.name}
-           assets={assets}
-           onAssetsUpdate={() => {
-             if (selectedRoom) {
-               fetchAssets(selectedRoom.room_id);
-             }
-           }}
-         />
-       </Modal>
-
-       <Modal
-         title={imagePreviewRoom?.name ? `Ảnh phòng - ${imagePreviewRoom.name}` : 'Ảnh phòng'}
+         title={imagePreviewRoom?.name ? `Thông tin phòng - ${imagePreviewRoom.name}` : 'Thông tin phòng'}
          open={imagePreviewOpen}
          onCancel={() => {
            setImagePreviewOpen(false);

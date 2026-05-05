@@ -53,11 +53,5 @@ public class House {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @JsonIgnore
-    private List<HouseImage> images;
-
-    @OneToMany(mappedBy = "house", cascade = CascadeType.ALL)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    @JsonIgnore
     private List<Room> rooms;
 }

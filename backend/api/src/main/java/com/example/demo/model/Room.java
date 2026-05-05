@@ -64,12 +64,6 @@ public class Room {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @JsonIgnore
-    private List<Asset> assets;
-
-    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    @JsonIgnore
     private List<Listing> listings;
 
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL)

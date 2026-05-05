@@ -1,10 +1,27 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Form, Input, Button, Card, Typography, App, Radio } from 'antd';
+import { Form, Input, Button, Card, Typography, App, Radio, Select } from 'antd';
 import { UserOutlined, MailOutlined, PhoneOutlined, LockOutlined } from '@ant-design/icons';
 import { authService } from '../../services/authService';
 
 const { Title } = Typography;
+const { Option } = Select;
+
+const BANK_OPTIONS = [
+  { label: 'MB Bank', code: '970422' },
+  { label: 'Vietcombank', code: '970436' },
+  { label: 'BIDV', code: '970418' },
+  { label: 'VietinBank', code: '970415' },
+  { label: 'Techcombank', code: '970407' },
+  { label: 'ACB', code: '970416' },
+  { label: 'Sacombank', code: '970403' },
+  { label: 'VPBank', code: '970432' },
+  { label: 'TPBank', code: '970423' },
+  { label: 'SHB', code: '970443' },
+  { label: 'Agribank', code: '970405' },
+  { label: 'Eximbank', code: '970431' },
+  { label: 'OCB', code: '970448' },
+];
 
 const Register = () => {
   const { message } = App.useApp(); // Use App context for message
@@ -19,8 +36,28 @@ const Register = () => {
     }
     setLoading(true);
     try {
-      const { fullname, phone, email, password, role } = values;
-      await authService.register({ fullname, phone, email, password, role });
+      const {
+        fullname,
+        phone,
+        email,
+        password,
+        role,
+        bank_name,
+        bank_account_number,
+        bank_account_name,
+        bank_code,
+      } = values;
+      await authService.register({
+        fullname,
+        phone,
+        email,
+        password,
+        role,
+        bank_name,
+        bank_account_number,
+        bank_account_name,
+        bank_code,
+      });
       message.success('Đăng ký thành công! Vui lòng đăng nhập.');
       navigate('/login');
     } catch (err) {
@@ -364,6 +401,57 @@ const Register = () => {
               <Radio value="LANDLORD" style={{ fontSize: '15px', marginRight: '24px' }}>Tôi là Chủ trọ</Radio>
               <Radio value="TENANT" style={{ fontSize: '15px' }}>Tôi là Khách thuê</Radio>
             </Radio.Group>
+          </Form.Item>
+
+          <Form.Item noStyle shouldUpdate>
+            {({ getFieldValue, setFieldsValue }) => {
+              const role = getFieldValue('role');
+              const isLandlord = role === 'LANDLORD';
+              return isLandlord ? (
+                <>
+                  <Form.Item
+                    label={<span style={{ fontSize: '16px', fontWeight: '500' }}>Ngân hàng</span>}
+                    name="bank_name"
+                    rules={[{ required: true, message: 'Vui lòng chọn ngân hàng' }]}
+                    style={{ marginBottom: '6px' }}
+                  >
+                    <Select
+                      placeholder="Chọn ngân hàng"
+                      allowClear
+                      onChange={(value) => {
+                        const matched = BANK_OPTIONS.find((item) => item.label === value);
+                        setFieldsValue({ bank_code: matched ? matched.code : undefined });
+                      }}
+                    >
+                      {BANK_OPTIONS.map((item) => (
+                        <Option key={item.code} value={item.label}>
+                          {item.label}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                  <Form.Item
+                    label={<span style={{ fontSize: '16px', fontWeight: '500' }}>Số tài khoản</span>}
+                    name="bank_account_number"
+                    rules={[{ required: true, message: 'Vui lòng nhập số tài khoản' }]}
+                    style={{ marginBottom: '6px' }}
+                  >
+                    <Input placeholder="Nhập số tài khoản" style={{ fontSize: '16px', padding: '10px 14px', height: '44px' }} />
+                  </Form.Item>
+                  <Form.Item
+                    label={<span style={{ fontSize: '16px', fontWeight: '500' }}>Chủ tài khoản</span>}
+                    name="bank_account_name"
+                    rules={[{ required: true, message: 'Vui lòng nhập tên chủ tài khoản' }]}
+                    style={{ marginBottom: '6px' }}
+                  >
+                    <Input placeholder="VD: NGUYEN VAN A" style={{ fontSize: '16px', padding: '10px 14px', height: '44px' }} />
+                  </Form.Item>
+                  <Form.Item name="bank_code" hidden>
+                    <Input />
+                  </Form.Item>
+                </>
+              ) : null;
+            }}
           </Form.Item>
 
           <Form.Item style={{ marginTop: '8px', marginBottom: '4px' }}>

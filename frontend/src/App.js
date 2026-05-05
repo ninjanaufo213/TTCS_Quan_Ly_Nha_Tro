@@ -16,8 +16,10 @@ import Listings from './pages/landlord/Listings';
 import Contracts from './pages/landlord/Contracts';
 import Invoices from './pages/landlord/Invoices';
 import Reports from './pages/landlord/Reports';
+import Viewings from './pages/landlord/Viewings';
 import Register from './pages/public/Register';
 import Profile from './pages/Profile';
+import Notifications from './pages/Notifications';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import RoomApproval from './pages/admin/RoomApproval';
 import UserManagement from './pages/admin/UserManagement';
@@ -25,7 +27,9 @@ import AreaStats from './pages/admin/AreaStats';
 import TenantRoomInfo from './pages/tenant/TenantRoomInfo';
 import TenantContractInfo from './pages/tenant/TenantContractInfo';
 import TenantServicesInfo from './pages/tenant/TenantServicesInfo';
-import TenantAssetsInfo from './pages/tenant/TenantAssetsInfo';
+import TenantInvoices from './pages/tenant/TenantInvoices';
+import MyViewings from './pages/tenant/MyViewings';
+import ContractRequests from './pages/tenant/ContractRequests';
 import authService from './services/authService';
 
 // Landlord Route Component (block TENANT)
@@ -100,7 +104,11 @@ function App() {
                         {/* HomePage as default home page */}
                         <Route path="/" element={<HomePage />} />
                         <Route path="/home" element={<HomePage />} />
+<<<<<<< Thanh
                         <Route path="/listings/:id" element={<ListingDetail />} />
+=======
+                        <Route path="/listing/:id" element={<ListingDetail />} />
+>>>>>>> main
                         <Route
                             path="/login"
                             element={
@@ -135,6 +143,8 @@ function App() {
                             <Route path="contracts" element={<Contracts />} />
                             <Route path="invoices" element={<Invoices />} />
                             <Route path="reports" element={<Reports />} />
+                            <Route path="viewings" element={<Viewings />} />
+                            <Route path="notifications" element={<Notifications />} />
                             <Route path="profile" element={<Profile />} />
                         </Route>
 
@@ -151,7 +161,10 @@ function App() {
                             <Route path="room-info" element={<TenantRoomInfo />} />
                             <Route path="contract" element={<TenantContractInfo />} />
                             <Route path="services" element={<TenantServicesInfo />} />
-                            <Route path="assets" element={<TenantAssetsInfo />} />
+                            <Route path="invoices" element={<TenantInvoices />} />
+                            <Route path="viewings" element={<MyViewings />} />
+                            <Route path="contract-requests" element={<ContractRequests />} />
+                            <Route path="notifications" element={<Notifications />} />
                         </Route>
 
                         {/* Admin routes */}

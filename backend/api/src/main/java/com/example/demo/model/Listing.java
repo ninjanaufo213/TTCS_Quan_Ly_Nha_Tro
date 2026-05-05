@@ -36,8 +36,9 @@ public class Listing {
     @Column(name = "views_count")
     private Integer viewsCount = 0;
 
+    @Builder.Default
     @Column(name = "is_published")
-    private Boolean isPublished;
+    private Boolean isPublished = true;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

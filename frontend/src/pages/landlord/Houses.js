@@ -9,8 +9,7 @@ import {
   InputNumber,
   App,
   Space,
-  Popconfirm,
-  Upload
+  Popconfirm
 } from 'antd';
 import {
   PlusOutlined,
@@ -27,7 +26,6 @@ const Houses = () => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingHouse, setEditingHouse] = useState(null);
-  const [imageFileList, setImageFileList] = useState([]);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 5,
@@ -38,17 +36,6 @@ const Houses = () => {
   });
   const [form] = Form.useForm();
   const navigate = useNavigate();
-
-  const apiBaseUrl = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/$/, '');
-  const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
-  const resolveImageUrl = (url) => {
-    if (!url) return url;
-    if (url.startsWith('data:') || url.startsWith('blob:')) return url;
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    if (!apiOrigin) return url;
-    const normalized = url.startsWith('/') ? url : `/${url}`;
-    return `${apiOrigin}${normalized}`;
-  };
 
   useEffect(() => {
     fetchHouses();
@@ -73,26 +60,12 @@ const Houses = () => {
   const handleCreate = () => {
     setEditingHouse(null);
     form.resetFields();
-    setImageFileList([]);
     setModalVisible(true);
   };
 
   const handleEdit = (record) => {
     setEditingHouse(record);
     form.setFieldsValue(record);
-    const existingImages = Array.isArray(record.images)
-      ? record.images.map((img, index) => {
-          const imageUrl = resolveImageUrl(img.image_url || img.imageUrl);
-          return {
-            uid: img.image_id ? String(img.image_id) : `existing-${index}`,
-            name: `house-image-${index + 1}`,
-            status: 'done',
-            url: imageUrl,
-            thumbUrl: imageUrl
-          };
-        })
-      : [];
-    setImageFileList(existingImages);
     setModalVisible(true);
   };
 
@@ -111,21 +84,16 @@ const Houses = () => {
 
   const handleSubmit = async (values) => {
     try {
-      const savedHouse = editingHouse
-        ? await houseService.update(editingHouse.house_id, values)
-        : await houseService.create(values);
-
-      const files = imageFileList.map((file) => file.originFileObj).filter(Boolean);
-      if (files.length > 0) {
-        await houseService.uploadImages(savedHouse.house_id, files);
-      }
+      await (editingHouse
+        ? houseService.update(editingHouse.house_id, values)
+        : houseService.create(values));
 
       message.success(editingHouse ? 'Cập nhật nhà trọ thành công!' : 'Tạo nhà trọ thành công!');
       setModalVisible(false);
-      setImageFileList([]);
       fetchHouses();
     } catch (error) {
-      message.error('Lỗi khi lưu nhà trọ!');
+      const detail = error?.response?.data?.detail;
+      message.error(detail || 'Lỗi khi lưu nhà trọ!');
     }
   };
 
@@ -224,7 +192,6 @@ const Houses = () => {
         open={modalVisible}
         onCancel={() => {
           setModalVisible(false);
-          setImageFileList([]);
         }}
         footer={null}
         width={600}
@@ -280,18 +247,6 @@ const Houses = () => {
               rows={3}
               placeholder="Nhập địa chỉ chi tiết"
             />
-          </Form.Item>
-
-          <Form.Item label="Hình ảnh nhà trọ">
-            <Upload
-              listType="picture"
-              multiple
-              beforeUpload={() => false}
-              fileList={imageFileList}
-              onChange={({ fileList }) => setImageFileList(fileList)}
-            >
-              <Button icon={<PlusOutlined />}>Chọn ảnh</Button>
-            </Upload>
           </Form.Item>
 
           <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
