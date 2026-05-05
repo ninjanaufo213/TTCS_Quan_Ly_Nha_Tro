@@ -55,7 +55,7 @@ public class RentRequestController {
             RentRequest request = RentRequest.builder()
                     .tenant(tenant)
                     .room(room)
-                    .expectedStartDate(expectedDate)
+                    .visitDate(expectedDate)
                     .status("PENDING")
                     .build();
 
@@ -87,7 +87,7 @@ public class RentRequestController {
                 Map<String, Object> m = new java.util.LinkedHashMap<>();
                 m.put("request_id", r.getRequestId());
                 m.put("status", r.getStatus());
-                m.put("expected_start_date", r.getExpectedStartDate());
+                m.put("expected_start_date", r.getVisitDate());
                 m.put("created_at", r.getCreatedAt());
                 if (r.getTenant() != null) {
                     m.put("tenant_name", r.getTenant().getFullname());
