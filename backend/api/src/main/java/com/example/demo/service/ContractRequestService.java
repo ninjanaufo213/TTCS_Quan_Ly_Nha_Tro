@@ -65,6 +65,10 @@ public class ContractRequestService {
             throw new IllegalArgumentException("Lịch xem không hợp lệ để tạo hợp đồng");
         }
 
+        if (!ViewingService.STATUS_APPROVED.equals(rentRequest.getStatus())) {
+            throw new IllegalArgumentException("Lịch xem phòng chưa được xác nhận");
+        }
+
         if (!contractRequestRepository.findByRentRequest_RequestIdAndStatusIn(viewingId, List.of(STATUS_PENDING)).isEmpty()) {
             throw new IllegalArgumentException("Lịch xem này đã có yêu cầu hợp đồng đang chờ xác nhận");
         }

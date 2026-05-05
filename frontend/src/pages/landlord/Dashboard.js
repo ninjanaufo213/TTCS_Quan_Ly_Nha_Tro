@@ -15,7 +15,7 @@ import { houseService } from '../../services/houseService';
 import { roomService } from '../../services/roomService';
 import { rentedRoomService } from '../../services/rentedRoomService';
 import { invoiceService } from '../../services/invoiceService';
-import { rentRequestService } from '../../services/rentRequestService';
+import { viewingService } from '../../services/viewingService';
 
 const Dashboard = () => {
   const { message } = App.useApp();
@@ -94,8 +94,8 @@ const Dashboard = () => {
   const fetchViewingRequests = async () => {
     setRequestLoading(true);
     try {
-      const data = await rentRequestService.getLandlordRequests();
-      setViewingRequests(data);
+      const data = await viewingService.getLandlordViewings();
+      setViewingRequests(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Lỗi tải yêu cầu xem phòng:', err);
     } finally {
@@ -105,12 +105,38 @@ const Dashboard = () => {
 
   const handleUpdateStatus = async (id, status) => {
     try {
-      await rentRequestService.updateStatus(id, status);
-      message.success(status === 'CONFIRMED' ? 'Xác nhận thành công!' : 'Đã từ chối yêu cầu.');
+      if (status === 'APPROVED') {
+        await viewingService.approveLandlordViewing(id);
+        message.success('Xác nhận thành công!');
+      } else {
+        await viewingService.rejectLandlordViewing(id);
+        message.success('Đã từ chối yêu cầu.');
+      }
       fetchViewingRequests();
     } catch (err) {
       message.error('Không thể cập nhật trạng thái.');
     }
+  };
+
+  const handleCancelViewing = async (id) => {
+    try {
+      await viewingService.cancelLandlordViewing(id);
+      message.success('Đã hủy lịch xem');
+      fetchViewingRequests();
+    } catch (err) {
+      message.error('Không thể hủy lịch xem.');
+    }
+  };
+
+  const goToContractRequest = (record) => {
+    const params = new URLSearchParams({
+      action: 'request',
+      viewingId: String(record.requestId),
+      room: String(record.roomId),
+      tenantName: record.tenantName || '',
+      tenantPhone: record.tenantPhone || ''
+    });
+    navigate(`/app/contracts?${params.toString()}`);
   };
 
   const houseColumns = [
@@ -190,26 +216,34 @@ const Dashboard = () => {
   ];
 
   const statusTag = (status) => {
-    if (status === 'CONFIRMED') return <Tag color="green" icon={<CheckCircleOutlined />}>Xác nhận</Tag>;
-    if (status === 'CANCELLED') return <Tag color="red" icon={<CloseCircleOutlined />}>Từ chối</Tag>;
-    return <Tag color="orange" icon={<ClockCircleOutlined />}>Chờ duyệt</Tag>;
+    if (status === 'APPROVED') return <Tag color="green" icon={<CheckCircleOutlined />}>Đã xác nhận</Tag>;
+    if (status === 'CONTRACT_PENDING') return <Tag color="gold" icon={<ClockCircleOutlined />}>Chờ hợp đồng</Tag>;
+    if (status === 'CONTRACTED') return <Tag color="purple" icon={<CheckCircleOutlined />}>Đã ký hợp đồng</Tag>;
+    if (status === 'CANCELED') return <Tag color="red" icon={<CloseCircleOutlined />}>Đã hủy</Tag>;
+    return <Tag color="orange" icon={<ClockCircleOutlined />}>Chờ xác nhận</Tag>;
   };
 
   const viewingColumns = [
-    { title: 'Khách thuê', dataIndex: 'tenant_name', key: 'tenant_name', render: v => v || 'N/A' },
-    { title: 'Số điện thoại', dataIndex: 'tenant_phone', key: 'tenant_phone', render: v => v || 'N/A' },
-    { title: 'Phòng', dataIndex: 'room_name', key: 'room_name' },
-    { title: 'Nhà trọ', dataIndex: 'house_name', key: 'house_name' },
+    { title: 'Khách thuê', dataIndex: 'tenantName', key: 'tenantName', render: v => v || 'N/A' },
+    { title: 'Số điện thoại', dataIndex: 'tenantPhone', key: 'tenantPhone', render: v => v || 'N/A' },
+    { title: 'Phòng', dataIndex: 'roomName', key: 'roomName' },
+    { title: 'Nhà trọ', dataIndex: 'houseName', key: 'houseName' },
     {
       title: 'Ngày muốn xem',
-      dataIndex: 'expected_start_date',
-      key: 'expected_start_date',
+      dataIndex: 'visitDate',
+      key: 'visitDate',
       render: (d) => d ? new Date(d).toLocaleDateString('vi-VN') : 'Chưa chọn',
     },
     {
+      title: 'Giờ',
+      dataIndex: 'visitTime',
+      key: 'visitTime',
+      render: (t) => t || 'Chưa chọn',
+    },
+    {
       title: 'Ngày gửi',
-      dataIndex: 'created_at',
-      key: 'created_at',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
       render: (d) => d ? new Date(d).toLocaleDateString('vi-VN') : '',
     },
     {
@@ -222,27 +256,47 @@ const Dashboard = () => {
       title: 'Hành động',
       key: 'action',
       align: 'center',
-      width: 200,
+      width: 260,
       render: (_, record) => record.status === 'PENDING' ? (
         <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
           <Popconfirm
             title="Xác nhận yêu cầu xem phòng?"
-            onConfirm={() => handleUpdateStatus(record.request_id, 'CONFIRMED')}
+            onConfirm={() => handleUpdateStatus(record.requestId, 'APPROVED')}
             okText="Xác nhận" cancelText="Hủy"
           >
             <Button type="primary" size="small" icon={<CheckCircleOutlined />}>Xác nhận</Button>
           </Popconfirm>
           <Popconfirm
             title="Từ chối yêu cầu này?"
-            onConfirm={() => handleUpdateStatus(record.request_id, 'CANCELLED')}
+            onConfirm={() => handleUpdateStatus(record.requestId, 'CANCELED')}
             okText="Từ chối" cancelText="Hủy" okButtonProps={{ danger: true }}
           >
             <Button danger size="small" icon={<CloseCircleOutlined />}>Từ chối</Button>
           </Popconfirm>
         </div>
-      ) : <span style={{ color: '#94a3b8', fontSize: 13 }}>-</span>,
+      ) : (
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+          <Button
+            size="small"
+            onClick={() => goToContractRequest(record)}
+            disabled={record.status !== 'APPROVED'}
+          >
+            Tạo hợp đồng mới
+          </Button>
+          <Button
+            size="small"
+            danger
+            onClick={() => handleCancelViewing(record.requestId)}
+            disabled={!['APPROVED', 'CONTRACT_PENDING'].includes(record.status)}
+          >
+            Hủy lịch
+          </Button>
+        </div>
+      ),
     },
   ];
+
+  const activeRequests = viewingRequests.filter(r => !['CANCELED', 'CONTRACTED'].includes(r.status));
 
   return (
     <div>
@@ -328,9 +382,9 @@ const Dashboard = () => {
                 <span>
                   <ClockCircleOutlined style={{ color: '#f59e0b', marginRight: 8 }} />
                   Yêu cầu xem phòng
-                  {viewingRequests.filter(r => r.status === 'PENDING').length > 0 && (
+                  {activeRequests.filter(r => r.status === 'PENDING').length > 0 && (
                     <Tag color="orange" style={{ marginLeft: 12 }}>
-                      {viewingRequests.filter(r => r.status === 'PENDING').length} chờ duyệt
+                      {activeRequests.filter(r => r.status === 'PENDING').length} chờ xác nhận
                     </Tag>
                   )}
                 </span>
@@ -338,8 +392,8 @@ const Dashboard = () => {
             >
               <Table
                 columns={viewingColumns}
-                dataSource={viewingRequests}
-                rowKey="request_id"
+                dataSource={activeRequests}
+                rowKey="requestId"
                 pagination={{ pageSize: 5, showTotal: (t) => `Tổng ${t} yêu cầu` }}
                 loading={requestLoading}
                 size="small"

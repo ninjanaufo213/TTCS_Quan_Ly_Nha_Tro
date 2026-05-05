@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 @Transactional
 public class ViewingService {
 
+    public static final String STATUS_PENDING = "PENDING";
     public static final String STATUS_SCHEDULED = "SCHEDULED";
     public static final String STATUS_APPROVED = "APPROVED";
     public static final String STATUS_CANCELED = "CANCELED";
@@ -67,7 +68,7 @@ public class ViewingService {
                 .tenant(tenant)
                 .visitDate(request.visitDate())
                 .visitTime(request.visitTime())
-                .status(STATUS_APPROVED)
+                .status(STATUS_PENDING)
                 .build();
 
         RentRequest saved = rentRequestRepository.save(rentRequest);
@@ -75,9 +76,9 @@ public class ViewingService {
         notificationService.notifyUser(
                 room.getHouse() != null && room.getHouse().getLandlord() != null ? room.getHouse().getLandlord().getUser() : null,
                 tenant.getUser(),
-                "Lịch xem phòng mới",
-                "Bạn có lịch xem phòng mới từ " + tenant.getFullname() + " cho phòng " + room.getName(),
-                "VIEWING_CREATED",
+                "Yêu cầu xem phòng mới",
+                "Bạn có yêu cầu xem phòng từ " + tenant.getFullname() + " cho phòng " + room.getName(),
+                "VIEWING_REQUESTED",
                 saved.getRequestId()
         );
 
@@ -170,10 +171,76 @@ public class ViewingService {
         return mapToResponse(saved);
     }
 
+    public ViewingResponse approveByLandlord(Integer requestId) {
+        RentRequest rentRequest = rentRequestRepository.findById(requestId)
+                .orElseThrow(() -> new IllegalArgumentException("Lịch xem phòng không tồn tại"));
+
+        Integer landlordId = authService.getCurrentLandlordId();
+        if (rentRequest.getRoom() == null || rentRequest.getRoom().getHouse() == null
+                || rentRequest.getRoom().getHouse().getLandlord() == null
+                || !rentRequest.getRoom().getHouse().getLandlord().getLandlordId().equals(landlordId)) {
+            throw new IllegalArgumentException("Bạn không có quyền xác nhận lịch này");
+        }
+
+        if (!STATUS_PENDING.equals(rentRequest.getStatus())) {
+            throw new IllegalArgumentException("Yêu cầu này đã được xử lý");
+        }
+
+        rentRequest.setStatus(STATUS_APPROVED);
+        RentRequest saved = rentRequestRepository.save(rentRequest);
+
+        notificationService.notifyUser(
+                rentRequest.getTenant() != null ? rentRequest.getTenant().getUser() : null,
+                rentRequest.getRoom() != null && rentRequest.getRoom().getHouse() != null
+                        && rentRequest.getRoom().getHouse().getLandlord() != null
+                        ? rentRequest.getRoom().getHouse().getLandlord().getUser()
+                        : null,
+                "Xác nhận lịch xem phòng",
+                "Chủ trọ đã xác nhận lịch xem phòng " + (rentRequest.getRoom() != null ? rentRequest.getRoom().getName() : ""),
+                "VIEWING_APPROVED",
+                rentRequest.getRequestId()
+        );
+
+        return mapToResponse(saved);
+    }
+
+    public ViewingResponse rejectByLandlord(Integer requestId) {
+        RentRequest rentRequest = rentRequestRepository.findById(requestId)
+                .orElseThrow(() -> new IllegalArgumentException("Lịch xem phòng không tồn tại"));
+
+        Integer landlordId = authService.getCurrentLandlordId();
+        if (rentRequest.getRoom() == null || rentRequest.getRoom().getHouse() == null
+                || rentRequest.getRoom().getHouse().getLandlord() == null
+                || !rentRequest.getRoom().getHouse().getLandlord().getLandlordId().equals(landlordId)) {
+            throw new IllegalArgumentException("Bạn không có quyền từ chối lịch này");
+        }
+
+        if (!STATUS_PENDING.equals(rentRequest.getStatus())) {
+            throw new IllegalArgumentException("Yêu cầu này đã được xử lý");
+        }
+
+        rentRequest.setStatus(STATUS_CANCELED);
+        RentRequest saved = rentRequestRepository.save(rentRequest);
+
+        notificationService.notifyUser(
+                rentRequest.getTenant() != null ? rentRequest.getTenant().getUser() : null,
+                rentRequest.getRoom() != null && rentRequest.getRoom().getHouse() != null
+                        && rentRequest.getRoom().getHouse().getLandlord() != null
+                        ? rentRequest.getRoom().getHouse().getLandlord().getUser()
+                        : null,
+                "Từ chối lịch xem phòng",
+                "Chủ trọ đã từ chối yêu cầu xem phòng " + (rentRequest.getRoom() != null ? rentRequest.getRoom().getName() : ""),
+                "VIEWING_REJECTED",
+                rentRequest.getRequestId()
+        );
+
+        return mapToResponse(saved);
+    }
+
     public void cancelScheduledByRoom(Integer roomId) {
         List<RentRequest> requests = rentRequestRepository.findByRoom_RoomIdAndStatusIn(
                 roomId,
-                List.of(STATUS_SCHEDULED, STATUS_APPROVED, STATUS_CONTRACT_PENDING)
+                List.of(STATUS_PENDING, STATUS_SCHEDULED, STATUS_APPROVED, STATUS_CONTRACT_PENDING)
         );
         if (requests.isEmpty()) {
             return;

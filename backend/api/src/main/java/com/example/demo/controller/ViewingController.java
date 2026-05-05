@@ -49,6 +49,24 @@ public class ViewingController {
         return ResponseEntity.ok(viewingService.getLandlordViewings());
     }
 
+    @PatchMapping("/api/landlord/viewings/{id}/approve")
+    public ResponseEntity<?> approveViewing(@PathVariable Integer id) {
+        try {
+            return ResponseEntity.ok(viewingService.approveByLandlord(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("detail", e.getMessage()));
+        }
+    }
+
+    @PatchMapping("/api/landlord/viewings/{id}/reject")
+    public ResponseEntity<?> rejectViewing(@PathVariable Integer id) {
+        try {
+            return ResponseEntity.ok(viewingService.rejectByLandlord(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("detail", e.getMessage()));
+        }
+    }
+
     @PatchMapping("/api/landlord/viewings/{id}/cancel")
     public ResponseEntity<?> cancelViewingByLandlord(@PathVariable Integer id) {
         try {
@@ -58,4 +76,3 @@ public class ViewingController {
         }
     }
 }
-

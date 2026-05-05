@@ -1,15 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Table, Button, Tag, Space, message } from 'antd';
+import { Card, Table, Button, Tag, Space, message, Popconfirm } from 'antd';
 import dayjs from 'dayjs';
 import { viewingService } from '../../services/viewingService';
 import { useNavigate } from 'react-router-dom';
 
 const statusColorMap = {
+  PENDING: 'orange',
   APPROVED: 'green',
   SCHEDULED: 'blue',
   CONTRACT_PENDING: 'gold',
   CONTRACTED: 'purple',
   CANCELED: 'red'
+};
+
+const statusLabelMap = {
+  PENDING: 'Chờ xác nhận',
+  APPROVED: 'Đã xác nhận',
+  SCHEDULED: 'Đã lên lịch',
+  CONTRACT_PENDING: 'Chờ hợp đồng',
+  CONTRACTED: 'Đã ký hợp đồng',
+  CANCELED: 'Đã hủy'
 };
 
 const Viewings = () => {
@@ -40,6 +50,26 @@ const Viewings = () => {
       await loadViewings();
     } catch (error) {
       message.error('Không thể hủy lịch xem');
+    }
+  };
+
+  const handleApprove = async (id) => {
+    try {
+      await viewingService.approveLandlordViewing(id);
+      message.success('Xác nhận thành công!');
+      await loadViewings();
+    } catch (error) {
+      message.error('Không thể xác nhận lịch xem');
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      await viewingService.rejectLandlordViewing(id);
+      message.success('Đã từ chối yêu cầu.');
+      await loadViewings();
+    } catch (error) {
+      message.error('Không thể từ chối lịch xem');
     }
   };
 
@@ -91,19 +121,45 @@ const Viewings = () => {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      render: (value) => <Tag color={statusColorMap[value] || 'default'}>{value}</Tag>
+      render: (value) => (
+        <Tag color={statusColorMap[value] || 'default'}>
+          {statusLabelMap[value] || value}
+        </Tag>
+      )
     },
     {
       title: 'Hành động',
       key: 'action',
       render: (_, record) => {
-        const disabled = ['CANCELED', 'CONTRACTED'].includes(record.status);
+        if (record.status === 'PENDING') {
+          return (
+            <Space>
+              <Popconfirm
+                title="Xác nhận yêu cầu xem phòng?"
+                onConfirm={() => handleApprove(record.requestId)}
+                okText="Xác nhận" cancelText="Hủy"
+              >
+                <Button size="small" type="primary">Xác nhận</Button>
+              </Popconfirm>
+              <Popconfirm
+                title="Từ chối yêu cầu này?"
+                onConfirm={() => handleReject(record.requestId)}
+                okText="Từ chối" cancelText="Hủy" okButtonProps={{ danger: true }}
+              >
+                <Button size="small" danger>Từ chối</Button>
+              </Popconfirm>
+            </Space>
+          );
+        }
+
+        const canCreateContract = record.status === 'APPROVED';
+        const canCancel = ['APPROVED', 'CONTRACT_PENDING'].includes(record.status);
         return (
           <Space>
-            <Button size="small" onClick={() => goToContractRequest(record)} disabled={disabled}>
+            <Button size="small" onClick={() => goToContractRequest(record)} disabled={!canCreateContract}>
               Tạo hợp đồng mới
             </Button>
-            <Button size="small" danger onClick={() => handleCancel(record.requestId)} disabled={disabled}>
+            <Button size="small" danger onClick={() => handleCancel(record.requestId)} disabled={!canCancel}>
               Hủy lịch
             </Button>
           </Space>

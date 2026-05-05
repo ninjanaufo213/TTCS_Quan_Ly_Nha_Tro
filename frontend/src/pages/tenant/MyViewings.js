@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import { viewingService } from '../../services/viewingService';
 
 const statusColorMap = {
+  PENDING: 'orange',
   APPROVED: 'green',
   SCHEDULED: 'blue',
   CONTRACT_PENDING: 'gold',
@@ -98,4 +99,3 @@ const MyViewings = () => {
 };
 
 export default MyViewings;
-

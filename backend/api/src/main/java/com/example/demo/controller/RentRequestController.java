@@ -7,10 +7,12 @@ import com.example.demo.repository.RentRequestRepository;
 import com.example.demo.repository.RoomRepository;
 import com.example.demo.repository.TenantRepository;
 import com.example.demo.service.AuthService;
+import com.example.demo.service.ViewingService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -51,12 +53,15 @@ public class RentRequestController {
 
             String expectedDateStr = (String) body.get("expected_start_date");
             LocalDate expectedDate = expectedDateStr != null ? LocalDate.parse(expectedDateStr) : null;
+            String expectedTimeStr = (String) body.get("expected_time");
+            LocalTime expectedTime = expectedTimeStr != null ? LocalTime.parse(expectedTimeStr) : null;
 
             RentRequest request = RentRequest.builder()
                     .tenant(tenant)
                     .room(room)
                     .visitDate(expectedDate)
-                    .status("PENDING")
+                    .visitTime(expectedTime)
+                    .status(ViewingService.STATUS_PENDING)
                     .build();
 
             RentRequest saved = rentRequestRepository.save(request);
@@ -88,6 +93,7 @@ public class RentRequestController {
                 m.put("request_id", r.getRequestId());
                 m.put("status", r.getStatus());
                 m.put("expected_start_date", r.getVisitDate());
+                m.put("expected_time", r.getVisitTime());
                 m.put("created_at", r.getCreatedAt());
                 if (r.getTenant() != null) {
                     m.put("tenant_name", r.getTenant().getFullname());
@@ -112,7 +118,7 @@ public class RentRequestController {
     }
 
     /**
-     * Landlord cập nhật trạng thái yêu cầu (CONFIRMED / CANCELLED)
+     * Landlord cập nhật trạng thái yêu cầu (APPROVED / CANCELED)
      * PATCH /api/landlord/rent-requests/{id}/status
      */
     @PatchMapping("/api/landlord/rent-requests/{id}/status")
@@ -128,7 +134,14 @@ public class RentRequestController {
             }
 
             String newStatus = body.get("status");
-            if (!"CONFIRMED".equals(newStatus) && !"CANCELLED".equals(newStatus)) {
+            if ("CONFIRMED".equals(newStatus)) {
+                newStatus = ViewingService.STATUS_APPROVED;
+            }
+            if ("CANCELLED".equals(newStatus)) {
+                newStatus = ViewingService.STATUS_CANCELED;
+            }
+
+            if (!ViewingService.STATUS_APPROVED.equals(newStatus) && !ViewingService.STATUS_CANCELED.equals(newStatus)) {
                 return ResponseEntity.badRequest().body(Map.of("detail", "Trạng thái không hợp lệ"));
             }
 

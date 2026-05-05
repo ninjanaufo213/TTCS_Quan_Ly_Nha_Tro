@@ -47,6 +47,16 @@ export const viewingService = {
     return normalizeList(response.data);
   },
 
+  approveLandlordViewing: async (id) => {
+    const response = await api.patch(`/landlord/viewings/${id}/approve`);
+    return normalizeViewing(response.data);
+  },
+
+  rejectLandlordViewing: async (id) => {
+    const response = await api.patch(`/landlord/viewings/${id}/reject`);
+    return normalizeViewing(response.data);
+  },
+
   cancelLandlordViewing: async (id) => {
     const response = await api.patch(`/landlord/viewings/${id}/cancel`);
     return normalizeViewing(response.data);

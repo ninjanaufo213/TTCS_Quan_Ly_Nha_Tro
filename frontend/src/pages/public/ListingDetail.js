@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Button, Tag, Skeleton, Empty, Breadcrumb,
-  Row, Col, Divider, Image, Modal, Form, DatePicker, App, message as antdMessage
+  Row, Col, Divider, Image, Modal, Form, DatePicker, TimePicker, App, message as antdMessage
 } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -20,7 +20,7 @@ import {
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { authService } from '../../services/authService';
-import { rentRequestService } from '../../services/rentRequestService';
+import { viewingService } from '../../services/viewingService';
 import '../../styles/ListingDetail.css';
 
 const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
@@ -82,13 +82,12 @@ const ListingDetail = () => {
     try {
       const roomId = listing?.room?.roomId || listing?.room?.room_id;
       if (!roomId) throw new Error('Không xác định được phòng');
-      await rentRequestService.create({
+      await viewingService.createViewing({
         room_id: roomId,
-        expected_start_date: values.expected_date
-          ? values.expected_date.format('YYYY-MM-DD')
-          : null,
+        visit_date: values.visit_date ? values.visit_date.format('YYYY-MM-DD') : null,
+        visit_time: values.visit_time ? values.visit_time.format('HH:mm') : null,
       });
-      antdMessage.success('Đã gửi yêu cầu xem phòng thành công! Chủ trọ sẽ liên hệ bạn sớm.');
+      antdMessage.success('Đã gửi yêu cầu xem phòng thành công! Chủ trọ sẽ xác nhận lịch của bạn.');
       setRequestModalOpen(false);
       requestForm.resetFields();
     } catch (err) {
@@ -372,11 +371,11 @@ const ListingDetail = () => {
         width={440}
       >
         <p style={{ color: '#64748b', marginBottom: 20 }}>
-          Chọn ngày bạn muốn đến xem phòng. Chủ trọ sẽ xác nhận và liên hệ với bạn qua SĐT đã đăng ký.
+          Chọn ngày và giờ bạn muốn đến xem phòng. Chủ trọ sẽ xác nhận lịch và liên hệ với bạn qua SĐT đã đăng ký.
         </p>
         <Form form={requestForm} layout="vertical" onFinish={handleSendRequest}>
           <Form.Item
-            name="expected_date"
+            name="visit_date"
             label="Ngày muốn xem phòng"
             rules={[{ required: true, message: 'Vui lòng chọn ngày!' }]}
           >
@@ -385,6 +384,17 @@ const ListingDetail = () => {
               format="DD/MM/YYYY"
               placeholder="Chọn ngày"
               disabledDate={(d) => d && d.valueOf() < Date.now() - 86400000}
+            />
+          </Form.Item>
+          <Form.Item
+            name="visit_time"
+            label="Giờ muốn xem phòng"
+            rules={[{ required: true, message: 'Vui lòng chọn giờ!' }]}
+          >
+            <TimePicker
+              style={{ width: '100%' }}
+              format="HH:mm"
+              placeholder="Chọn giờ"
             />
           </Form.Item>
           <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
