@@ -245,7 +245,7 @@ const HomePage = () => {
                   className="phone-button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/listing/${listing.id}`);
+                    navigate(`/listings/${listing.id}`);
                   }}
                 >
                   Xem chi tiết
