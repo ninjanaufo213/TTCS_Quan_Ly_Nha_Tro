@@ -9,6 +9,7 @@ export const listingService = {
     return response.data;
   },
 
+  getListingById: async (id) => {
   searchPublicListings: async (params) => {
     const response = await axios.get(`${BASE_URL}/listings/search`, { params });
     return response.data;

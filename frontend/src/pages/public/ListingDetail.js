@@ -1,163 +1,404 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Card, Carousel, Button, Descriptions, Tag, Modal, DatePicker, TimePicker, Form, message, Input } from 'antd';
-import { PhoneOutlined, HomeOutlined, EnvironmentOutlined, UserOutlined } from '@ant-design/icons';
-import dayjs from 'dayjs';
-import { listingService } from '../../services/listingService';
-import { viewingService } from '../../services/viewingService';
+import React, { useState, useEffect } from 'react';
+import {
+  Button, Tag, Skeleton, Empty, Breadcrumb,
+  Row, Col, Divider, Image, Modal, Form, DatePicker, App, message as antdMessage
+} from 'antd';
+import {
+  ArrowLeftOutlined,
+  EnvironmentOutlined,
+  PhoneOutlined,
+  HeartOutlined,
+  HeartFilled,
+  HomeOutlined,
+  CheckCircleOutlined,
+  CalendarOutlined,
+  EyeOutlined,
+  ExpandOutlined,
+  TeamOutlined,
+  DollarOutlined,
+} from '@ant-design/icons';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
 import { authService } from '../../services/authService';
+import { rentRequestService } from '../../services/rentRequestService';
+import '../../styles/ListingDetail.css';
+
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
 const ListingDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [listing, setListing] = useState(null);
-  const [scheduleOpen, setScheduleOpen] = useState(false);
-  const [form] = Form.useForm();
 
-  const loadListing = async () => {
-    setLoading(true);
-    try {
-      const data = await listingService.getListingDetail(id);
-      setListing(data);
-    } catch (error) {
-      message.error('Không thể tải chi tiết phòng trọ');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [listing, setListing] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saved, setSaved] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [showPhone, setShowPhone] = useState(false);
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const [requestLoading, setRequestLoading] = useState(false);
+  const [requestForm] = Form.useForm();
 
   useEffect(() => {
-    loadListing();
+    window.scrollTo(0, 0);
+    const fetchListing = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get(`${BASE_URL}/listings/${id}`);
+        setListing(response.data);
+      } catch (err) {
+        console.error('Lỗi tải chi tiết bài đăng:', err);
+        setListing(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchListing();
   }, [id]);
 
-  const handleSchedule = async (values) => {
+  const formatPrice = (price) => {
+    if (!price) return 'Thỏa thuận';
+    if (price >= 1000000) return `${(price / 1000000).toFixed(1)} triệu/tháng`;
+    return `${Number(price).toLocaleString('vi-VN')} VNĐ/tháng`;
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleDateString('vi-VN', {
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    });
+  };
+
+  const handleSendRequest = async (values) => {
     if (!authService.isAuthenticated()) {
       navigate('/login');
       return;
     }
+    const role = authService.getUserRole();
+    if (role !== 'tenant' && role !== 'TENANT') {
+      antdMessage.warning('Chỉ tài khoản khách thuê mới có thể gửi yêu cầu xem phòng.');
+      return;
+    }
+    setRequestLoading(true);
     try {
-      const resolvedRoomId = Number(listing?.room?.roomId ?? listing?.room?.room_id ?? room.roomId ?? room.room_id);
-      if (!Number.isFinite(resolvedRoomId)) {
-        message.error('Không xác định phòng để đặt lịch');
-        return;
-      }
-      await viewingService.createViewing({
-        room_id: resolvedRoomId,
-        visit_date: values.visitDate.format('YYYY-MM-DD'),
-        visit_time: values.visitTime.format('HH:mm')
+      const roomId = listing?.room?.roomId || listing?.room?.room_id;
+      if (!roomId) throw new Error('Không xác định được phòng');
+      await rentRequestService.create({
+        room_id: roomId,
+        expected_start_date: values.expected_date
+          ? values.expected_date.format('YYYY-MM-DD')
+          : null,
       });
-      message.success('Đặt lịch xem phòng thành công');
-      setScheduleOpen(false);
-      form.resetFields();
-    } catch (error) {
-      message.error(error?.response?.data?.detail || 'Không thể đặt lịch xem phòng');
+      antdMessage.success('Đã gửi yêu cầu xem phòng thành công! Chủ trọ sẽ liên hệ bạn sớm.');
+      setRequestModalOpen(false);
+      requestForm.resetFields();
+    } catch (err) {
+      console.error("Full Error Object:", err);
+      const detail = err?.response?.data?.detail || 'Gửi yêu cầu thất bại. Vui lòng thử lại.';
+      antdMessage.error(detail);
+    } finally {
+      setRequestLoading(false);
     }
   };
 
-  const room = listing?.room || {};
-  const houseName = room.houseName || room.house_name || '';
-  const addressLine = [room.address || room.address_line, room.ward, room.district].filter(Boolean).join(', ');
-  const images = (room.image_urls && room.image_urls.length > 0)
-    ? room.image_urls
-    : (room.imageUrls && room.imageUrls.length > 0)
-      ? room.imageUrls
-      : [];
-  const isAvailable = room.isAvailable ?? room.is_available ?? true;
-  const roomName = room.name || '';
-  const roomLabel = [roomName, houseName].filter(Boolean).join(' - ');
-  const landlordName = room.landlordName || room.landlord_name || '';
-  const landlordPhone = room.landlordPhone || room.landlord_phone || '';
+  const handleRequestButtonClick = () => {
+    if (!authService.isAuthenticated()) {
+      navigate('/login', { state: { from: `/listings/${id}` } });
+      return;
+    }
+    const role = authService.getUserRole();
+    if (role !== 'tenant' && role !== 'TENANT') {
+      antdMessage.warning('Chỉ tài khoản khách thuê mới có thể gửi yêu cầu xem phòng.');
+      return;
+    }
+    setRequestModalOpen(true);
+  };
 
-  return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
-      <Card loading={loading} title={listing?.title || ''}>
-        {images.length > 0 && (
-          <Carousel autoplay style={{ marginBottom: 24 }}>
-            {images.map((img, index) => (
-              <div key={index}>
-                <img
-                  src={img}
-                  alt={`Room ${index + 1}`}
-                  style={{ width: '100%', maxHeight: 420, objectFit: 'cover', borderRadius: 8 }}
-                />
-              </div>
-            ))}
-          </Carousel>
-        )}
+  const images = listing
+    ? (listing.room?.image_urls?.length > 0
+      ? listing.room.image_urls
+      : listing.room?.imageUrls?.length > 0
+        ? listing.room.imageUrls
+        : ['https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800'])
+    : [];
 
-        <Descriptions bordered column={1} size="middle">
-          <Descriptions.Item label="Tên phòng">
-            {room.name || '—'}
-          </Descriptions.Item>
-          <Descriptions.Item label="Nhà trọ">
-            {houseName || '—'}
-          </Descriptions.Item>
-          <Descriptions.Item label="Địa chỉ">
-            <EnvironmentOutlined style={{ marginRight: 8 }} />
-            {addressLine || 'Chưa có địa chỉ'}
-          </Descriptions.Item>
-          <Descriptions.Item label="Diện tích">
-            {room.area ? `${room.area} m2` : '—'}
-          </Descriptions.Item>
-          <Descriptions.Item label="Giá thuê">
-            <Tag color="green">{room.price ? `${room.price.toLocaleString()} VNĐ/tháng` : '—'}</Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="Mô tả">
-            {room.description || 'Chưa có mô tả'}
-          </Descriptions.Item>
-          <Descriptions.Item label="Chủ trọ">
-            <UserOutlined style={{ marginRight: 8 }} />
-            {landlordName || '—'}
-          </Descriptions.Item>
-          <Descriptions.Item label="Số điện thoại">
-            <PhoneOutlined style={{ marginRight: 8 }} />
-            {landlordPhone || '—'}
-          </Descriptions.Item>
-          <Descriptions.Item label="Trạng thái">
-            <Tag color={isAvailable ? 'green' : 'red'}>
-              {isAvailable ? 'Trống' : 'Đã thuê'}
-            </Tag>
-          </Descriptions.Item>
-        </Descriptions>
-
-        <div style={{ marginTop: 24, display: 'flex', gap: 12 }}>
-          <Button type="primary" icon={<HomeOutlined />} onClick={() => setScheduleOpen(true)}>
-            Đặt lịch xem phòng
+  if (loading) {
+    return (
+      <div className="detail-page">
+        <div className="detail-navbar">
+          <Button icon={<ArrowLeftOutlined />} type="text" onClick={() => navigate(-1)}>
+            Quay lại
           </Button>
         </div>
-      </Card>
+        <div className="detail-container">
+          <Skeleton active paragraph={{ rows: 8 }} />
+        </div>
+      </div>
+    );
+  }
 
+  if (!listing) {
+    return (
+      <div className="detail-page">
+        <div className="detail-navbar">
+          <Button icon={<ArrowLeftOutlined />} type="text" onClick={() => navigate(-1)}>
+            Quay lại
+          </Button>
+        </div>
+        <div className="detail-container" style={{ textAlign: 'center', paddingTop: 80 }}>
+          <Empty description="Không tìm thấy bài đăng này" />
+          <Button type="primary" style={{ marginTop: 24 }} onClick={() => navigate('/')}>
+            Về trang chủ
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const price = listing.room?.price;
+  const area = listing.room?.area;
+  const district = listing.room?.district || '';
+  const ward = listing.room?.ward || '';
+  const address = listing.room?.address || '';
+  const views = listing.views_count || listing.viewsCount || 0;
+  const createdAt = listing.created_at || listing.createdAt;
+
+  return (
+    <>
+      <div className="detail-page">
+        {/* Navbar */}
+        <header className="detail-navbar">
+          <div className="detail-navbar-inner">
+            <Button
+              icon={<ArrowLeftOutlined />}
+              type="text"
+              className="back-btn"
+              onClick={() => navigate(-1)}
+            >
+              Quay lại trang chủ
+            </Button>
+            <Breadcrumb
+              items={[
+                { title: <Link to="/"><HomeOutlined /> Trang chủ</Link> },
+                { title: 'Chi tiết bài đăng' },
+              ]}
+            />
+          </div>
+        </header>
+
+        <div className="detail-container">
+          <Row gutter={[32, 0]}>
+            {/* LEFT COLUMN */}
+            <Col xs={24} lg={16}>
+              {/* Gallery */}
+              <div className="gallery-section">
+                <div className="main-gallery-image">
+                  <Image
+                    src={images[selectedImage]}
+                    alt="Ảnh phòng trọ"
+                    preview={{ mask: <><ExpandOutlined /> Phóng to</> }}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  <div className="image-overlay-badge">
+                    📷 {images.length} ảnh
+                  </div>
+                </div>
+                {images.length > 1 && (
+                  <div className="thumbnail-strip">
+                    {images.map((img, idx) => (
+                      <div
+                        key={idx}
+                        className={`thumbnail-item ${idx === selectedImage ? 'active' : ''}`}
+                        onClick={() => setSelectedImage(idx)}
+                      >
+                        <img src={img} alt={`thumb-${idx}`} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Main Info */}
+              <div className="detail-card">
+                <div className="detail-header">
+                  <Tag color="blue" className="listing-tag">Cho thuê phòng trọ</Tag>
+                  <div className="view-count">
+                    <EyeOutlined /> {views} lượt xem
+                  </div>
+                </div>
+
+                <h1 className="detail-title">{listing.title}</h1>
+
+                <div className="detail-location">
+                  <EnvironmentOutlined className="location-icon" />
+                  <span>{[address, ward, district].filter(Boolean).join(', ') || 'Chưa có địa chỉ'}</span>
+                </div>
+
+                <div className="stats-grid">
+                  <div className="stat-item">
+                    <DollarOutlined className="stat-icon price-icon" />
+                    <div>
+                      <div className="stat-label">Giá thuê</div>
+                      <div className="stat-value price-value">{formatPrice(price)}</div>
+                    </div>
+                  </div>
+                  {area && (
+                    <div className="stat-item">
+                      <ExpandOutlined className="stat-icon" />
+                      <div>
+                        <div className="stat-label">Diện tích</div>
+                        <div className="stat-value">{area} m²</div>
+                      </div>
+                    </div>
+                  )}
+                  <div className="stat-item">
+                    <CalendarOutlined className="stat-icon" />
+                    <div>
+                      <div className="stat-label">Ngày đăng</div>
+                      <div className="stat-value">{formatDate(createdAt)}</div>
+                    </div>
+                  </div>
+                  <div className="stat-item">
+                    <CheckCircleOutlined className="stat-icon green-icon" />
+                    <div>
+                      <div className="stat-label">Trạng thái</div>
+                      <div className="stat-value green-value">Còn trống</div>
+                    </div>
+                  </div>
+                </div>
+
+                <Divider />
+
+                <div className="description-section">
+                  <h2 className="section-heading">Thông tin mô tả</h2>
+                  <p className="description-text">{listing.description || 'Không có mô tả.'}</p>
+                </div>
+              </div>
+
+              {/* Amenities */}
+              <div className="detail-card">
+                <h2 className="section-heading">Tiện ích phòng trọ</h2>
+                <div className="amenities-grid">
+                  {['Điện nước', 'Wifi miễn phí', 'Giờ giấc tự do', 'An ninh 24/7',
+                    'Chỗ để xe', 'Vệ sinh riêng'].map((item) => (
+                      <div key={item} className="amenity-item">
+                        <CheckCircleOutlined className="amenity-icon" />
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </Col>
+
+            {/* RIGHT COLUMN — Sticky contact card */}
+            <Col xs={24} lg={8}>
+              <div className="contact-sticky-wrapper">
+                <div className="contact-card">
+                  <div className="price-highlight">
+                    <span className="price-big">{formatPrice(price)}</span>
+                    {area && <span className="price-area"> · {area} m²</span>}
+                  </div>
+
+                  <Divider style={{ margin: '16px 0' }} />
+
+                  <div className="contact-info">
+                    <div className="contact-row">
+                      <TeamOutlined className="contact-icon" />
+                      <div>
+                        <div className="contact-label">Liên hệ chủ phòng</div>
+                        <div className="contact-value">Nhà trọ TTCS</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="primary"
+                    size="large"
+                    block
+                    className="call-button"
+                    icon={<PhoneOutlined />}
+                    onClick={() => setShowPhone(!showPhone)}
+                  >
+                    {showPhone ? '0901 234 567' : 'Hiện số điện thoại'}
+                  </Button>
+
+                  <Button
+                    size="large"
+                    block
+                    className="save-button"
+                    icon={saved ? <HeartFilled style={{ color: '#ef4444' }} /> : <HeartOutlined />}
+                    onClick={() => setSaved(!saved)}
+                    style={{ marginTop: 12 }}
+                  >
+                    {saved ? 'Đã lưu bài đăng' : 'Lưu bài đăng'}
+                  </Button>
+
+                  <Button
+                    size="large"
+                    block
+                    className="request-view-button"
+                    icon={<CalendarOutlined />}
+                    onClick={handleRequestButtonClick}
+                    style={{ marginTop: 12 }}
+                  >
+                    Yêu cầu xem phòng
+                  </Button>
+
+                  <div className="contact-note">
+                    <CheckCircleOutlined style={{ color: '#22c55e' }} />
+                    <span>Tin đăng đã được kiểm duyệt</span>
+                  </div>
+                </div>
+
+                {/* Map placeholder */}
+                <div className="map-card">
+                  <h3 className="map-title"><EnvironmentOutlined /> Vị trí</h3>
+                  <div className="map-placeholder">
+                    <EnvironmentOutlined style={{ fontSize: 36, color: '#94a3b8' }} />
+                    <p>{[ward, district].filter(Boolean).join(', ') || 'Chưa xác định'}</p>
+                  </div>
+                </div>
+              </div>
+            </Col>
+          </Row>
+        </div>
+      </div>
+
+      {/* Modal yêu cầu xem phòng */}
       <Modal
-        title="Đặt lịch xem phòng"
-        open={scheduleOpen}
-        onCancel={() => setScheduleOpen(false)}
-        onOk={() => form.submit()}
-        okText="Đặt lịch"
+        title={<><CalendarOutlined style={{ color: '#2563eb', marginRight: 8 }} />Yêu cầu xem phòng</>}
+        open={requestModalOpen}
+        onCancel={() => { setRequestModalOpen(false); requestForm.resetFields(); }}
+        footer={null}
+        width={440}
       >
-        <Form form={form} layout="vertical" onFinish={handleSchedule}>
-          <Form.Item label="Phòng">
-            <Input value={roomLabel} disabled />
-          </Form.Item>
+        <p style={{ color: '#64748b', marginBottom: 20 }}>
+          Chọn ngày bạn muốn đến xem phòng. Chủ trọ sẽ xác nhận và liên hệ với bạn qua SĐT đã đăng ký.
+        </p>
+        <Form form={requestForm} layout="vertical" onFinish={handleSendRequest}>
           <Form.Item
-            name="visitDate"
-            label="Ngày xem phòng"
-            rules={[{ required: true, message: 'Vui lòng chọn ngày xem' }]}
+            name="expected_date"
+            label="Ngày muốn xem phòng"
+            rules={[{ required: true, message: 'Vui lòng chọn ngày!' }]}
           >
-            <DatePicker style={{ width: '100%' }} disabledDate={(current) => current && current.isBefore(dayjs(), 'day')} />
+            <DatePicker
+              style={{ width: '100%' }}
+              format="DD/MM/YYYY"
+              placeholder="Chọn ngày"
+              disabledDate={(d) => d && d.valueOf() < Date.now() - 86400000}
+            />
           </Form.Item>
-          <Form.Item
-            name="visitTime"
-            label="Giờ xem phòng"
-            rules={[{ required: true, message: 'Vui lòng chọn giờ xem' }]}
-          >
-            <TimePicker style={{ width: '100%' }} format="HH:mm" />
+          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+            <Button onClick={() => { setRequestModalOpen(false); requestForm.resetFields(); }} style={{ marginRight: 8 }}>
+              Hủy
+            </Button>
+            <Button type="primary" htmlType="submit" loading={requestLoading}>
+              Gửi yêu cầu
+            </Button>
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </>
   );
 };
 
 export default ListingDetail;
-

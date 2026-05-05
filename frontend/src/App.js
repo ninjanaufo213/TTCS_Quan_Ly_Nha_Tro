@@ -104,7 +104,11 @@ function App() {
                         {/* HomePage as default home page */}
                         <Route path="/" element={<HomePage />} />
                         <Route path="/home" element={<HomePage />} />
+<<<<<<< Thanh
+                        <Route path="/listings/:id" element={<ListingDetail />} />
+=======
                         <Route path="/listing/:id" element={<ListingDetail />} />
+>>>>>>> main
                         <Route
                             path="/login"
                             element={

@@ -181,8 +181,8 @@ const HomePage = () => {
     <Card 
         key={listing.id} 
         className="listing-card animate-fade-in-up" 
-        style={{ animationDelay: `${(index % 8) * 100}ms` }}
-        onClick={() => navigate(`/listing/${listing.id}`)}
+        style={{ animationDelay: `${(index % 8) * 100}ms`, cursor: 'pointer' }}
+        onClick={() => navigate(`/listings/${listing.id}`)}
     >
       <Row gutter={24}>
         {/* Images Section */}

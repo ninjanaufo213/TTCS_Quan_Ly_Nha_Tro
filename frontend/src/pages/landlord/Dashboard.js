@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Statistic, Table, Button, Tag, Modal, Descriptions, Image, Spin, App } from 'antd';
+import { Row, Col, Card, Statistic, Table, Button, Tag, Modal, Descriptions, Image, Spin, App, Popconfirm } from 'antd';
 import {
   BankOutlined,
   ShopOutlined,
   UserOutlined,
   DollarOutlined,
-  EyeOutlined
+  EyeOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { houseService } from '../../services/houseService';
 import { roomService } from '../../services/roomService';
 import { rentedRoomService } from '../../services/rentedRoomService';
 import { invoiceService } from '../../services/invoiceService';
+import { rentRequestService } from '../../services/rentRequestService';
 
 const Dashboard = () => {
   const { message } = App.useApp();
@@ -23,6 +27,8 @@ const Dashboard = () => {
   });
   const [recentData, setRecentData] = useState([]);
   const [pendingInvoices, setPendingInvoices] = useState([]);
+  const [viewingRequests, setViewingRequests] = useState([]);
+  const [requestLoading, setRequestLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [houseDetailOpen, setHouseDetailOpen] = useState(false);
   const [houseDetailLoading, setHouseDetailLoading] = useState(false);
@@ -42,6 +48,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
+    fetchViewingRequests();
   }, []);
 
   const fetchDashboardData = async () => {
@@ -81,6 +88,28 @@ const Dashboard = () => {
       message.error('Lỗi khi tải chi tiết nhà trọ!');
     } finally {
       setHouseDetailLoading(false);
+    }
+  };
+
+  const fetchViewingRequests = async () => {
+    setRequestLoading(true);
+    try {
+      const data = await rentRequestService.getLandlordRequests();
+      setViewingRequests(data);
+    } catch (err) {
+      console.error('Lỗi tải yêu cầu xem phòng:', err);
+    } finally {
+      setRequestLoading(false);
+    }
+  };
+
+  const handleUpdateStatus = async (id, status) => {
+    try {
+      await rentRequestService.updateStatus(id, status);
+      message.success(status === 'CONFIRMED' ? 'Xác nhận thành công!' : 'Đã từ chối yêu cầu.');
+      fetchViewingRequests();
+    } catch (err) {
+      message.error('Không thể cập nhật trạng thái.');
     }
   };
 
@@ -160,6 +189,61 @@ const Dashboard = () => {
     },
   ];
 
+  const statusTag = (status) => {
+    if (status === 'CONFIRMED') return <Tag color="green" icon={<CheckCircleOutlined />}>Xác nhận</Tag>;
+    if (status === 'CANCELLED') return <Tag color="red" icon={<CloseCircleOutlined />}>Từ chối</Tag>;
+    return <Tag color="orange" icon={<ClockCircleOutlined />}>Chờ duyệt</Tag>;
+  };
+
+  const viewingColumns = [
+    { title: 'Khách thuê', dataIndex: 'tenant_name', key: 'tenant_name', render: v => v || 'N/A' },
+    { title: 'Số điện thoại', dataIndex: 'tenant_phone', key: 'tenant_phone', render: v => v || 'N/A' },
+    { title: 'Phòng', dataIndex: 'room_name', key: 'room_name' },
+    { title: 'Nhà trọ', dataIndex: 'house_name', key: 'house_name' },
+    {
+      title: 'Ngày muốn xem',
+      dataIndex: 'expected_start_date',
+      key: 'expected_start_date',
+      render: (d) => d ? new Date(d).toLocaleDateString('vi-VN') : 'Chưa chọn',
+    },
+    {
+      title: 'Ngày gửi',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      render: (d) => d ? new Date(d).toLocaleDateString('vi-VN') : '',
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'status',
+      key: 'status',
+      render: (s) => statusTag(s),
+    },
+    {
+      title: 'Hành động',
+      key: 'action',
+      align: 'center',
+      width: 200,
+      render: (_, record) => record.status === 'PENDING' ? (
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+          <Popconfirm
+            title="Xác nhận yêu cầu xem phòng?"
+            onConfirm={() => handleUpdateStatus(record.request_id, 'CONFIRMED')}
+            okText="Xác nhận" cancelText="Hủy"
+          >
+            <Button type="primary" size="small" icon={<CheckCircleOutlined />}>Xác nhận</Button>
+          </Popconfirm>
+          <Popconfirm
+            title="Từ chối yêu cầu này?"
+            onConfirm={() => handleUpdateStatus(record.request_id, 'CANCELLED')}
+            okText="Từ chối" cancelText="Hủy" okButtonProps={{ danger: true }}
+          >
+            <Button danger size="small" icon={<CloseCircleOutlined />}>Từ chối</Button>
+          </Popconfirm>
+        </div>
+      ) : <span style={{ color: '#94a3b8', fontSize: 13 }}>-</span>,
+    },
+  ];
+
   return (
     <div>
       <h2 style={{ marginBottom: 24 }}>
@@ -232,6 +316,34 @@ const Dashboard = () => {
                 pagination={false}
                 loading={loading}
                 size="small"
+              />
+            </Card>
+          </Col>
+        </Row>
+
+        <Row gutter={16} style={{ marginTop: 24 }}>
+          <Col span={24}>
+            <Card
+              title={
+                <span>
+                  <ClockCircleOutlined style={{ color: '#f59e0b', marginRight: 8 }} />
+                  Yêu cầu xem phòng
+                  {viewingRequests.filter(r => r.status === 'PENDING').length > 0 && (
+                    <Tag color="orange" style={{ marginLeft: 12 }}>
+                      {viewingRequests.filter(r => r.status === 'PENDING').length} chờ duyệt
+                    </Tag>
+                  )}
+                </span>
+              }
+            >
+              <Table
+                columns={viewingColumns}
+                dataSource={viewingRequests}
+                rowKey="request_id"
+                pagination={{ pageSize: 5, showTotal: (t) => `Tổng ${t} yêu cầu` }}
+                loading={requestLoading}
+                size="small"
+                locale={{ emptyText: 'Chưa có yêu cầu xem phòng nào.' }}
               />
             </Card>
           </Col>
