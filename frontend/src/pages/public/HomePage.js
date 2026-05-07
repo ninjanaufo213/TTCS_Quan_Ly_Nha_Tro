@@ -27,6 +27,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import { listingService } from '../../services/listingService';
+import NotificationPopover from '../../components/NotificationPopover';
 import '../../styles/HomePage.css';
 
 const HomePage = () => {
@@ -292,6 +293,7 @@ const HomePage = () => {
                 
                 return (
                   <>
+                    <NotificationPopover />
                     {!isTenant && (
                       <Button
                         type="link"

@@ -16,6 +16,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { authService } from '../services/authService';
+import NotificationPopover from './NotificationPopover';
 
 const { Header, Sider, Content } = AntLayout;
 
@@ -164,31 +165,34 @@ const Layout = ({ children }) => {
               }}
             />
           )}
-          <Dropdown
-            menu={{ items: userMenuItems, onClick: onUserMenuClick }}
-            placement="bottomRight"
-            arrow
-          >
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 8, 
-              padding: '0 16px',
-              cursor: 'pointer'
-            }}>
-              <Avatar icon={<UserOutlined />} />
-              <span>{userInfo?.fullname || 'User'}</span>
-              {userInfo?.role && (
-                <span style={{ 
-                  fontSize: '12px', 
-                  color: '#999',
-                  marginLeft: '4px'
-                }}>
-                  ({userInfo.role.authority})
-                </span>
-              )}
-            </div>
-          </Dropdown>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <NotificationPopover />
+            <Dropdown
+              menu={{ items: userMenuItems, onClick: onUserMenuClick }}
+              placement="bottomRight"
+              arrow
+            >
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 8, 
+                padding: '0 16px',
+                cursor: 'pointer'
+              }}>
+                <Avatar icon={<UserOutlined />} />
+                <span>{userInfo?.fullname || 'User'}</span>
+                {userInfo?.role && (
+                  <span style={{ 
+                    fontSize: '12px', 
+                    color: '#999',
+                    marginLeft: '4px'
+                  }}>
+                    ({userInfo.role.authority})
+                  </span>
+                )}
+              </div>
+            </Dropdown>
+          </div>
         </Header>
         <Content style={{ 
           margin: '24px 16px', 

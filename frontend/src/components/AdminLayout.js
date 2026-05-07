@@ -13,6 +13,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { authService } from '../services/authService';
+import NotificationPopover from './NotificationPopover';
 
 const { Header, Sider, Content } = AntLayout;
 
@@ -133,35 +134,38 @@ const AdminLayout = () => {
             </Tag>
           </div>
 
-          <Dropdown
-            menu={{ items: userMenuItems, onClick: onUserMenuClick }}
-            placement="bottomRight"
-            arrow
-          >
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              cursor: 'pointer',
-              padding: '8px 12px',
-              borderRadius: 8,
-              transition: 'background 0.2s',
-            }}
-              onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <NotificationPopover />
+            <Dropdown
+              menu={{ items: userMenuItems, onClick: onUserMenuClick }}
+              placement="bottomRight"
+              arrow
             >
-              <Avatar
-                style={{ background: 'linear-gradient(135deg, #e94560, #0f3460)' }}
-                icon={<UserOutlined />}
-              />
-              <div style={{ lineHeight: 1.3 }}>
-                <div style={{ fontWeight: 600, fontSize: 14 }}>
-                  {userInfo?.email || 'Admin'}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                cursor: 'pointer',
+                padding: '8px 12px',
+                borderRadius: 8,
+                transition: 'background 0.2s',
+              }}
+                onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <Avatar
+                  style={{ background: 'linear-gradient(135deg, #e94560, #0f3460)' }}
+                  icon={<UserOutlined />}
+                />
+                <div style={{ lineHeight: 1.3 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>
+                    {userInfo?.email || 'Admin'}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#e94560' }}>ADMIN</div>
                 </div>
-                <div style={{ fontSize: 12, color: '#e94560' }}>ADMIN</div>
               </div>
-            </div>
-          </Dropdown>
+            </Dropdown>
+          </div>
         </Header>
 
         <Content style={{

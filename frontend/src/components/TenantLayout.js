@@ -13,6 +13,7 @@ import {
 } from '@ant-design/icons';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
+import NotificationPopover from './NotificationPopover';
 
 const { Header, Sider, Content } = AntLayout;
 
@@ -147,15 +148,18 @@ export default function TenantLayout() {
             </Tag>
           </div>
 
-          <Dropdown menu={{ items: userMenuItems, onClick: onUserMenuClick }} placement="bottomRight" arrow>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-              <Avatar style={{ background: 'linear-gradient(135deg, #1890ff, #0f172a)' }} icon={<UserOutlined />} />
-              <div style={{ lineHeight: 1.3 }}>
-                <div style={{ fontWeight: 600, fontSize: 14 }}>{userInfo?.fullname || userInfo?.email || 'User'}</div>
-                <div style={{ fontSize: 12, color: '#1890ff' }}>TENANT</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <NotificationPopover />
+            <Dropdown menu={{ items: userMenuItems, onClick: onUserMenuClick }} placement="bottomRight" arrow>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+                <Avatar style={{ background: 'linear-gradient(135deg, #1890ff, #0f172a)' }} icon={<UserOutlined />} />
+                <div style={{ lineHeight: 1.3 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>{userInfo?.fullname || userInfo?.email || 'User'}</div>
+                  <div style={{ fontSize: 12, color: '#1890ff' }}>TENANT</div>
+                </div>
               </div>
-            </div>
-          </Dropdown>
+            </Dropdown>
+          </div>
         </Header>
 
         <Content style={{ margin: '24px 20px', padding: 0, minHeight: 'calc(100vh - 112px)' }}>
