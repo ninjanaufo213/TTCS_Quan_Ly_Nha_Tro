@@ -12,6 +12,7 @@ import {
   EyeOutlined,
 } from '@ant-design/icons';
 import adminService from '../../services/adminService';
+import DashboardLayout from '../../components/DashboardLayout';
 
 const { Title, Text } = Typography;
 
@@ -137,13 +138,12 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div style={{ padding: '4px 0' }}>
-      <div style={{ marginBottom: 28 }}>
-        <Title level={3} style={{ margin: 0, color: '#1a1a2e' }}>
-          📊 Dashboard Quản trị
-        </Title>
-        <Text type="secondary">Tổng quan hệ thống quản lý nhà trọ</Text>
-      </div>
+    <DashboardLayout
+      title="📊 Dashboard Quản trị"
+      subtitle="Tổng quan hệ thống quản lý nhà trọ"
+      showHeader={false}
+      showFooter={false}
+    >
 
       {/* Stat Cards */}
       <Row gutter={[20, 20]} style={{ marginBottom: 28 }}>
@@ -274,7 +274,7 @@ const AdminDashboard = () => {
           </Card>
         </Col>
       </Row>
-    </div>
+    </DashboardLayout>
   );
 };
 

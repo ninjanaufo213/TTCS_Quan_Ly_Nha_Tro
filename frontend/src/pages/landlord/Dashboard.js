@@ -16,6 +16,7 @@ import { roomService } from '../../services/roomService';
 import { rentedRoomService } from '../../services/rentedRoomService';
 import { invoiceService } from '../../services/invoiceService';
 import { viewingService } from '../../services/viewingService';
+import DashboardLayout from '../../components/DashboardLayout';
 
 const Dashboard = () => {
   const { message } = App.useApp();
@@ -299,110 +300,111 @@ const Dashboard = () => {
   const activeRequests = viewingRequests.filter(r => !['CANCELED', 'CONTRACTED'].includes(r.status));
 
   return (
-    <div>
-      <h2 style={{ marginBottom: 24 }}>
-        Dashboard - Chủ trọ
-      </h2>
+    <DashboardLayout
+      title="Dashboard"
+      subtitle="Quản lý nhà trọ, phòng trọ và hóa đơn"
+      showHeader={false}
+      showFooter={false}
+    >
+      {/* Stats Row */}
+      <Row gutter={16} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="Tổng số nhà trọ"
+              value={stats.totalHouses}
+              prefix={<BankOutlined />}
+              valueStyle={{ color: '#3f8600' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="Tổng số phòng"
+              value={stats.totalRooms}
+              prefix={<ShopOutlined />}
+              valueStyle={{ color: '#1890ff' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="Phòng đang thuê"
+              value={stats.totalRentedRooms}
+              prefix={<UserOutlined />}
+              valueStyle={{ color: '#722ed1' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="Hóa đơn chưa thanh toán"
+              value={stats.totalPendingInvoices}
+              prefix={<DollarOutlined />}
+              valueStyle={{ color: '#cf1322' }}
+            />
+          </Card>
+        </Col>
+      </Row>
 
-      <>
-        <Row gutter={16} style={{ marginBottom: 24 }}>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="Tổng số nhà trọ"
-                value={stats.totalHouses}
-                prefix={<BankOutlined />}
-                valueStyle={{ color: '#3f8600' }}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="Tổng số phòng"
-                value={stats.totalRooms}
-                prefix={<ShopOutlined />}
-                valueStyle={{ color: '#1890ff' }}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="Phòng đang thuê"
-                value={stats.totalRentedRooms}
-                prefix={<UserOutlined />}
-                valueStyle={{ color: '#722ed1' }}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="Hóa đơn chưa thanh toán"
-                value={stats.totalPendingInvoices}
-                prefix={<DollarOutlined />}
-                valueStyle={{ color: '#cf1322' }}
-              />
-            </Card>
-          </Col>
-        </Row>
+      {/* Content Rows */}
+      <Row gutter={16}>
+        <Col xs={24} lg={12}>
+          <Card title="Nhà trọ gần đây" style={{ height: 400 }}>
+            <Table
+              columns={houseColumns}
+              dataSource={recentData}
+              rowKey="house_id"
+              pagination={false}
+              loading={loading}
+              size="small"
+            />
+          </Card>
+        </Col>
+        <Col xs={24} lg={12}>
+          <Card title="Hóa đơn chưa thanh toán" style={{ height: 400 }}>
+            <Table
+              columns={invoiceColumns}
+              dataSource={pendingInvoices}
+              rowKey="invoice_id"
+              pagination={false}
+              loading={loading}
+              size="small"
+            />
+          </Card>
+        </Col>
+      </Row>
 
-        <Row gutter={16}>
-          <Col span={12}>
-            <Card title="Nhà trọ gần đây" style={{ height: 400 }}>
-              <Table
-                columns={houseColumns}
-                dataSource={recentData}
-                rowKey="house_id"
-                pagination={false}
-                loading={loading}
-                size="small"
-              />
-            </Card>
-          </Col>
-          <Col span={12}>
-            <Card title="Hóa đơn chưa thanh toán" style={{ height: 400 }}>
-              <Table
-                columns={invoiceColumns}
-                dataSource={pendingInvoices}
-                rowKey="invoice_id"
-                pagination={false}
-                loading={loading}
-                size="small"
-              />
-            </Card>
-          </Col>
-        </Row>
-
-        <Row gutter={16} style={{ marginTop: 24 }}>
-          <Col span={24}>
-            <Card
-              title={
-                <span>
-                  <ClockCircleOutlined style={{ color: '#f59e0b', marginRight: 8 }} />
-                  Yêu cầu xem phòng
-                  {activeRequests.filter(r => r.status === 'PENDING').length > 0 && (
-                    <Tag color="orange" style={{ marginLeft: 12 }}>
-                      {activeRequests.filter(r => r.status === 'PENDING').length} chờ xác nhận
-                    </Tag>
-                  )}
-                </span>
-              }
-            >
-              <Table
-                columns={viewingColumns}
-                dataSource={activeRequests}
-                rowKey="requestId"
-                pagination={{ pageSize: 5, showTotal: (t) => `Tổng ${t} yêu cầu` }}
-                loading={requestLoading}
-                size="small"
-                locale={{ emptyText: 'Chưa có yêu cầu xem phòng nào.' }}
-              />
-            </Card>
-          </Col>
-        </Row>
-      </>
+      <Row gutter={16} style={{ marginTop: 24 }}>
+        <Col xs={24}>
+          <Card
+            title={
+              <span>
+                <ClockCircleOutlined style={{ color: '#f59e0b', marginRight: 8 }} />
+                Yêu cầu xem phòng
+                {activeRequests.filter(r => r.status === 'PENDING').length > 0 && (
+                  <Tag color="orange" style={{ marginLeft: 12 }}>
+                    {activeRequests.filter(r => r.status === 'PENDING').length} chờ xác nhận
+                  </Tag>
+                )}
+              </span>
+            }
+          >
+            <Table
+              columns={viewingColumns}
+              dataSource={activeRequests}
+              rowKey="requestId"
+              pagination={{ pageSize: 5, showTotal: (t) => `Tổng ${t} yêu cầu` }}
+              loading={requestLoading}
+              size="small"
+              locale={{ emptyText: 'Chưa có yêu cầu xem phòng nào.' }}
+            />
+          </Card>
+        </Col>
+      </Row>
 
       <Modal
         title={selectedHouse?.name ? `Chi tiết nhà trọ - ${selectedHouse.name}` : 'Chi tiết nhà trọ'}
@@ -480,7 +482,7 @@ const Dashboard = () => {
           </>
         )}
       </Modal>
-    </div>
+    </DashboardLayout>
   );
 };
 

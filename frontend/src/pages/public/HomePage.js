@@ -24,19 +24,22 @@ import {
   EnvironmentOutlined,
   UserOutlined
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import { listingService } from '../../services/listingService';
+import SharedHeader from '../../components/SharedHeader';
+import SharedFooter from '../../components/SharedFooter';
 import '../../styles/HomePage.css';
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('suggest');
   const [selectedProvince, setSelectedProvince] = useState('all');
   const [savedListings, setSavedListings] = useState(new Set());
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [searchKeyword, setSearchKeyword] = useState('');
+  const [searchKeyword, setSearchKeyword] = useState(searchParams.get('search') || '');
   const [selectedPriceRange, setSelectedPriceRange] = useState(null);
   const [selectedAreaRange, setSelectedAreaRange] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -260,85 +263,8 @@ const HomePage = () => {
 
   return (
     <div className="home-page">
-      {/* Top Navigation Bar */}
-      <header className="top-navbar animate-fade-in">
-        <div className="navbar-container">
-          <div className="logo">TTCS</div>
-
-          <Input
-            placeholder="Tìm kiếm theo khu vực, tên đường..."
-            prefix={<SearchOutlined style={{ color: '#94a3b8' }}/>}
-            className="search-input"
-            value={searchKeyword}
-            onChange={(e) => setSearchKeyword(e.target.value)}
-            allowClear
-          />
-
-          <Button 
-            type="default" 
-            icon={<FilterOutlined />} 
-            className="filter-button"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            Bộ lọc
-          </Button>
-
-          <div className="navbar-actions">
-            <Button type="link">Tin đã lưu</Button>
-            {authService.isAuthenticated() ? (
-              (() => {
-                const role = authService.getUserRole();
-                const isTenant = role === 'tenant' || role === 'TENANT';
-                
-                return (
-                  <>
-                    {!isTenant && (
-                      <Button
-                        type="link"
-                        onClick={() => {
-                          navigate((role === 'admin' || role === 'ADMIN') ? '/admin/dashboard' : '/app/dashboard');
-                        }}
-                      >
-                        Quản lý
-                      </Button>
-                    )}
-
-                    {isTenant && (
-                      <Button type="primary" onClick={() => navigate('/tenant/room-info')}>
-                        Phòng trọ của bạn
-                      </Button>
-                    )}
-
-                    {!isTenant && (
-                      <Button
-                        type="primary"
-                        className="post-button"
-                        onClick={() => {
-                          navigate((role === 'admin' || role === 'ADMIN') ? '/admin/dashboard' : '/app/dashboard');
-                        }}
-                      >
-                        Đăng tin
-                      </Button>
-                    )}
-                  </>
-                );
-              })()
-            ) : (
-              <>
-                <Button type="link" onClick={() => navigate('/register')}>Đăng ký</Button>
-                <Button type="link" onClick={() => navigate('/login')}>Đăng nhập</Button>
-                <Button
-                  type="primary"
-                  className="post-button"
-                  onClick={() => navigate('/login')}
-                >
-                  Đăng tin
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      {/* Shared Header */}
+      <SharedHeader showSearch={false} showDashboardButton={true} />
 
       {/* Menu Categories */}
       <nav className={`category-menu animate-fade-in`}>
@@ -348,6 +274,7 @@ const HomePage = () => {
               key={cat.key}
               href="#"
               className={`menu-item ${cat.key === 'rooms' ? 'active' : ''}`}
+              onClick={(e) => e.preventDefault()}
             >
               {cat.label}
             </a>
@@ -507,27 +434,30 @@ const HomePage = () => {
       </div>
 
       {/* Floating Action Buttons */}
-      <div className="floating-actions">
-        <Button
-          type="primary"
-          shape="circle"
-          icon={<MessageOutlined />}
-          size="large"
-          className="float-button chat-button"
-          title="Chat với chúng tôi"
-        />
-        {showBackToTop && (
-          <Button
-            type="primary"
-            shape="circle"
-            icon={<ArrowUpOutlined />}
-            size="large"
-            className="float-button back-to-top-button"
-            onClick={scrollToTop}
-            title="Lên đầu trang"
-          />
-        )}
-      </div>
+       <div className="floating-actions">
+         <Button
+           type="primary"
+           shape="circle"
+           icon={<MessageOutlined />}
+           size="large"
+           className="float-button chat-button"
+           title="Chat với chúng tôi"
+         />
+         {showBackToTop && (
+           <Button
+             type="primary"
+             shape="circle"
+             icon={<ArrowUpOutlined />}
+             size="large"
+             className="float-button back-to-top-button"
+             onClick={scrollToTop}
+             title="Lên đầu trang"
+           />
+         )}
+       </div>
+
+      {/* Shared Footer */}
+      <SharedFooter />
     </div>
   );
 };

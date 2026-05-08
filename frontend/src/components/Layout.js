@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Layout as AntLayout, Menu, Button, Dropdown, Avatar } from 'antd';
+import { Layout as AntLayout, Menu } from 'antd';
 import { 
   HomeOutlined, 
-  UserOutlined, 
-  LogoutOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
   BankOutlined,
   ShopOutlined,
   FileTextOutlined,
@@ -16,6 +12,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { authService } from '../services/authService';
+import SharedHeader from './SharedHeader';
 
 const { Header, Sider, Content } = AntLayout;
 
@@ -34,17 +31,12 @@ const Layout = ({ children }) => {
         console.error('Failed to fetch user info:', error);
       }
     };
-    fetchUserInfo();
-  }, []);
+     fetchUserInfo();
+   }, []);
 
-  const handleLogout = () => {
-    authService.logout();
-    navigate('/login');
-  };
+   const isTenant = userInfo?.role?.authority?.toLowerCase() === 'tenant';
 
-  const isTenant = userInfo?.role?.authority?.toLowerCase() === 'tenant';
-
-  // landlord menu items
+  // Landlord menu items
   const menuItems = [
     {
       key: '/app/dashboard',
@@ -86,35 +78,14 @@ const Layout = ({ children }) => {
       icon: <FileTextOutlined />,
       label: 'Báo cáo & AI',
     },
-    {
-      key: '/app/notifications',
-      icon: <BellOutlined />,
-      label: 'Thông báo',
-    },
-  ];
+     {
+       key: '/app/notifications',
+       icon: <BellOutlined />,
+       label: 'Thông báo',
+     },
+   ];
 
-  const userMenuItems = [
-    {
-      key: 'profile',
-      icon: <UserOutlined />,
-      label: 'Thông tin cá nhân',
-    },
-    {
-      key: 'logout',
-      icon: <LogoutOutlined />,
-      label: 'Đăng xuất',
-    },
-  ];
-
-  const onUserMenuClick = ({ key }) => {
-    if (key === 'logout') {
-      handleLogout();
-    } else if (key === 'profile') {
-      navigate('/app/profile');
-    }
-  };
-
-  return (
+   return (
     <AntLayout style={{ minHeight: '100vh' }}>
       {!isTenant && (
         <Sider trigger={null} collapsible collapsed={collapsed}>
@@ -141,55 +112,18 @@ const Layout = ({ children }) => {
         </Sider>
       )}
       <AntLayout>
-        <Header style={{ 
-          padding: 0, 
-          background: '#fff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          {isTenant ? (
-            <div style={{ paddingLeft: 24, fontWeight: 'bold', fontSize: 18, color: '#1890ff' }}>
-              Trung tâm Cá nhân
-            </div>
-          ) : (
-            <Button
-              type="text"
-              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-              onClick={() => setCollapsed(!collapsed)}
-              style={{
-                fontSize: '16px',
-                width: 64,
-                height: 64,
-              }}
-            />
-          )}
-          <Dropdown
-            menu={{ items: userMenuItems, onClick: onUserMenuClick }}
-            placement="bottomRight"
-            arrow
-          >
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 8, 
-              padding: '0 16px',
-              cursor: 'pointer'
-            }}>
-              <Avatar icon={<UserOutlined />} />
-              <span>{userInfo?.fullname || 'User'}</span>
-              {userInfo?.role && (
-                <span style={{ 
-                  fontSize: '12px', 
-                  color: '#999',
-                  marginLeft: '4px'
-                }}>
-                  ({userInfo.role.authority})
-                </span>
-              )}
-            </div>
-          </Dropdown>
-        </Header>
+        {/* Shared Header */}
+        {isTenant ? (
+          <SharedHeader showSearch={false} showDashboardButton={false} />
+        ) : (
+          <SharedHeader 
+            showSearch={false} 
+            showDashboardButton={false}
+            onMenuToggle={() => setCollapsed(!collapsed)}
+            menuCollapsed={collapsed}
+          />
+        )}
+
         <Content style={{ 
           margin: '24px 16px', 
           padding: 24, 

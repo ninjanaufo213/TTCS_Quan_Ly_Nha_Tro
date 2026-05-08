@@ -1,43 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import { Layout as AntLayout, Menu, Button, Dropdown, Avatar, Tag } from 'antd';
+import React, { useState } from 'react';
+import { Layout as AntLayout, Menu } from 'antd';
 import {
   HomeOutlined,
   FileTextOutlined,
   ThunderboltOutlined,
-  LogoutOutlined,
-  UserOutlined,
   BellOutlined,
   CalendarOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
 } from '@ant-design/icons';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { authService } from '../services/authService';
+import SharedHeader from './SharedHeader';
 
-const { Header, Sider, Content } = AntLayout;
+const { Sider, Content } = AntLayout;
 
 export default function TenantLayout() {
   const [collapsed, setCollapsed] = useState(false);
-  const [userInfo, setUserInfo] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
-
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const user = await authService.getCurrentUser();
-        setUserInfo(user);
-      } catch (error) {
-        // ignore: trang vẫn render được với info cache
-      }
-    };
-    fetchUserInfo();
-  }, []);
-
-  const handleLogout = () => {
-    authService.logout();
-    navigate('/login');
-  };
 
   const menuItems = [
     {
@@ -76,14 +54,6 @@ export default function TenantLayout() {
       label: 'Thông báo',
     },
   ];
-
-  const userMenuItems = [
-    { key: 'logout', icon: <LogoutOutlined />, label: 'Đăng xuất', danger: true },
-  ];
-
-  const onUserMenuClick = ({ key }) => {
-    if (key === 'logout') handleLogout();
-  };
 
   return (
     <AntLayout style={{ minHeight: '100vh' }}>
@@ -125,38 +95,13 @@ export default function TenantLayout() {
       </Sider>
 
       <AntLayout>
-        <Header
-          style={{
-            padding: '0 24px',
-            background: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Button
-              type="text"
-              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-              onClick={() => setCollapsed(!collapsed)}
-              style={{ fontSize: '16px', width: 48, height: 48 }}
-            />
-            <Tag color="blue" style={{ fontSize: 13 }}>
-              Người thuê trọ
-            </Tag>
-          </div>
-
-          <Dropdown menu={{ items: userMenuItems, onClick: onUserMenuClick }} placement="bottomRight" arrow>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-              <Avatar style={{ background: 'linear-gradient(135deg, #1890ff, #0f172a)' }} icon={<UserOutlined />} />
-              <div style={{ lineHeight: 1.3 }}>
-                <div style={{ fontWeight: 600, fontSize: 14 }}>{userInfo?.fullname || userInfo?.email || 'User'}</div>
-                <div style={{ fontSize: 12, color: '#1890ff' }}>TENANT</div>
-              </div>
-            </div>
-          </Dropdown>
-        </Header>
+        <SharedHeader
+          showSearch={false}
+          showDashboardButton={false}
+          onMenuToggle={() => setCollapsed(!collapsed)}
+          menuCollapsed={collapsed}
+          showProfileItem={false}
+        />
 
         <Content style={{ margin: '24px 20px', padding: 0, minHeight: 'calc(100vh - 112px)' }}>
           <div style={{ padding: 24, background: '#fff', borderRadius: 8 }}>
