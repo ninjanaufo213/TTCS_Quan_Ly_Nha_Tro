@@ -88,7 +88,12 @@ const Layout = ({ children }) => {
    return (
     <AntLayout style={{ minHeight: '100vh' }}>
       {!isTenant && (
-        <Sider trigger={null} collapsible collapsed={collapsed}>
+        <Sider trigger={null} collapsible collapsed={collapsed} style={{
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+          overflow: 'auto',
+        }}>
           <div style={{ 
           height: 32, 
           margin: 16, 

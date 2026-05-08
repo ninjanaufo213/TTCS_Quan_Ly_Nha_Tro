@@ -60,6 +60,10 @@ const AdminLayout = () => {
           style={{
             background: 'linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
             boxShadow: '2px 0 8px rgba(0,0,0,0.3)',
+            position: 'sticky',
+            top: 0,
+            height: '100vh',
+            overflow: 'auto',
           }}
         >
           {/* Logo */}

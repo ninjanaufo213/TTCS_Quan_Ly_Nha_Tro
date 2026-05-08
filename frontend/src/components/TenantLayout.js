@@ -64,6 +64,10 @@ export default function TenantLayout() {
         style={{
           background: 'linear-gradient(180deg, #0b1220 0%, #0f172a 50%, #111827 100%)',
           boxShadow: '2px 0 8px rgba(0,0,0,0.25)',
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+          overflow: 'auto',
         }}
       >
         <div
