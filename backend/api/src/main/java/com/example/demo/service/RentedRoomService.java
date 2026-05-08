@@ -29,6 +29,7 @@ public class RentedRoomService {
     private final RoomService roomService;
     private final AuthService authService;
     private final ViewingService viewingService;
+    private final NotificationService notificationService;
 
     /**
      * Lấy tất cả hợp đồng
@@ -129,6 +130,18 @@ public class RentedRoomService {
         refreshRoomAvailability(room.getRoomId());
         viewingService.cancelScheduledByRoom(room.getRoomId());
 
+        if (saved.getTenant() != null && saved.getTenant().getUser() != null
+                && room.getHouse() != null && room.getHouse().getLandlord() != null) {
+            notificationService.notifyUser(
+                    saved.getTenant().getUser(),
+                    room.getHouse().getLandlord().getUser(),
+                    "Hợp đồng thuê phòng mới",
+                    "Chủ trọ đã tạo hợp đồng thuê phòng cho phòng " + room.getName(),
+                    "CONTRACT_CREATED",
+                    saved.getRrId()
+            );
+        }
+
         return convertToResponse(saved);
     }
 
@@ -224,6 +237,18 @@ public class RentedRoomService {
 
         if (updated.getRoom() != null) {
             refreshRoomAvailability(updated.getRoom().getRoomId());
+            
+            if (updated.getTenant() != null && updated.getTenant().getUser() != null
+                    && updated.getRoom().getHouse() != null && updated.getRoom().getHouse().getLandlord() != null) {
+                notificationService.notifyUser(
+                        updated.getTenant().getUser(),
+                        updated.getRoom().getHouse().getLandlord().getUser(),
+                        "Cập nhật hợp đồng",
+                        "Chủ trọ đã cập nhật thông tin hợp đồng phòng " + updated.getRoom().getName(),
+                        "CONTRACT_UPDATED",
+                        updated.getRrId()
+                );
+            }
         }
 
         return convertToResponse(updated);
@@ -243,6 +268,18 @@ public class RentedRoomService {
 
         if (updated.getRoom() != null) {
             refreshRoomAvailability(updated.getRoom().getRoomId());
+            
+            if (updated.getTenant() != null && updated.getTenant().getUser() != null
+                    && updated.getRoom().getHouse() != null && updated.getRoom().getHouse().getLandlord() != null) {
+                notificationService.notifyUser(
+                        updated.getTenant().getUser(),
+                        updated.getRoom().getHouse().getLandlord().getUser(),
+                        "Hợp đồng chấm dứt",
+                        "Chủ trọ đã chấm dứt hợp đồng phòng " + updated.getRoom().getName(),
+                        "CONTRACT_TERMINATED",
+                        updated.getRrId()
+                );
+            }
         }
 
         return convertToResponse(updated);

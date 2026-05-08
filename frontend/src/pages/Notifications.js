@@ -5,9 +5,14 @@ import { notificationService } from '../services/notificationService';
 const typeColorMap = {
   VIEWING_CREATED: 'blue',
   VIEWING_CANCELED: 'red',
+  VIEWING_APPROVED: 'green',
+  VIEWING_REJECTED: 'red',
   CONTRACT_REQUESTED: 'gold',
   CONTRACT_CONFIRMED: 'green',
   CONTRACT_CANCELED: 'orange',
+  CONTRACT_CREATED: 'blue',
+  CONTRACT_UPDATED: 'purple',
+  CONTRACT_TERMINATED: 'red',
   INVOICE_CREATED: 'blue',
   INVOICE_PROOF_SUBMITTED: 'gold',
   INVOICE_PROOF_APPROVED: 'green',
@@ -32,11 +37,20 @@ const Notifications = () => {
 
   useEffect(() => {
     loadNotifications();
+
+    // Lắng nghe sự kiện từ NotificationPopover
+    const handleSync = () => loadNotifications();
+    window.addEventListener('notificationMarkedRead', handleSync);
+    
+    return () => {
+      window.removeEventListener('notificationMarkedRead', handleSync);
+    };
   }, []);
 
   const handleMarkRead = async (id) => {
     try {
       await notificationService.markRead(id);
+      window.dispatchEvent(new CustomEvent('notificationMarkedRead', { detail: { id } }));
       await loadNotifications();
     } catch (error) {
       message.error('Không thể cập nhật trạng thái thông báo');
@@ -49,35 +63,39 @@ const Notifications = () => {
         loading={loading}
         dataSource={notifications}
         locale={{ emptyText: 'Chưa có thông báo' }}
-        renderItem={(item) => (
-          <List.Item
-            actions={[
-              item.isRead ? null : (
-                <Button size="small" onClick={() => handleMarkRead(item.notificationId)}>
-                  Đánh dấu đã đọc
-                </Button>
-              )
-            ]}
-          >
-            <List.Item.Meta
-              title={
-                <Space>
-                  <span>{item.title}</span>
-                  <Tag color={typeColorMap[item.type] || 'default'}>{item.type || 'INFO'}</Tag>
-                  {!item.isRead && <Tag color="red">Chưa đọc</Tag>}
-                </Space>
-              }
-              description={
-                <div>
-                  <div>{item.message}</div>
-                  <div style={{ fontSize: 12, color: '#888' }}>
-                    {item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : ''}
+        renderItem={(item) => {
+          const isRead = item.isRead !== undefined ? item.isRead : item.is_read;
+          const notifId = item.notificationId || item.notification_id;
+          return (
+            <List.Item
+              actions={[
+                isRead ? null : (
+                  <Button size="small" onClick={() => handleMarkRead(notifId)}>
+                    Đánh dấu đã đọc
+                  </Button>
+                )
+              ]}
+            >
+              <List.Item.Meta
+                title={
+                  <Space>
+                    <span>{item.title}</span>
+                    <Tag color={typeColorMap[item.type] || 'default'}>{item.type || 'INFO'}</Tag>
+                    {!isRead && <Tag color="red">Chưa đọc</Tag>}
+                  </Space>
+                }
+                description={
+                  <div>
+                    <div>{item.message}</div>
+                    <div style={{ fontSize: 12, color: '#888' }}>
+                      {item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : ''}
+                    </div>
                   </div>
-                </div>
-              }
-            />
-          </List.Item>
-        )}
+                }
+              />
+            </List.Item>
+          );
+        }}
       />
     </Card>
   );
