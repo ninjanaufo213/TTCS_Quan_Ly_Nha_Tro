@@ -48,6 +48,7 @@ const AdminLayout = () => {
         showDashboardButton={false}
         onMenuToggle={() => setCollapsed(!collapsed)}
         menuCollapsed={collapsed}
+        showNotifications
       />
 
       <div style={{ display: 'flex', flex: 1 }}>

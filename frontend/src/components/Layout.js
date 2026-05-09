@@ -14,7 +14,7 @@ import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { authService } from '../services/authService';
 import SharedHeader from './SharedHeader';
 
-const { Header, Sider, Content } = AntLayout;
+const { Sider, Content } = AntLayout;
 
 const Layout = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
@@ -119,16 +119,20 @@ const Layout = ({ children }) => {
       <AntLayout>
         {/* Shared Header */}
         {isTenant ? (
-          <SharedHeader showSearch={false} showDashboardButton={false} />
+          <SharedHeader
+            showSearch={false}
+            showDashboardButton={false}
+            showNotifications
+          />
         ) : (
           <SharedHeader 
             showSearch={false} 
             showDashboardButton={false}
             onMenuToggle={() => setCollapsed(!collapsed)}
             menuCollapsed={collapsed}
+            showNotifications
           />
         )}
-
         <Content style={{ 
           margin: '24px 16px', 
           padding: 24, 

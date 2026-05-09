@@ -264,7 +264,28 @@ const HomePage = () => {
   return (
     <div className="home-page">
       {/* Shared Header */}
-      <SharedHeader showSearch={false} showDashboardButton={true} />
+      {/* Shared Header */}
+      <SharedHeader
+        showSearch
+        showDashboardButton
+        showNotifications
+        rightExtra={
+          <>
+            <Button
+              type="default"
+              icon={<FilterOutlined />}
+              onClick={() => setShowFilters(!showFilters)}
+              style={{
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                color: 'white',
+              }}
+            >
+              Bộ lọc
+            </Button>
+          </>
+        }
+      />
 
       {/* Menu Categories */}
       <nav className={`category-menu animate-fade-in`}>

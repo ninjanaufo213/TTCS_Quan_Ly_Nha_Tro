@@ -105,6 +105,7 @@ export default function TenantLayout() {
           onMenuToggle={() => setCollapsed(!collapsed)}
           menuCollapsed={collapsed}
           showProfileItem={false}
+          showNotifications
         />
 
         <Content style={{ margin: '24px 20px', padding: 0, minHeight: 'calc(100vh - 112px)' }}>

@@ -11,6 +11,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
+import NotificationPopover from './NotificationPopover';
 
 const SharedHeader = ({
   showSearch = true,
@@ -18,6 +19,8 @@ const SharedHeader = ({
   onMenuToggle = null,
   menuCollapsed = false,
   showProfileItem = true,
+  showNotifications = false,
+  rightExtra = null,
 }) => {
   const [userInfo, setUserInfo] = useState(null);
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -171,6 +174,10 @@ const SharedHeader = ({
           />
         )}
 
+        {showNotifications && authService.isAuthenticated() && <NotificationPopover variant="dark" />}
+
+        {rightExtra}
+
         {/* Dashboard Button */}
         {showDashboardButton && authService.isAuthenticated() && (
           <Button
@@ -250,4 +257,3 @@ const SharedHeader = ({
 };
 
 export default SharedHeader;
-
