@@ -19,13 +19,16 @@ import {
 } from '@ant-design/icons';
 import { houseService } from '../../services/houseService';
 import { useNavigate } from 'react-router-dom';
+import LocationSelector from '../../components/LocationSelector';
+import locationData from '../../data/vn_locations.json';
 
 const Houses = () => {
-  const { message } = App.useApp(); // Use hook to get message
+  const { message } = App.useApp();
   const [houses, setHouses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingHouse, setEditingHouse] = useState(null);
+  const [addressData, setAddressData] = useState({});
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 5,
@@ -59,12 +62,37 @@ const Houses = () => {
 
   const handleCreate = () => {
     setEditingHouse(null);
+    setAddressData({});
     form.resetFields();
     setModalVisible(true);
   };
 
   const handleEdit = (record) => {
     setEditingHouse(record);
+    
+    // Tìm mã code từ tên để map vào LocationSelector
+    let pCode = "", dCode = "", wCode = "";
+    
+    // Tìm province có chứa district của record
+    for (const p of locationData) {
+      const d = p.districts?.find(dist => dist.name === record.district);
+      if (d) {
+        pCode = p.code;
+        dCode = d.code;
+        const w = d.wards?.find(ward => ward.name === record.ward);
+        if (w) {
+          wCode = w.code;
+        }
+        break;
+      }
+    }
+
+    setAddressData({
+      provinceCode: pCode,
+      districtCode: dCode,
+      wardCode: wCode
+    });
+
     form.setFieldsValue(record);
     setModalVisible(true);
   };
@@ -76,7 +104,6 @@ const Houses = () => {
       fetchHouses();
     } catch (error) {
       console.error('Delete house error:', error);
-      // Display error message from backend or default message
       const errorMessage = error.response?.data?.detail || 'Lỗi khi xóa nhà trọ!';
       message.error(errorMessage);
     }
@@ -194,7 +221,7 @@ const Houses = () => {
           setModalVisible(false);
         }}
         footer={null}
-        width={600}
+        width={700}
       >
         <Form
           form={form}
@@ -222,25 +249,30 @@ const Houses = () => {
             />
           </Form.Item>
 
-          <Form.Item
-            name="ward"
-            label="Phường/Xã"
-            rules={[{ required: true, message: 'Vui lòng nhập phường/xã!' }]}
-          >
-            <Input placeholder="Nhập phường/xã" />
-          </Form.Item>
+          {/* Ẩn input để ant design form vẫn lấy được giá trị khi submit */}
+          <Form.Item name="ward" hidden><Input /></Form.Item>
+          <Form.Item name="district" hidden><Input /></Form.Item>
 
-          <Form.Item
-            name="district"
-            label="Quận/Huyện"
-            rules={[{ required: true, message: 'Vui lòng nhập quận/huyện!' }]}
+          <Form.Item 
+            label="Khu vực (Tỉnh/Thành - Quận/Huyện - Phường/Xã)" 
+            required
           >
-            <Input placeholder="Nhập quận/huyện" />
+            {/* Truyền thêm key để component re-render khi addressData thay đổi (lúc bấm Edit) */}
+            <LocationSelector
+              key={modalVisible ? (addressData.districtCode || 'new') : 'closed'}
+              selectedAddress={addressData}
+              onChange={(data) => {
+                form.setFieldsValue({
+                  district: data.districtName,
+                  ward: data.wardName
+                });
+              }}
+            />
           </Form.Item>
 
           <Form.Item
             name="address_line"
-            label="Địa chỉ chi tiết"
+            label="Địa chỉ chi tiết (Số nhà, tên đường...)"
             rules={[{ required: true, message: 'Vui lòng nhập địa chỉ!' }]}
           >
             <Input.TextArea
