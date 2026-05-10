@@ -67,6 +67,9 @@ public class ListingService {
         if (listing.getRoom() == null || !Boolean.TRUE.equals(listing.getRoom().getIsAvailable())) {
             throw new IllegalArgumentException("Phòng đã được thuê hoặc không khả dụng");
         }
+        Integer currentViews = listing.getViewsCount() == null ? 0 : listing.getViewsCount();
+        listing.setViewsCount(currentViews + 1);
+        listingRepository.save(listing);
         return mapToResponse(listing);
     }
 

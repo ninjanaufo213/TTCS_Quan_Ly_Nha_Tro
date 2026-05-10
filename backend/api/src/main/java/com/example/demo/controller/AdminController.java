@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.AdminUserResponse;
 import com.example.demo.dto.AdminUserUpdateRequest;
+import com.example.demo.dto.AreaDemandResponse;
 import com.example.demo.service.AdminService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -81,6 +82,22 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error("Lỗi khi xóa user: " + e.getMessage()));
+        }
+    }
+
+    // ===== AREA DEMAND STATS =====
+    @GetMapping("/stats/area-demand")
+    public ResponseEntity<?> getAreaDemandStats() {
+        try {
+            List<AreaDemandResponse> stats = adminService.getAreaDemandStats();
+            return ResponseEntity.ok(stats);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error(e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(error("Lỗi khi lấy thống kê khu vực: " + e.getMessage()));
         }
     }
 

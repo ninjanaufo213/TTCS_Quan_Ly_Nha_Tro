@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Button, Tag, Skeleton, Empty, Breadcrumb,
   Row, Col, Divider, Image, Modal, Form, DatePicker, TimePicker, App, message as antdMessage
@@ -37,9 +37,14 @@ const ListingDetail = () => {
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [requestLoading, setRequestLoading] = useState(false);
   const [requestForm] = Form.useForm();
+  const lastFetchedIdRef = useRef(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    if (lastFetchedIdRef.current === id) {
+      return;
+    }
+    lastFetchedIdRef.current = id;
     const fetchListing = async () => {
       setLoading(true);
       try {
