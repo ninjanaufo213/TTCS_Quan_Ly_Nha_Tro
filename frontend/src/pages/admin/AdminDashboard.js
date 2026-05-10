@@ -12,7 +12,6 @@ import {
   EyeOutlined,
 } from '@ant-design/icons';
 import adminService from '../../services/adminService';
-import DashboardLayout from '../../components/DashboardLayout';
 
 const { Title, Text } = Typography;
 
@@ -51,6 +50,19 @@ const statCardStyle = (color) => ({
   position: 'relative',
 });
 
+const safeNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const mapAreaDemand = (item, index) => ({
+  district: item?.district || '—',
+  ward: item?.ward || '—',
+  totalViews: safeNumber(item?.total_views ?? item?.totalViews),
+  listings: safeNumber(item?.listings),
+  color: item?.color || ['#e94560', '#f5a623', '#0f3460', '#7b61ff', '#00c9a7'][index % 5],
+});
+
 const AdminDashboard = () => {
   const [stats, setStats] = useState(MOCK_STATS);
   const [areaDemand, setAreaDemand] = useState(MOCK_AREA_DEMAND);
@@ -69,7 +81,9 @@ const AdminDashboard = () => {
         adminService.getAreaDemandStats().catch(() => null),
       ]);
       if (statsData) setStats(statsData);
-      if (areaData) setAreaDemand(areaData);
+      if (Array.isArray(areaData) && areaData.length > 0) {
+        setAreaDemand(areaData.map(mapAreaDemand));
+      }
     } catch {
       // Use mock data if API not available
     } finally {
@@ -77,7 +91,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const maxViews = areaDemand.length > 0 ? areaDemand[0].totalViews : 1;
+  const maxViews = areaDemand.length > 0 ? safeNumber(areaDemand[0].totalViews) : 1;
 
   const areaColumns = [
     {
@@ -118,10 +132,10 @@ const AdminDashboard = () => {
         <div>
           <div style={{ fontWeight: 600, marginBottom: 4 }}>
             <EyeOutlined style={{ color: record.color, marginRight: 4 }} />
-            {record.totalViews.toLocaleString()}
+            {safeNumber(record.totalViews).toLocaleString()}
           </div>
           <Progress
-            percent={Math.round((record.totalViews / maxViews) * 100)}
+            percent={Math.round((safeNumber(record.totalViews) / maxViews) * 100)}
             strokeColor={record.color}
             showInfo={false}
             size="small"
@@ -138,12 +152,11 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <DashboardLayout
-      title="📊 Dashboard Quản trị"
-      subtitle="Tổng quan hệ thống quản lý nhà trọ"
-      showHeader={false}
-      showFooter={false}
-    >
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <Title level={3} style={{ margin: 0, color: '#0f3460' }}>Dashboard Quản trị</Title>
+        <Text type="secondary">Tổng quan hệ thống quản lý nhà trọ</Text>
+      </div>
 
       {/* Stat Cards */}
       <Row gutter={[20, 20]} style={{ marginBottom: 28 }}>
@@ -274,7 +287,7 @@ const AdminDashboard = () => {
           </Card>
         </Col>
       </Row>
-    </DashboardLayout>
+    </div>
   );
 };
 

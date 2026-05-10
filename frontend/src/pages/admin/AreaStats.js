@@ -14,37 +14,68 @@ import adminService from '../../services/adminService';
 
 const { Title, Text } = Typography;
 
-const MOCK_AREA_DATA = [
-  { district: 'Cầu Giấy', ward: 'Dịch Vọng Hậu', totalViews: 4820, listings: 18, avgPrice: 4200000, trend: '+12%', color: '#e94560' },
-  { district: 'Đống Đa', ward: 'Ô Chợ Dừa', totalViews: 3950, listings: 14, avgPrice: 4800000, trend: '+8%', color: '#f5a623' },
-  { district: 'Thanh Xuân', ward: 'Nhân Chính', totalViews: 3210, listings: 11, avgPrice: 3800000, trend: '+15%', color: '#0f3460' },
-  { district: 'Hà Đông', ward: 'Văn Quán', totalViews: 2780, listings: 9, avgPrice: 3200000, trend: '+5%', color: '#7b61ff' },
-  { district: 'Long Biên', ward: 'Bồ Đề', totalViews: 2350, listings: 8, avgPrice: 3000000, trend: '+3%', color: '#00c9a7' },
-  { district: 'Hoàng Mai', ward: 'Định Công', totalViews: 1890, listings: 7, avgPrice: 2800000, trend: '+7%', color: '#febc2e' },
-  { district: 'Bắc Từ Liêm', ward: 'Cổ Nhuế', totalViews: 1450, listings: 5, avgPrice: 2600000, trend: '+2%', color: '#ff6b6b' },
-  { district: 'Nam Từ Liêm', ward: 'Mỹ Đình', totalViews: 1320, listings: 5, avgPrice: 3400000, trend: '+6%', color: '#43b89c' },
+const PRICE_RANGES = [
+  { range: 'Dưới 2 triệu', min: 0, max: 2000000, color: '#52c41a' },
+  { range: '2 – 3 triệu', min: 2000000, max: 3000000, color: '#1677ff' },
+  { range: '3 – 5 triệu', min: 3000000, max: 5000000, color: '#7b61ff' },
+  { range: 'Trên 5 triệu', min: 5000000, max: Infinity, color: '#e94560' },
 ];
 
-const MOCK_PRICE_RANGES = [
-  { range: 'Dưới 2 triệu', count: 8, percent: 11, color: '#52c41a' },
-  { range: '2 – 3 triệu', count: 22, percent: 30, color: '#1677ff' },
-  { range: '3 – 5 triệu', count: 31, percent: 42, color: '#7b61ff' },
-  { range: 'Trên 5 triệu', count: 13, percent: 17, color: '#e94560' },
-];
+const safeNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+// Convert snake_case API response to camelCase used by the component
+const mapApiData = (item) => ({
+  district: item?.district || '—',
+  ward: item?.ward || '—',
+  totalViews: safeNumber(item?.total_views ?? item?.totalViews),
+  listings: safeNumber(item?.listings),
+  avgPrice: safeNumber(item?.avg_price ?? item?.avgPrice),
+  color: item?.color || '#1677ff',
+});
+
+// Dynamically compute price range distribution from area data
+const computePriceRanges = (data) => {
+  const totalListings = data.reduce((s, d) => s + d.listings, 0);
+  const ranges = PRICE_RANGES.map((r) => ({ ...r, count: 0 }));
+
+  data.forEach((d) => {
+    const price = d.avgPrice;
+    for (const r of ranges) {
+      if (price >= r.min && price < r.max) {
+        r.count += d.listings;
+        break;
+      }
+    }
+  });
+
+  return ranges.map((r) => ({
+    range: r.range,
+    count: r.count,
+    percent: totalListings > 0 ? Math.round((r.count / totalListings) * 100) : 0,
+    color: r.color,
+  }));
+};
 
 const AreaStats = () => {
-  const [areaData, setAreaData] = useState(MOCK_AREA_DATA);
+  const [areaData, setAreaData] = useState([]);
+  const [priceRanges, setPriceRanges] = useState(computePriceRanges([]));
   const [loading, setLoading] = useState(false);
-  const maxViews = areaData.length > 0 ? areaData[0].totalViews : 1;
+  const maxViews = areaData.length > 0 ? safeNumber(areaData[0].totalViews) : 1;
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         const data = await adminService.getAreaDemandStats();
-        if (data?.length) setAreaData(data);
+        const mapped = Array.isArray(data) ? data.map(mapApiData) : [];
+        setAreaData(mapped);
+        setPriceRanges(computePriceRanges(mapped));
       } catch {
-        // Use mock
+        setAreaData([]);
+        setPriceRanges(computePriceRanges([]));
       } finally {
         setLoading(false);
       }
@@ -84,12 +115,11 @@ const AreaStats = () => {
         <div style={{ minWidth: 180 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
             <Text>
-              <EyeOutlined style={{ color: record.color }} /> {record.totalViews.toLocaleString()}
+              <EyeOutlined style={{ color: record.color }} /> {safeNumber(record.totalViews).toLocaleString()}
             </Text>
-            <Tag color="processing" style={{ fontSize: 11 }}>{record.trend}</Tag>
           </div>
           <Progress
-            percent={Math.round((record.totalViews / maxViews) * 100)}
+            percent={Math.round((safeNumber(record.totalViews) / maxViews) * 100)}
             strokeColor={{ from: record.color, to: record.color + '88' }}
             showInfo={false}
             size={['100%', 8]}
@@ -111,7 +141,7 @@ const AreaStats = () => {
       width: 140,
       render: v => (
         <span style={{ fontWeight: 600, color: '#e94560' }}>
-          {(v / 1000000).toFixed(1)}tr đ
+          {(safeNumber(v) / 1000000).toFixed(1)}tr đ
         </span>
       ),
     },
@@ -137,8 +167,8 @@ const AreaStats = () => {
   ];
 
   const topDistrict = areaData[0];
-  const totalViews = areaData.reduce((s, a) => s + a.totalViews, 0);
-  const totalListings = areaData.reduce((s, a) => s + a.listings, 0);
+  const totalViews = areaData.reduce((s, a) => s + safeNumber(a.totalViews), 0);
+  const totalListings = areaData.reduce((s, a) => s + safeNumber(a.listings), 0);
 
   return (
     <div>
@@ -223,7 +253,7 @@ const AreaStats = () => {
             title="Phân bổ giá thuê"
             style={{ borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 16 }}
           >
-            {MOCK_PRICE_RANGES.map((p) => (
+            {priceRanges.map((p) => (
               <div key={p.range} style={{ marginBottom: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                   <Text style={{ fontSize: 13 }}>{p.range}</Text>
@@ -268,9 +298,6 @@ const AreaStats = () => {
                     description={
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                         <Tag style={{ fontSize: 11 }}>{item.listings} tin</Tag>
-                        <Tag color="processing" style={{ fontSize: 11 }}>
-                          <RiseOutlined /> {item.trend}
-                        </Tag>
                       </div>
                     }
                   />

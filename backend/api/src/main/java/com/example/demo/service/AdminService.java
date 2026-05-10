@@ -2,23 +2,28 @@ package com.example.demo.service;
 
 import com.example.demo.dto.AdminUserResponse;
 import com.example.demo.dto.AdminUserUpdateRequest;
+import com.example.demo.dto.AreaDemandResponse;
 import com.example.demo.model.User;
+import com.example.demo.repository.ListingRepository;
 import com.example.demo.repository.UserRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class AdminService {
 
     private final UserRepository userRepository;
     private final AuthService authService;
+    private final ListingRepository listingRepository;
 
-    public AdminService(UserRepository userRepository, AuthService authService) {
+    public AdminService(UserRepository userRepository, AuthService authService, ListingRepository listingRepository) {
         this.userRepository = userRepository;
         this.authService = authService;
+        this.listingRepository = listingRepository;
     }
 
     public List<AdminUserResponse> getAllUsers() {
@@ -91,6 +96,50 @@ public class AdminService {
         userRepository.delete(user);
     }
 
+    // ===== AREA DEMAND STATS =====
+    public List<AreaDemandResponse> getAreaDemandStats() {
+        assertAdmin();
+
+        List<Object[]> districtRows = listingRepository.aggregateByDistrict();
+        List<Object[]> wardRows = listingRepository.topWardPerDistrict();
+
+        // Build ward lookup: district -> top ward
+        Map<String, String> topWardMap = new LinkedHashMap<>();
+        for (Object[] row : wardRows) {
+            String district = (String) row[0];
+            String ward = (String) row[1];
+            topWardMap.putIfAbsent(district, ward); // first one per district = highest count
+        }
+
+        // Color palette for visual distinction
+        String[] colors = {
+            "#e94560", "#f5a623", "#0f3460", "#7b61ff",
+            "#00c9a7", "#febc2e", "#ff6b6b", "#43b89c",
+            "#1677ff", "#722ed1"
+        };
+
+        List<AreaDemandResponse> result = new ArrayList<>();
+
+        for (int i = 0; i < districtRows.size(); i++) {
+            Object[] row = districtRows.get(i);
+            String district = (String) row[0];
+            Long totalViews = ((Number) row[1]).longValue();
+            Long listings = ((Number) row[2]).longValue();
+            Double avgPrice = ((Number) row[3]).doubleValue();
+
+            result.add(AreaDemandResponse.builder()
+                    .district(district)
+                    .ward(topWardMap.getOrDefault(district, ""))
+                    .totalViews(totalViews)
+                    .listings(listings)
+                    .avgPrice(avgPrice)
+                    .color(colors[i % colors.length])
+                    .build());
+        }
+
+        return result;
+    }
+
     private void assertAdmin() {
         Integer currentUserId = authService.getCurrentUserId();
         User user = userRepository.findById(currentUserId)
@@ -111,4 +160,3 @@ public class AdminService {
                 .build();
     }
 }
-
