@@ -9,6 +9,15 @@ const LocationSelector = ({ selectedAddress, onChange, className = "" }) => {
   const [selectedDistrict, setSelectedDistrict] = useState(selectedAddress?.districtCode || "");
   const [selectedWard, setSelectedWard] = useState(selectedAddress?.wardCode || "");
 
+  // Sync clear from parent
+  useEffect(() => {
+    if (!selectedAddress || Object.keys(selectedAddress).length === 0) {
+      if (selectedProvince !== "") setSelectedProvince("");
+      if (selectedDistrict !== "") setSelectedDistrict("");
+      if (selectedWard !== "") setSelectedWard("");
+    }
+  }, [selectedAddress]);
+
   // Đẩy dữ liệu lên form cha
   useEffect(() => {
     if (onChange) {

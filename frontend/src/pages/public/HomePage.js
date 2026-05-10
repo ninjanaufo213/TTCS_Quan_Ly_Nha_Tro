@@ -8,7 +8,9 @@ import {
   Col,
   Divider,
   Badge,
-  Empty
+  Empty,
+  Select,
+  Drawer
 } from 'antd';
 import {
   SearchOutlined,
@@ -29,51 +31,48 @@ import { authService } from '../../services/authService';
 import { listingService } from '../../services/listingService';
 import SharedHeader from '../../components/SharedHeader';
 import SharedFooter from '../../components/SharedFooter';
+import LocationSelector from '../../components/LocationSelector';
 import '../../styles/HomePage.css';
 
 const HomePage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('suggest');
-  const [selectedProvince, setSelectedProvince] = useState('all');
   const [savedListings, setSavedListings] = useState(new Set());
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Search States
   const [searchKeyword, setSearchKeyword] = useState(searchParams.get('search') || '');
+  const [addressData, setAddressData] = useState({});
   const [selectedPriceRange, setSelectedPriceRange] = useState(null);
   const [selectedAreaRange, setSelectedAreaRange] = useState(null);
-  const [showFilters, setShowFilters] = useState(false);
 
-  // Listings data - will be populated from API
+  // Listings data
   const [listings, setListings] = useState([]);
   const [filteredListings, setFilteredListings] = useState([]);
 
-  const provinces = [
-    { label: 'Tất cả', value: 'all' },
-    { label: 'Phòng trọ Hồ Chí Minh', value: 'Ho Chi Minh' },
-    { label: 'Phòng trọ Hà Nội', value: 'Ha Noi' },
-    { label: 'Phòng trọ Đà Nẵng', value: 'Da Nang' },
-    { label: 'Phòng trọ Bình Dương', value: 'Binh Duong' }
-  ];
-
   const priceRanges = [
-    { label: 'Dưới 1 triệu', value: [0, 1000000] },
-    { label: 'Từ 1 - 2 triệu', value: [1000000, 2000000] },
-    { label: 'Từ 2 - 3 triệu', value: [2000000, 3000000] },
-    { label: 'Từ 3 - 5 triệu', value: [3000000, 5000000] },
-    { label: 'Từ 5 - 7 triệu', value: [5000000, 7000000] },
-    { label: 'Từ 7 - 10 triệu', value: [7000000, 10000000] },
-    { label: 'Từ 10 - 15 triệu', value: [10000000, 15000000] },
-    { label: 'Trên 15 triệu', value: [15000000, Infinity] }
+    { label: 'Tất cả mức giá', value: null },
+    { label: 'Dưới 1 triệu', value: '0-1000000' },
+    { label: 'Từ 1 - 2 triệu', value: '1000000-2000000' },
+    { label: 'Từ 2 - 3 triệu', value: '2000000-3000000' },
+    { label: 'Từ 3 - 5 triệu', value: '3000000-5000000' },
+    { label: 'Từ 5 - 7 triệu', value: '5000000-7000000' },
+    { label: 'Từ 7 - 10 triệu', value: '7000000-10000000' },
+    { label: 'Từ 10 - 15 triệu', value: '10000000-15000000' },
+    { label: 'Trên 15 triệu', value: '15000000-999999999' }
   ];
 
   const areaRanges = [
-    { label: 'Dưới 20 m²', value: [0, 20] },
-    { label: 'Từ 20 - 30 m²', value: [20, 30] },
-    { label: 'Từ 30 - 50 m²', value: [30, 50] },
-    { label: 'Từ 50 - 70 m²', value: [50, 70] },
-    { label: 'Từ 70 - 90 m²', value: [70, 90] },
-    { label: 'Trên 90 m²', value: [90, Infinity] }
+    { label: 'Tất cả diện tích', value: null },
+    { label: 'Dưới 20 m²', value: '0-20' },
+    { label: 'Từ 20 - 30 m²', value: '20-30' },
+    { label: 'Từ 30 - 50 m²', value: '30-50' },
+    { label: 'Từ 50 - 70 m²', value: '50-70' },
+    { label: 'Từ 70 - 90 m²', value: '70-90' },
+    { label: 'Trên 90 m²', value: '90-9999' }
   ];
 
   const newListings = filteredListings.slice(0, 3);
@@ -95,17 +94,33 @@ const HomePage = () => {
   }, []);
 
   useEffect(() => {
-    const keyword = searchKeyword.trim();
-    const params = {
-      keyword: keyword || undefined,
-      district: selectedProvince !== 'all' ? selectedProvince : undefined,
-      minPrice: selectedPriceRange ? selectedPriceRange[0] : undefined,
-      maxPrice: selectedPriceRange ? selectedPriceRange[1] : undefined,
-      minArea: selectedAreaRange ? selectedAreaRange[0] : undefined,
-      maxArea: selectedAreaRange ? selectedAreaRange[1] : undefined,
-    };
+    const fetchSearchResults = async () => {
+      const keyword = searchKeyword.trim();
+      
+      let minPrice, maxPrice, minArea, maxArea;
+      
+      if (selectedPriceRange) {
+        const [min, max] = selectedPriceRange.split('-');
+        minPrice = Number(min);
+        maxPrice = Number(max);
+      }
+      
+      if (selectedAreaRange) {
+        const [min, max] = selectedAreaRange.split('-');
+        minArea = Number(min);
+        maxArea = Number(max);
+      }
 
-    const timeoutId = setTimeout(async () => {
+      const params = {
+        keyword: keyword || undefined,
+        district: addressData.districtName || undefined,
+        ward: addressData.wardName || undefined,
+        minPrice,
+        maxPrice,
+        minArea,
+        maxArea,
+      };
+
       try {
         const data = await listingService.searchPublicListings(params);
         const mapped = data.map(l => {
@@ -143,10 +158,11 @@ const HomePage = () => {
         setListings([]);
         setFilteredListings([]);
       }
-    }, 350);
+    };
 
+    const timeoutId = setTimeout(fetchSearchResults, 350);
     return () => clearTimeout(timeoutId);
-  }, [searchKeyword, selectedProvince, selectedPriceRange, selectedAreaRange]);
+  }, [searchKeyword, addressData, selectedPriceRange, selectedAreaRange]);
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll);
@@ -188,10 +204,8 @@ const HomePage = () => {
         onClick={() => navigate(`/listings/${listing.id}`)}
     >
       <Row gutter={24}>
-        {/* Images Section */}
         <Col xs={24} sm={24} md={10}>
           <div className="images-container">
-            {/* Main large image */}
             <div className="main-image">
               <img src={listing.images[0]} alt="Main" />
               <Badge
@@ -202,10 +216,8 @@ const HomePage = () => {
           </div>
         </Col>
 
-        {/* Content Section */}
         <Col xs={24} sm={24} md={14}>
           <div className="listing-content">
-            {/* Title */}
             <div className="listing-title">
               <span>{listing.title}</span>
             </div>
@@ -215,17 +227,14 @@ const HomePage = () => {
               {listing.addressLine || 'Chưa có địa chỉ'}
             </div>
 
-            {/* Meta info */}
             <div className="listing-meta">
               <span className="price">{formatPrice(listing.price)}/tháng</span>
               <span className="divider">•</span>
               <span className="area">{listing.area || '-'} m²</span>
             </div>
 
-            {/* Description */}
             <p className="listing-description">{listing.description || 'Chưa có mô tả.'}</p>
 
-            {/* Footer */}
             <div className="listing-footer">
               <div className="actions">
                 <Button
@@ -263,18 +272,16 @@ const HomePage = () => {
 
   return (
     <div className="home-page">
-      {/* Shared Header */}
-      {/* Shared Header */}
-      <SharedHeader
-        showSearch
-        showDashboardButton
-        showNotifications
+      <SharedHeader 
+        showSearch={false} 
+        showDashboardButton 
+        showNotifications 
         rightExtra={
           <>
             <Button
               type="default"
               icon={<FilterOutlined />}
-              onClick={() => setShowFilters(!showFilters)}
+              onClick={() => setShowFilters(true)}
               style={{
                 background: 'rgba(255,255,255,0.1)',
                 border: '1px solid rgba(255,255,255,0.3)',
@@ -287,7 +294,6 @@ const HomePage = () => {
         }
       />
 
-      {/* Menu Categories */}
       <nav className={`category-menu animate-fade-in`}>
         <div className="menu-container">
           {menuCategories.map(cat => (
@@ -303,40 +309,62 @@ const HomePage = () => {
         </div>
       </nav>
 
-      {/* Main Content */}
-      <div className="main-content">
+      {/* Premium Hero Banner Section */}
+      <section 
+        className="hero-banner-section animate-fade-in" 
+        style={{ 
+          background: 'linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6)), url("https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=2069&auto=format&fit=crop") center/cover no-repeat',
+          padding: '80px 24px',
+          textAlign: 'center',
+          color: 'white'
+        }}
+      >
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <h1 style={{ color: 'white', fontSize: '36px', fontWeight: 700, marginBottom: '16px' }}>
+            Không Gian Sống Lý Tưởng
+          </h1>
+          <p style={{ color: '#f0f0f0', fontSize: '18px', marginBottom: '40px' }}>
+            Hàng ngàn phòng trọ, căn hộ, nhà nguyên căn cao cấp đang chờ bạn khám phá.
+          </p>
+          <div style={{ 
+            background: 'white', 
+            padding: '8px', 
+            borderRadius: '32px', 
+            display: 'flex', 
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)' 
+          }}>
+            <Input 
+              size="large"
+              bordered={false}
+              prefix={<SearchOutlined style={{ color: '#bfbfbf', fontSize: '20px', marginRight: '8px' }} />} 
+              placeholder="Nhập tên nhà trọ, tên đường, hoặc khu vực bạn muốn tìm..." 
+              value={searchKeyword}
+              onChange={e => setSearchKeyword(e.target.value)}
+              allowClear
+              style={{ flex: 1, fontSize: '16px' }}
+            />
+            <Button 
+              type="primary" 
+              shape="round" 
+              size="large"
+              style={{ padding: '0 32px' }}
+              onClick={() => setShowFilters(true)}
+              icon={<FilterOutlined />}
+            >
+              Lọc chi tiết
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <div className="main-content" style={{ marginTop: '32px' }}>
         <div className="content-container">
-          {/* Center Content */}
           <main className="center-content">
-            {/* Page Title */}
             <section className="page-title animate-fade-in-up">
-              <h1>Kênh thông tin Phòng Trọ số 1 Việt Nam</h1>
-              <p>Có {filteredListings.length} tin đăng cho thuê phù hợp với bạn</p>
+              <h1>Tin đăng nổi bật</h1>
+              <p>Có {filteredListings.length} tin đăng phù hợp với tìm kiếm của bạn</p>
             </section>
 
-            {/* Province Selection */}
-            <section className="province-section animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-              <div className="section-label">Tỉnh Thành Nổi Bật</div>
-              <div className="province-buttons">
-                {provinces.map(prov => (
-                  <Button
-                    key={prov.value}
-                    className={`province-btn ${selectedProvince === prov.value ? 'active' : ''}`}
-                    onClick={() => {
-                      setSelectedProvince(prov.value);
-                      if (prov.value === 'all') {
-                        setSelectedPriceRange(null);
-                        setSelectedAreaRange(null);
-                      }
-                    }}
-                  >
-                    {prov.label}
-                  </Button>
-                ))}
-              </div>
-            </section>
-
-            {/* Content Tabs */}
             <div className="content-tabs animate-fade-in-up" style={{ animationDelay: '200ms' }}>
               <div className="tab-list">
                 <div
@@ -360,101 +388,50 @@ const HomePage = () => {
               </div>
             </div>
 
-            {/* Listings */}
             <section className="listings-section">
               {filteredListings.length > 0 ? (
                   filteredListings.map((listing, index) => renderListingCard(listing, index))
               ) : (
                   <div className="animate-fade-in-up" style={{ animationDelay: '300ms' }}>
-                     <Empty description="Không có tin đăng nào phù hợp" />
+                     <Empty description="Không có tin đăng nào phù hợp với bộ lọc" />
                   </div>
               )}
             </section>
           </main>
 
-          {/* Right Sidebar */}
           <aside className="right-sidebar animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-            {/* Price Filter */}
-            <Card className="filter-card">
-              <h3 className="filter-title">Lọc theo giá</h3>
-              <div className="filter-links">
-                {priceRanges.map((range, idx) => (
-                  <div 
-                    key={idx} 
-                    className={`filter-item ${selectedPriceRange === range.value ? 'active' : ''}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setSelectedPriceRange(selectedPriceRange === range.value ? null : range.value);
-                    }}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <ArrowRightOutlined className="filter-icon" />
-                    <a href="#" className="filter-link" onClick={(e) => e.preventDefault()}>
-                      {range.label}
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Area Filter */}
-            <Card className="filter-card">
-              <h3 className="filter-title">Lọc theo diện tích</h3>
-              <div className="filter-links">
-                {areaRanges.map((range, idx) => (
-                  <div 
-                    key={idx} 
-                    className={`filter-item ${selectedAreaRange === range.value ? 'active' : ''}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setSelectedAreaRange(selectedAreaRange === range.value ? null : range.value);
-                    }}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <ArrowRightOutlined className="filter-icon" />
-                    <a href="#" className="filter-link" onClick={(e) => e.preventDefault()}>
-                      {range.label}
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* New Listings */}
             {newListings.length > 0 && (
-                <Card className="new-listings-card">
-                <h3 className="filter-title">Tin mới đăng</h3>
+                <Card className="new-listings-card" style={{ borderRadius: '12px' }}>
+                <h3 className="filter-title" style={{ fontSize: '18px', marginBottom: '16px' }}>Tin mới đăng</h3>
                 {newListings.map((listing, idx) => (
                     <div key={idx}>
-                    <div className="new-listing-item">
+                    <div className="new-listing-item" style={{ cursor: 'pointer', display: 'flex', gap: '12px' }} onClick={() => navigate(`/listings/${listing.id}`)}>
                         <img
                         src={listing.images[0]}
                         alt={listing.title}
                         className="new-listing-thumb"
+                        style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }}
                         />
-                        <div className="new-listing-info">
-                        <a href="#" className="new-listing-title">
-                            {listing.title.substring(0, 40)}...
-                        </a>
+                        <div className="new-listing-info" style={{ flex: 1 }}>
+                        <div className="new-listing-title" style={{ fontWeight: 500, fontSize: '14px', marginBottom: '4px', lineHeight: '1.4' }}>
+                            {listing.title.length > 40 ? `${listing.title.substring(0, 40)}...` : listing.title}
+                        </div>
                         <div className="new-listing-meta">
-                            <span className="new-price">
+                            <span className="new-price" style={{ color: '#ef4444', fontWeight: 'bold' }}>
                             {formatPrice(listing.price)}
                             </span>
-                            <span className="new-time">{listing.createdAt}</span>
                         </div>
                         </div>
                     </div>
-                    {idx < newListings.length - 1 && <Divider style={{ margin: '8px 0', borderColor: '#e2e8f0' }} />}
+                    {idx < newListings.length - 1 && <Divider style={{ margin: '16px 0', borderColor: '#e2e8f0' }} />}
                     </div>
                 ))}
                 </Card>
             )}
-            
           </aside>
         </div>
       </div>
 
-      {/* Floating Action Buttons */}
        <div className="floating-actions">
          <Button
            type="primary"
@@ -477,8 +454,82 @@ const HomePage = () => {
          )}
        </div>
 
-      {/* Shared Footer */}
       <SharedFooter />
+
+      {/* Advanced Filter Drawer */}
+      <Drawer
+        title={<span style={{ fontSize: '18px', fontWeight: 600 }}>Bộ lọc nâng cao</span>}
+        placement="right"
+        onClose={() => setShowFilters(false)}
+        open={showFilters}
+        width={380}
+        footer={
+          <div style={{ padding: '12px 0', display: 'flex', gap: '12px' }}>
+            <Button 
+              size="large" 
+              style={{ flex: 1, borderRadius: '8px' }}
+              onClick={() => {
+                setSearchKeyword('');
+                setAddressData({});
+                setSelectedPriceRange(null);
+                setSelectedAreaRange(null);
+              }}
+            >
+              Xóa bộ lọc
+            </Button>
+            <Button 
+              type="primary" 
+              size="large" 
+              style={{ flex: 2, borderRadius: '8px', fontWeight: 600 }}
+              onClick={() => setShowFilters(false)}
+            >
+              Hiển thị {filteredListings.length} kết quả
+            </Button>
+          </div>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div>
+            <div style={{ marginBottom: '12px', fontSize: '16px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <EnvironmentOutlined style={{ color: '#1890ff' }} /> Khu vực
+            </div>
+            <LocationSelector 
+              selectedAddress={addressData}
+              onChange={(data) => setAddressData(data)}
+            />
+          </div>
+
+          <Divider style={{ margin: '8px 0' }} />
+
+          <div>
+            <div style={{ marginBottom: '12px', fontSize: '16px', fontWeight: 500 }}>Khoảng giá</div>
+            <Select 
+              size="large"
+              style={{ width: '100%' }}
+              placeholder="Chọn mức giá"
+              value={selectedPriceRange}
+              options={priceRanges}
+              onChange={v => setSelectedPriceRange(v)}
+              allowClear
+            />
+          </div>
+
+          <Divider style={{ margin: '8px 0' }} />
+
+          <div>
+            <div style={{ marginBottom: '12px', fontSize: '16px', fontWeight: 500 }}>Diện tích</div>
+            <Select 
+              size="large"
+              style={{ width: '100%' }}
+              placeholder="Chọn diện tích"
+              value={selectedAreaRange}
+              options={areaRanges}
+              onChange={v => setSelectedAreaRange(v)}
+              allowClear
+            />
+          </div>
+        </div>
+      </Drawer>
     </div>
   );
 };
