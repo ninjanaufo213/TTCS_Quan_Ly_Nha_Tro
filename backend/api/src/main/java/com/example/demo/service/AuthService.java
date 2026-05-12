@@ -15,6 +15,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.Optional;
+import java.util.UUID;
 import jakarta.servlet.http.HttpServletRequest;
 
 @Service
@@ -97,6 +98,79 @@ public class AuthService {
                     .build();
             landlordRepository.save(landlord);
         }
+    }
+
+    @Transactional
+    public User findOrCreateOAuthUser(String email, String fullName, String requestedRole) {
+        Optional<User> existing = userRepository.findByEmail(email);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
+        String role = normalizeRole(requestedRole);
+        String phone = generateUniquePhone();
+        String password = UUID.randomUUID().toString();
+
+        User user = User.builder()
+            .email(email)
+            .phone(phone)
+            .password(password)
+            .role(role)
+            .isActive(true)
+            .build();
+
+        user = userRepository.save(user);
+
+        String displayName = resolveDisplayName(fullName, email);
+
+        if ("TENANT".equals(role)) {
+            Tenant tenant = Tenant.builder()
+                .user(user)
+                .fullname(displayName)
+                .identityCard("OAUTH-" + user.getUserId())
+                .build();
+            tenantRepository.save(tenant);
+        } else {
+            Landlord landlord = Landlord.builder()
+                .user(user)
+                .brandName(displayName)
+                .build();
+            landlordRepository.save(landlord);
+        }
+
+        return user;
+    }
+
+    private String normalizeRole(String requestedRole) {
+        if (requestedRole == null || requestedRole.isBlank()) {
+            return "TENANT";
+        }
+        String role = requestedRole.trim().toUpperCase();
+        if (!"TENANT".equals(role) && !"LANDLORD".equals(role)) {
+            return "TENANT";
+        }
+        return role;
+    }
+
+    private String resolveDisplayName(String fullName, String email) {
+        if (fullName != null && !fullName.isBlank()) {
+            return fullName;
+        }
+        return email;
+    }
+
+    private String generateUniquePhone() {
+        String phone;
+        int attempts = 0;
+        do {
+            phone = "oauth" + System.currentTimeMillis() + (int) (Math.random() * 1000);
+            if (phone.length() > 20) {
+                phone = phone.substring(0, 20);
+            }
+            attempts++;
+        } while (userRepository.findByPhone(phone).isPresent() && attempts < 5);
+
+        return phone;
     }
 
     /**

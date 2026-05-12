@@ -6,6 +6,11 @@ const normalizeUserInfo = (userInfo, freshUser) => {
     return { ...merged, userId: normalizedId };
 };
 
+const resolveOAuthBaseUrl = () => {
+    const apiBase = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
+    return apiBase.replace(/\/api\/?$/, '');
+};
+
 export const authService = {
     login: async(email, password) => {
         const response = await api.post('/auth/login', {
@@ -108,6 +113,11 @@ export const authService = {
 
     isAuthenticated: () => {
         return !!localStorage.getItem('access_token');
+    },
+
+    loginWithProvider: (provider) => {
+        const baseUrl = resolveOAuthBaseUrl();
+        window.location.href = `${baseUrl}/oauth2/authorization/${provider}`;
     }
 };
 
