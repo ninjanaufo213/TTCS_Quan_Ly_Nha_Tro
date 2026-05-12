@@ -43,4 +43,37 @@ public interface ListingRepository extends JpaRepository<Listing, Integer> {
             @Param("minArea") Double minArea,
             @Param("maxArea") Double maxArea
     );
+
+    // Area demand statistics: aggregate by district
+    @Query("""
+            SELECT h.district,
+                   COALESCE(SUM(l.viewsCount), 0),
+                   COUNT(l),
+                   COALESCE(AVG(r.price), 0)
+            FROM Listing l
+            JOIN l.room r
+            JOIN r.house h
+            WHERE l.isPublished = true
+              AND h.district IS NOT NULL
+              AND h.district <> ''
+            GROUP BY h.district
+            ORDER BY SUM(l.viewsCount) DESC
+            """)
+    List<Object[]> aggregateByDistrict();
+
+    // Find the top ward (most listings) per district
+    @Query("""
+            SELECT h.district, h.ward, COUNT(l)
+            FROM Listing l
+            JOIN l.room r
+            JOIN r.house h
+            WHERE l.isPublished = true
+              AND h.district IS NOT NULL
+              AND h.district <> ''
+              AND h.ward IS NOT NULL
+              AND h.ward <> ''
+            GROUP BY h.district, h.ward
+            ORDER BY h.district, COUNT(l) DESC
+            """)
+    List<Object[]> topWardPerDistrict();
 }
