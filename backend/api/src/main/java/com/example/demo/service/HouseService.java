@@ -63,6 +63,8 @@ public class HouseService {
                 .addressLine(request.addressLine())
                 .ward(request.ward())
                 .district(request.district())
+                .latitude(request.latitude())
+                .longitude(request.longitude())
                 .build();
 
         House savedHouse = houseRepository.save(house);
@@ -87,6 +89,8 @@ public class HouseService {
         house.setAddressLine(request.addressLine());
         house.setWard(request.ward());
         house.setDistrict(request.district());
+        house.setLatitude(request.latitude());
+        house.setLongitude(request.longitude());
 
         House updatedHouse = houseRepository.save(house);
         return mapToResponse(updatedHouse);
@@ -117,6 +121,8 @@ public class HouseService {
                 house.getAddressLine(),
                 house.getWard(),
                 house.getDistrict(),
+                house.getLatitude(),
+                house.getLongitude(),
                 house.getCreatedAt(),
                 house.getUpdatedAt()
         );

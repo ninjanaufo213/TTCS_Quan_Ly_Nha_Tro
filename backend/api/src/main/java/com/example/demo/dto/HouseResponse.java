@@ -10,6 +10,8 @@ public record HouseResponse(
         String addressLine,
         String ward,
         String district,
+        Double latitude,
+        Double longitude,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {}

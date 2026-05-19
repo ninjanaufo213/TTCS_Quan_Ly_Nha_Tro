@@ -20,6 +20,7 @@ import {
 import { houseService } from '../../services/houseService';
 import { useNavigate } from 'react-router-dom';
 import LocationSelector from '../../components/LocationSelector';
+import MapPicker from '../../components/MapPicker';
 import locationData from '../../data/vn_locations.json';
 
 const Houses = () => {
@@ -93,7 +94,11 @@ const Houses = () => {
       wardCode: wCode
     });
 
-    form.setFieldsValue(record);
+    form.setFieldsValue({
+      ...record,
+      latitude: record.latitude || null,
+      longitude: record.longitude || null,
+    });
     setModalVisible(true);
   };
 
@@ -252,12 +257,13 @@ const Houses = () => {
           {/* Ẩn input để ant design form vẫn lấy được giá trị khi submit */}
           <Form.Item name="ward" hidden><Input /></Form.Item>
           <Form.Item name="district" hidden><Input /></Form.Item>
+          <Form.Item name="latitude" hidden><Input /></Form.Item>
+          <Form.Item name="longitude" hidden><Input /></Form.Item>
 
           <Form.Item 
             label="Khu vực (Tỉnh/Thành - Quận/Huyện - Phường/Xã)" 
             required
           >
-            {/* Truyền thêm key để component re-render khi addressData thay đổi (lúc bấm Edit) */}
             <LocationSelector
               key={modalVisible ? (addressData.districtCode || 'new') : 'closed'}
               selectedAddress={addressData}
@@ -278,6 +284,23 @@ const Houses = () => {
             <Input.TextArea
               rows={3}
               placeholder="Nhập địa chỉ chi tiết"
+            />
+          </Form.Item>
+
+          <Form.Item label="Vị trí trên bản đồ">
+            <MapPicker
+              key={modalVisible ? (editingHouse ? `edit-${editingHouse.house_id}` : 'create') : 'closed'}
+              initialPosition={
+                editingHouse && editingHouse.latitude && editingHouse.longitude
+                  ? { lat: editingHouse.latitude, lng: editingHouse.longitude }
+                  : undefined
+              }
+              onChange={({ lat, lng }) => {
+                form.setFieldsValue({
+                  latitude: lat,
+                  longitude: lng,
+                });
+              }}
             />
           </Form.Item>
 

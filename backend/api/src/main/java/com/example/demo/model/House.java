@@ -41,6 +41,12 @@ public class House {
     @Column(length = 100)
     private String district;
 
+    @Column
+    private Double latitude;
+
+    @Column
+    private Double longitude;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

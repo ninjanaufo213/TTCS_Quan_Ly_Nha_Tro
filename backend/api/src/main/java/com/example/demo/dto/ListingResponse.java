@@ -41,5 +41,7 @@ public class ListingResponse {
         private String landlordName;
         private String landlordPhone;
         private java.util.List<String> imageUrls;
+        private Double latitude;
+        private Double longitude;
     }
 }

@@ -138,12 +138,16 @@ public class ListingService {
             Integer houseId = null;
             String landlordName = "";
             String landlordPhone = "";
+            Double latitude = null;
+            Double longitude = null;
             if (listing.getRoom().getHouse() != null) {
                 district = listing.getRoom().getHouse().getDistrict();
                 ward = listing.getRoom().getHouse().getWard();
                 address = listing.getRoom().getHouse().getAddressLine();
                 houseName = listing.getRoom().getHouse().getName();
                 houseId = listing.getRoom().getHouse().getHouseId();
+                latitude = listing.getRoom().getHouse().getLatitude();
+                longitude = listing.getRoom().getHouse().getLongitude();
                 if (listing.getRoom().getHouse().getLandlord() != null) {
                     landlordName = listing.getRoom().getHouse().getLandlord().getBrandName();
                     if (listing.getRoom().getHouse().getLandlord().getUser() != null) {
@@ -174,6 +178,8 @@ public class ListingService {
                     .landlordName(landlordName)
                     .landlordPhone(landlordPhone)
                     .imageUrls(imageUrls)
+                    .latitude(latitude)
+                    .longitude(longitude)
                     .build();
         }
 

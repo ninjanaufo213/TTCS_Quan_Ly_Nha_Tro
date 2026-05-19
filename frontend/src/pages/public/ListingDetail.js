@@ -21,6 +21,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { authService } from '../../services/authService';
 import { viewingService } from '../../services/viewingService';
+import MapView from '../../components/MapView';
 import '../../styles/ListingDetail.css';
 
 const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
@@ -165,6 +166,15 @@ const ListingDetail = () => {
   const address = listing.room?.address || '';
   const views = listing.views_count || listing.viewsCount || 0;
   const createdAt = listing.created_at || listing.createdAt;
+
+  // Google Maps URL — dùng tọa độ nếu có, fallback sang tìm kiếm địa chỉ
+  const lat = listing.room?.latitude;
+  const lng = listing.room?.longitude;
+  const hasCoords = lat != null && lng != null;
+  const fullAddress = [address, ward, district, 'Việt Nam'].filter(Boolean).join(', ');
+  const googleMapsUrl = hasCoords
+    ? `https://www.google.com/maps?q=${lat},${lng}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
 
   return (
     <>
@@ -353,13 +363,37 @@ const ListingDetail = () => {
                   </div>
                 </div>
 
-                {/* Map placeholder */}
+                {/* Vị trí */}
                 <div className="map-card">
-                  <h3 className="map-title"><EnvironmentOutlined /> Vị trí</h3>
-                  <div className="map-placeholder">
-                    <EnvironmentOutlined style={{ fontSize: 36, color: '#94a3b8' }} />
-                    <p>{[ward, district].filter(Boolean).join(', ') || 'Chưa xác định'}</p>
-                  </div>
+                  <h3 className="map-title">
+                    <EnvironmentOutlined />Vị trí
+                    {/* {hasCoords && (
+                      <a
+                        href={googleMapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="map-open-hint"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Mở Google Maps ↗
+                      </a>
+                    )} */}
+                  </h3>
+
+                  {hasCoords ? (
+                    <MapView
+                      lat={lat}
+                      lng={lng}
+                      label={[address, ward, district].filter(Boolean).join(', ')}
+                      googleMapsUrl={googleMapsUrl}
+                      height={200}
+                    />
+                  ) : (
+                    <div className="map-placeholder">
+                      <EnvironmentOutlined style={{ fontSize: 36, color: '#94a3b8' }} />
+                      <p>{[ward, district].filter(Boolean).join(', ') || 'Chưa xác định'}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </Col>

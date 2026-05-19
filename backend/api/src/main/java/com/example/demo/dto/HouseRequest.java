@@ -9,5 +9,7 @@ public record HouseRequest(
         @JsonProperty("address_line")
         String addressLine,
         String ward,
-        String district
+        String district,
+        Double latitude,
+        Double longitude
 ) {}
