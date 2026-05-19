@@ -78,6 +78,16 @@ export default function NotificationPopover({ variant = 'light' }) {
     }
   };
 
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationService.markAllRead();
+      window.dispatchEvent(new CustomEvent('notificationMarkedRead'));
+      fetchNotifications();
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error);
+    }
+  };
+
   // Support both camelCase and snake_case depending on API mapping
   const getIsRead = (item) => item.isRead !== undefined ? item.isRead : item.is_read;
   const getId = (item) => item.notificationId || item.notification_id;
@@ -99,12 +109,11 @@ export default function NotificationPopover({ variant = 'light' }) {
             const isRead = getIsRead(item);
             return (
               <List.Item
+                className={`notification-item ${isRead ? 'is-read' : 'is-unread'}`}
                 style={{
                   padding: '12px 16px',
-                  background: isRead ? '#fff' : '#f0f5ff',
                   borderBottom: '1px solid #f0f0f0',
-                  cursor: 'pointer',
-                  transition: 'background 0.3s'
+                  cursor: 'pointer'
                 }}
                 onClick={() => handleMarkAsRead(getId(item), isRead)}
               >
@@ -157,25 +166,44 @@ export default function NotificationPopover({ variant = 'light' }) {
             }}>
               Thông báo
             </span>
-            <Button 
-              type="text" 
-              size="small" 
-              icon={<ReloadOutlined style={{ fontSize: 12 }} />}
-              onClick={fetchNotifications} 
-              loading={loading}
-              style={{ 
-                color: '#3b82f6', 
-                fontSize: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                fontWeight: 500,
-                borderRadius: '6px',
-                padding: '0 8px'
-              }}
-              className="hover-bright"
-            >
-              Làm mới
-            </Button>
+            <div>
+              <Button 
+                type="text" 
+                size="small" 
+                onClick={handleMarkAllRead}
+                disabled={unreadCount === 0}
+                style={{
+                  color: unreadCount === 0 ? '#94a3b8' : '#16a34a',
+                  fontSize: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontWeight: 500,
+                  borderRadius: '6px',
+                  padding: '0 8px'
+                }}
+              >
+                Đánh dấu tất cả đã đọc
+              </Button>
+              <Button 
+                type="text" 
+                size="small" 
+                icon={<ReloadOutlined style={{ fontSize: 12 }} />}
+                onClick={fetchNotifications} 
+                loading={loading}
+                style={{ 
+                  color: '#3b82f6', 
+                  fontSize: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontWeight: 500,
+                  borderRadius: '6px',
+                  padding: '0 8px'
+                }}
+                className="hover-bright"
+              >
+                Làm mới
+              </Button>
+            </div>
           </div>
         }
         trigger="click"

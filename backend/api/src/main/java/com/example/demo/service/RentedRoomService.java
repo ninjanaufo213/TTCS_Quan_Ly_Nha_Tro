@@ -263,6 +263,13 @@ public class RentedRoomService {
         RentedRoom rentedRoom = rentedRoomRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Hợp đồng không tồn tại!"));
 
+        Integer landlordId = authService.getCurrentLandlordId();
+        if (rentedRoom.getRoom() == null || rentedRoom.getRoom().getHouse() == null
+                || rentedRoom.getRoom().getHouse().getLandlord() == null
+                || !rentedRoom.getRoom().getHouse().getLandlord().getLandlordId().equals(landlordId)) {
+            throw new IllegalArgumentException("Bạn không có quyền chấm dứt hợp đồng này");
+        }
+
         rentedRoom.setIsActive(false);
         RentedRoom updated = rentedRoomRepository.save(rentedRoom);
 

@@ -11,3 +11,19 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.notification-item {
+  transition: background 0.2s ease;
+}
+
+.notification-item.is-read {
+  background: #fff;
+}
+
+.notification-item.is-unread {
+  background: #f0f5ff;
+}
+
+.notification-item:hover {
+  background: #e6f4ff;
+}

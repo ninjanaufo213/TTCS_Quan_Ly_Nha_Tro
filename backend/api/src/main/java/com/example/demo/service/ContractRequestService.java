@@ -32,6 +32,7 @@ public class ContractRequestService {
     private final AuthService authService;
     private final RentedRoomService rentedRoomService;
     private final NotificationService notificationService;
+    private final ViewingService viewingService;
 
     public ContractRequestService(ContractRequestRepository contractRequestRepository,
                                   RentRequestRepository rentRequestRepository,
@@ -39,7 +40,8 @@ public class ContractRequestService {
                                   TenantRepository tenantRepository,
                                   AuthService authService,
                                   RentedRoomService rentedRoomService,
-                                  NotificationService notificationService) {
+                                  NotificationService notificationService,
+                                  ViewingService viewingService) {
         this.contractRequestRepository = contractRequestRepository;
         this.rentRequestRepository = rentRequestRepository;
         this.roomRepository = roomRepository;
@@ -47,6 +49,7 @@ public class ContractRequestService {
         this.authService = authService;
         this.rentedRoomService = rentedRoomService;
         this.notificationService = notificationService;
+        this.viewingService = viewingService;
     }
 
     public ContractRequestResponse createForViewing(Integer viewingId, RentedRoomRequest request) {
@@ -175,6 +178,10 @@ public class ContractRequestService {
                 .build();
 
         rentedRoomService.createRentedRoom(rentedRoomRequest);
+        viewingService.cancelOtherViewingsForTenant(
+                contractRequest.getTenant() != null ? contractRequest.getTenant().getTenantId() : null,
+                rentRequest != null ? rentRequest.getRequestId() : null
+        );
 
         if (contractRequest.getRoom() != null && contractRequest.getRoom().getHouse() != null
                 && contractRequest.getRoom().getHouse().getLandlord() != null) {
@@ -209,7 +216,7 @@ public class ContractRequestService {
 
         RentRequest rentRequest = contractRequest.getRentRequest();
         if (rentRequest != null && !ViewingService.STATUS_CONTRACTED.equals(rentRequest.getStatus())) {
-            rentRequest.setStatus(ViewingService.STATUS_APPROVED);
+            rentRequest.setStatus(ViewingService.STATUS_CANCELED);
             rentRequestRepository.save(rentRequest);
         }
 

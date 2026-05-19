@@ -30,6 +30,7 @@ import { houseService } from '../../services/houseService';
 import { tenantService } from '../../services/tenantService';
 import { contractRequestService } from '../../services/contractRequestService';
 import { viewingService } from '../../services/viewingService';
+import { contractExtensionRequestService } from '../../services/contractExtensionRequestService';
 import dayjs from 'dayjs';
 
 const { Option } = Select;
@@ -38,9 +39,11 @@ const Contracts = () => {
   console.log('Contracts component loaded');
 
   const [contracts, setContracts] = useState([]);
+  const [extensionRequests, setExtensionRequests] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [houses, setHouses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [extensionLoading, setExtensionLoading] = useState(false);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -112,6 +115,7 @@ const Contracts = () => {
     } else {
       fetchAllContracts();
     }
+    loadExtensionRequests();
   }, [roomId]);
 
   useEffect(() => {
@@ -262,6 +266,43 @@ const Contracts = () => {
       setError('Lỗi khi tải danh sách hợp đồng');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadExtensionRequests = async () => {
+    setExtensionLoading(true);
+    try {
+      const data = await contractExtensionRequestService.getLandlordRequests();
+      setExtensionRequests(Array.isArray(data) ? data : []);
+    } catch (error) {
+      message.error('Lỗi khi tải yêu cầu gia hạn hợp đồng');
+    } finally {
+      setExtensionLoading(false);
+    }
+  };
+
+  const handleApproveExtension = async (id) => {
+    try {
+      await contractExtensionRequestService.approve(id);
+      message.success('Đã duyệt gia hạn hợp đồng');
+      await loadExtensionRequests();
+      if (roomId) {
+        fetchContractsByRoom(roomId);
+      } else {
+        fetchAllContracts();
+      }
+    } catch (error) {
+      message.error('Không thể duyệt yêu cầu gia hạn');
+    }
+  };
+
+  const handleRejectExtension = async (id) => {
+    try {
+      await contractExtensionRequestService.reject(id);
+      message.success('Đã từ chối yêu cầu gia hạn');
+      await loadExtensionRequests();
+    } catch (error) {
+      message.error('Không thể từ chối yêu cầu gia hạn');
     }
   };
 
@@ -574,6 +615,54 @@ const Contracts = () => {
     },
   ];
 
+  const extensionColumns = [
+    {
+      title: 'Phòng',
+      dataIndex: 'roomName',
+      key: 'roomName',
+    },
+    {
+      title: 'Khách thuê',
+      dataIndex: 'tenantName',
+      key: 'tenantName',
+    },
+    {
+      title: 'Ngày kết thúc hiện tại',
+      dataIndex: 'currentEndDate',
+      key: 'currentEndDate',
+      render: (value) => (value ? dayjs(value).format('DD/MM/YYYY') : '-'),
+    },
+    {
+      title: 'Ngày kết thúc đề xuất',
+      dataIndex: 'requestedEndDate',
+      key: 'requestedEndDate',
+      render: (value) => (value ? dayjs(value).format('DD/MM/YYYY') : '-'),
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'status',
+      key: 'status',
+      render: (value) => <Tag color={value === 'PENDING' ? 'gold' : value === 'APPROVED' ? 'green' : 'red'}>{value}</Tag>,
+    },
+    {
+      title: 'Hành động',
+      key: 'action',
+      render: (_, record) => {
+        const disabled = record.status !== 'PENDING';
+        return (
+          <Space>
+            <Button type="primary" size="small" onClick={() => handleApproveExtension(record.extensionRequestId)} disabled={disabled}>
+              Duyệt
+            </Button>
+            <Button size="small" danger onClick={() => handleRejectExtension(record.extensionRequestId)} disabled={disabled}>
+              Từ chối
+            </Button>
+          </Space>
+        );
+      },
+    },
+  ];
+
   console.log('Rendering Contracts, houses:', houses.length, 'contracts:', contracts.length, 'loading:', loading, 'roomId:', roomId, 'action:', action);
 
   return (
@@ -735,6 +824,16 @@ const Contracts = () => {
             )}
           </>
         )}
+      </Card>
+
+      <Card title="Yêu cầu gia hạn hợp đồng" style={{ marginTop: 16 }}>
+        <Table
+          rowKey="extensionRequestId"
+          loading={extensionLoading}
+          dataSource={extensionRequests}
+          columns={extensionColumns}
+          pagination={{ pageSize: 6 }}
+        />
       </Card>
 
       <Modal

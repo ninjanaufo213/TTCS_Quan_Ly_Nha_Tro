@@ -9,8 +9,12 @@ export const notificationService = {
   markRead: async (id) => {
     const response = await api.patch(`/notifications/${id}/read`);
     return response.data;
+  },
+
+  markAllRead: async () => {
+    const response = await api.patch('/notifications/read-all');
+    return response.data;
   }
 };
 
 export default notificationService;
-

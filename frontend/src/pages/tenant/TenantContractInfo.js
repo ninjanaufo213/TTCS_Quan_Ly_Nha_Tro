@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Card, Col, Descriptions, Row, Select, Spin, Tag, Typography } from 'antd';
+import { Alert, Button, Card, Col, DatePicker, Descriptions, Form, Modal, Row, Select, Spin, Tag, Typography, message } from 'antd';
 import dayjs from 'dayjs';
 import { rentedRoomService } from '../../services/rentedRoomService';
+import { contractExtensionRequestService } from '../../services/contractExtensionRequestService';
 
 const { Title, Text, Link } = Typography;
 
@@ -30,6 +31,9 @@ const ContractStatusTag = ({ endDate, isActive }) => {
 export default function TenantContractInfo() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [extensionModalOpen, setExtensionModalOpen] = useState(false);
+  const [extensionLoading, setExtensionLoading] = useState(false);
+  const [extensionForm] = Form.useForm();
 
   const [contracts, setContracts] = useState([]);
   const [selectedRrId, setSelectedRrId] = useState(null);
@@ -56,6 +60,30 @@ export default function TenantContractInfo() {
     };
     load();
   }, []);
+
+  const handleOpenExtension = () => {
+    if (!selectedContract) return;
+    extensionForm.resetFields();
+    setExtensionModalOpen(true);
+  };
+
+  const handleSubmitExtension = async (values) => {
+    if (!selectedContract?.rr_id) return;
+    setExtensionLoading(true);
+    try {
+      await contractExtensionRequestService.create({
+        rentedRoomId: selectedContract.rr_id,
+        requestedEndDate: values.requested_end_date.format('YYYY-MM-DD'),
+      });
+      message.success('Đã gửi yêu cầu gia hạn hợp đồng');
+      setExtensionModalOpen(false);
+      extensionForm.resetFields();
+    } catch (e) {
+      message.error(e?.response?.data?.detail || 'Không thể gửi yêu cầu gia hạn');
+    } finally {
+      setExtensionLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -101,6 +129,11 @@ export default function TenantContractInfo() {
             }))}
           />
         </Col>
+        <Col>
+          <Button type="primary" onClick={handleOpenExtension} disabled={!selectedContract}>
+            Yêu cầu gia hạn
+          </Button>
+        </Col>
       </Row>
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
@@ -130,6 +163,46 @@ export default function TenantContractInfo() {
           </Card>
         </Col>
       </Row>
+
+      <Modal
+        title="Yêu cầu gia hạn hợp đồng"
+        open={extensionModalOpen}
+        onCancel={() => {
+          setExtensionModalOpen(false);
+          extensionForm.resetFields();
+        }}
+        footer={null}
+        width={420}
+      >
+        <Form form={extensionForm} layout="vertical" onFinish={handleSubmitExtension}>
+          <Form.Item
+            name="requested_end_date"
+            label="Ngày kết thúc mới"
+            rules={[{ required: true, message: 'Vui lòng chọn ngày kết thúc mới' }]}
+          >
+            <DatePicker
+              style={{ width: '100%' }}
+              disabledDate={(d) => {
+                const currentEnd = selectedContract?.end_date ? dayjs(selectedContract.end_date) : null;
+                if (!d) return false;
+                if (!currentEnd) return d.isBefore(dayjs().startOf('day'));
+                return d.isBefore(currentEnd.add(1, 'day').startOf('day'));
+              }}
+            />
+          </Form.Item>
+          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+            <Button onClick={() => {
+              setExtensionModalOpen(false);
+              extensionForm.resetFields();
+            }} style={{ marginRight: 8 }}>
+              Hủy
+            </Button>
+            <Button type="primary" htmlType="submit" loading={extensionLoading}>
+              Gửi yêu cầu
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

@@ -50,6 +50,15 @@ const Dashboard = () => {
   useEffect(() => {
     fetchDashboardData();
     fetchViewingRequests();
+    const intervalId = setInterval(() => {
+      fetchViewingRequests();
+    }, 20000);
+    const handleFocus = () => fetchViewingRequests();
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   const fetchDashboardData = async () => {
