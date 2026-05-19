@@ -18,6 +18,7 @@ public class ListingResponse {
     private Integer viewsCount;
     private Boolean isPublished;
     private LocalDateTime createdAt;
+    private Double distance;
     
     private RoomInfo room;
 

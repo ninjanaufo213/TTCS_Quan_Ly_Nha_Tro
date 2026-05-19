@@ -76,4 +76,27 @@ public interface ListingRepository extends JpaRepository<Listing, Integer> {
             ORDER BY h.district, COUNT(l) DESC
             """)
     List<Object[]> topWardPerDistrict();
+
+    @Query(value = """
+            SELECT l.listing_id,
+                   ( 6371 * acos( cos( radians(:latitude) )
+                                * cos( radians( h.latitude ) )
+                                * cos( radians( h.longitude ) - radians(:longitude) )
+                                + sin( radians(:latitude) )
+                                * sin( radians( h.latitude ) ) ) ) AS distance
+            FROM listings l
+            JOIN rooms r ON l.room_id = r.room_id
+            JOIN houses h ON r.house_id = h.house_id
+            WHERE l.is_published = true
+              AND r.is_available = true
+              AND h.latitude IS NOT NULL
+              AND h.longitude IS NOT NULL
+            HAVING distance <= :radius
+            ORDER BY distance ASC
+            LIMIT :limit
+            """, nativeQuery = true)
+    List<Object[]> findRecommendedListingIdsAndDistances(@Param("latitude") Double latitude,
+                                                         @Param("longitude") Double longitude,
+                                                         @Param("radius") Double radius,
+                                                         @Param("limit") Integer limit);
 }

@@ -58,6 +58,28 @@ public class ListingService {
                 .collect(Collectors.toList());
     }
 
+    public List<ListingResponse> getRecommendedListings(Double latitude, Double longitude, Double radius, Integer limit) {
+        // Fallback mechanism: if coordinates are null, use Hanoi city center as default
+        if (latitude == null || longitude == null) {
+            latitude = 21.028511; // Hanoi
+            longitude = 105.804817;
+        }
+        if (radius == null) radius = 1000.0;
+        if (limit == null) limit = 10;
+
+        List<Object[]> results = listingRepository.findRecommendedListingIdsAndDistances(latitude, longitude, radius, limit);
+
+        return results.stream().map(row -> {
+            Integer listingId = ((Number) row[0]).intValue();
+            Double distance = ((Number) row[1]).doubleValue();
+            
+            Listing listing = listingRepository.findById(listingId).orElseThrow();
+            ListingResponse response = mapToResponse(listing);
+            response.setDistance(distance);
+            return response;
+        }).collect(Collectors.toList());
+    }
+
     public ListingResponse getPublicListingById(Integer id) {
         Listing listing = listingRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tin đăng"));

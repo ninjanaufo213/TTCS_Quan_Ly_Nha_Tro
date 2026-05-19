@@ -41,6 +41,18 @@ public class ListingController {
         );
     }
 
+    @GetMapping("/api/listings/recommendations")
+    public ResponseEntity<List<ListingResponse>> getRecommendedListings(
+            @RequestParam(required = false) Double latitude,
+            @RequestParam(required = false) Double longitude,
+            @RequestParam(required = false) Double radius,
+            @RequestParam(required = false) Integer limit
+    ) {
+        return ResponseEntity.ok(
+                listingService.getRecommendedListings(latitude, longitude, radius, limit)
+        );
+    }
+
     @GetMapping("/api/listings/{id}")
     public ResponseEntity<?> getListingDetail(@PathVariable Integer id) {
         try {

@@ -63,5 +63,26 @@ public class ListingControllerTest {
                 .andExpect(jsonPath("$.title").value("Cho thue phong"))
                 .andExpect(jsonPath("$.is_published").value(false));
     }
+    @Test
+    void getRecommendedListings_Success() throws Exception {
+        java.util.List<ListingResponse> mockResponse = java.util.Collections.singletonList(
+                ListingResponse.builder()
+                        .listingId(1)
+                        .title("Phong tro gan DH BKHN")
+                        .distance(2.5)
+                        .build()
+        );
 
+        when(listingService.getRecommendedListings(any(), any(), any(), any())).thenReturn(mockResponse);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/listings/recommendations")
+                        .param("latitude", "21.0")
+                        .param("longitude", "105.8")
+                        .param("radius", "5.0")
+                        .param("limit", "10")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].listing_id").value(1))
+                .andExpect(jsonPath("$[0].distance").value(2.5));
+    }
 }

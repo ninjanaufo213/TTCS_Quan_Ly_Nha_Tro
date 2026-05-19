@@ -14,6 +14,11 @@ export const listingService = {
     return response.data;
   },
 
+  getRecommendedListings: async (params) => {
+    const response = await axios.get(`${BASE_URL}/listings/recommendations`, { params });
+    return response.data;
+  },
+
   getListingDetail: async (id) => {
     const response = await axios.get(`${BASE_URL}/listings/${id}`);
     return response.data;
