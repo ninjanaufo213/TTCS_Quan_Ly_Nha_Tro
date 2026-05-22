@@ -59,6 +59,11 @@ public class NotificationService {
         return mapToResponse(notificationRepository.save(notification));
     }
 
+    public int markAllAsRead() {
+        Integer userId = authService.getCurrentUserId();
+        return notificationRepository.markAllAsRead(userId);
+    }
+
     private NotificationResponse mapToResponse(Notification notification) {
         return NotificationResponse.builder()
                 .notificationId(notification.getNotificationId())
@@ -71,4 +76,3 @@ public class NotificationService {
                 .build();
     }
 }
-

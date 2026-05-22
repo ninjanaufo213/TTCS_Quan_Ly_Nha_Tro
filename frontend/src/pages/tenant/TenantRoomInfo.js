@@ -39,16 +39,17 @@ export default function TenantRoomInfo() {
   useEffect(() => {
     const loadHouse = async () => {
       setHouse(null);
-      if (!selectedContract?.room?.houseId) return;
+          const houseId = selectedContract?.room?.house_id;
+      if (!houseId) return;
       try {
-        const houseData = await houseService.getById(selectedContract.room.houseId);
+        const houseData = await houseService.getById(houseId);
         setHouse(houseData || null);
       } catch (e) {
         setError(e?.response?.data?.message || e?.message || 'Không thể tải thông tin nhà trọ.');
       }
     };
     loadHouse();
-  }, [selectedContract?.room?.houseId]);
+  }, [selectedContract?.room?.house_id]);
 
   if (loading) {
     return (
@@ -80,7 +81,7 @@ export default function TenantRoomInfo() {
           <Title level={3} style={{ margin: 0 }}>
             Thông tin phòng trọ
           </Title>
-          <Text type="secondary">Thông tin trọ/phòng bạn đang thuê (demo UI).</Text>
+          <Text type="secondary">Thông tin trọ/phòng bạn đang thuê.</Text>
         </Col>
         <Col flex="auto" />
         <Col>
@@ -102,7 +103,7 @@ export default function TenantRoomInfo() {
             <Descriptions column={1} size="middle">
               <Descriptions.Item label="Tên nhà trọ">{house?.name || '-'}</Descriptions.Item>
               <Descriptions.Item label="Địa chỉ">
-                {[house?.addressLine, house?.ward, house?.district].filter(Boolean).join(', ') || '-'}
+                {[house?.address_line, house?.ward, house?.district].filter(Boolean).join(', ') || '-'}
               </Descriptions.Item>
             </Descriptions>
           </Card>

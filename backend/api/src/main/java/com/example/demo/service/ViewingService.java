@@ -258,6 +258,22 @@ public class ViewingService {
         rentRequestRepository.save(rentRequest);
     }
 
+    public void cancelOtherViewingsForTenant(Integer tenantId, Integer keepRequestId) {
+        if (tenantId == null) {
+            return;
+        }
+        List<RentRequest> requests = rentRequestRepository.findByTenant_TenantId(tenantId);
+        List<RentRequest> toCancel = requests.stream()
+                .filter(req -> keepRequestId == null || !keepRequestId.equals(req.getRequestId()))
+                .filter(req -> List.of(STATUS_PENDING, STATUS_APPROVED, STATUS_SCHEDULED, STATUS_CONTRACT_PENDING)
+                        .contains(req.getStatus()))
+                .peek(req -> req.setStatus(STATUS_CANCELED))
+                .collect(Collectors.toList());
+        if (!toCancel.isEmpty()) {
+            rentRequestRepository.saveAll(toCancel);
+        }
+    }
+
     private ViewingResponse mapToResponse(RentRequest request) {
         String houseName = "";
         String addressLine = "";

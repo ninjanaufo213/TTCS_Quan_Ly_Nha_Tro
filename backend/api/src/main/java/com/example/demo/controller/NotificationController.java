@@ -31,5 +31,14 @@ public class NotificationController {
             return ResponseEntity.badRequest().body(Map.of("detail", e.getMessage()));
         }
     }
-}
 
+    @PatchMapping("/api/notifications/read-all")
+    public ResponseEntity<?> markAllAsRead() {
+        try {
+            int updated = notificationService.markAllAsRead();
+            return ResponseEntity.ok(Map.of("updated", updated));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("detail", e.getMessage()));
+        }
+    }
+}
