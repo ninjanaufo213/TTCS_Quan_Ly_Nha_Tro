@@ -18,6 +18,7 @@ import Invoices from './pages/landlord/Invoices';
 import Reports from './pages/landlord/Reports';
 import Viewings from './pages/landlord/Viewings';
 import Register from './pages/public/Register';
+import OAuthCallback from './pages/public/OAuthCallback';
 import Profile from './pages/Profile';
 import Notifications from './pages/Notifications';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -110,6 +111,14 @@ function App() {
                             element={
                                 <PublicRoute>
                                     <Login />
+                                </PublicRoute>
+                            }
+                        />
+                        <Route
+                            path="/oauth2/redirect"
+                            element={
+                                <PublicRoute>
+                                    <OAuthCallback />
                                 </PublicRoute>
                             }
                         />

@@ -15,6 +15,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.Optional;
+import java.util.Locale;
 import jakarta.servlet.http.HttpServletRequest;
 
 @Service
@@ -31,6 +32,10 @@ public class AuthService {
     }
 
     public LoginResponse authenticate(LoginRequest request) {
+        if (request == null || request.getEmail() == null || request.getEmail().isBlank()
+                || request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new IllegalArgumentException("Email và mật khẩu không hợp lệ");
+        }
         Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
 
         if (userOpt.isEmpty()) {
@@ -42,7 +47,7 @@ public class AuthService {
         if (!user.getPassword().equals(request.getPassword())) {
             throw new IllegalArgumentException("Mật khẩu không chính xác");
         }
-        
+
         if (user.getIsActive() != null && !user.getIsActive()) {
             throw new IllegalStateException("Tài khoản đã bị khóa");
         }
@@ -58,6 +63,14 @@ public class AuthService {
 
     @Transactional
     public void register(RegisterRequest request) {
+        if (request == null || request.getEmail() == null || request.getEmail().isBlank()
+                || request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new IllegalArgumentException("Thiếu thông tin đăng ký");
+        }
+        if (request.getPhone() == null || request.getPhone().isBlank()) {
+            throw new IllegalArgumentException("Số điện thoại là bắt buộc");
+        }
+
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Email already registered");
         }
@@ -65,8 +78,8 @@ public class AuthService {
             throw new IllegalArgumentException("Phone already registered");
         }
 
-        String role = request.getRole() != null ? request.getRole().toUpperCase() : "LANDLORD"; // Default to LANDLORD
-        
+        String role = normalizeRole(request.getRole());
+
         User user = User.builder()
                 .email(request.getEmail())
                 .phone(request.getPhone())
@@ -82,7 +95,7 @@ public class AuthService {
                     .user(user)
                     .fullname(request.getFullname())
                     // Use phone as temporary identity card for fallback
-                    .identityCard(request.getPhone()) 
+                    .identityCard(request.getPhone())
                     .build();
             tenantRepository.save(tenant);
         } else {
@@ -97,6 +110,63 @@ public class AuthService {
                     .build();
             landlordRepository.save(landlord);
         }
+    }
+
+    @Transactional
+    public User findOrCreateOAuthUser(String email, String name, String requestedRole) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email không hợp lệ");
+        }
+
+        Optional<User> existing = userRepository.findByEmail(email);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
+        String role = normalizeRoleOrDefault(requestedRole, "TENANT");
+        String fallbackPhone = "oauth" + System.currentTimeMillis();
+
+        User user = User.builder()
+                .email(email)
+                .phone(fallbackPhone)
+                .password("oauth")
+                .role(role)
+                .isActive(true)
+                .build();
+
+        user = userRepository.save(user);
+
+        if ("TENANT".equals(role)) {
+            Tenant tenant = Tenant.builder()
+                    .user(user)
+                    .fullname(name == null || name.isBlank() ? email : name)
+                    .identityCard(fallbackPhone)
+                    .build();
+            tenantRepository.save(tenant);
+        } else {
+            Landlord landlord = Landlord.builder()
+                    .user(user)
+                    .brandName(name == null || name.isBlank() ? email : name)
+                    .build();
+            landlordRepository.save(landlord);
+        }
+
+        return user;
+    }
+
+    private String normalizeRole(String role) {
+        return normalizeRoleOrDefault(role, "LANDLORD");
+    }
+
+    private String normalizeRoleOrDefault(String role, String defaultRole) {
+        if (role == null || role.isBlank()) {
+            return defaultRole;
+        }
+        String normalized = role.trim().toUpperCase(Locale.ROOT);
+        if ("LANDLORD".equals(normalized) || "TENANT".equals(normalized) || "ADMIN".equals(normalized)) {
+            return normalized;
+        }
+        throw new IllegalArgumentException("Vai trò không hợp lệ");
     }
 
     /**
