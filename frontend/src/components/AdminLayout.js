@@ -40,6 +40,10 @@ const AdminLayout = () => {
     },
   ];
 
+  const selectedKey =
+    menuItems.map((item) => item.key).find((key) => location.pathname.startsWith(key)) ||
+    '/admin/dashboard';
+
   return (
     <AntLayout style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Shared Header */}
@@ -90,7 +94,7 @@ const AdminLayout = () => {
           {/* Menu */}
           <Menu
             mode="inline"
-            selectedKeys={[location.pathname]}
+            selectedKeys={[selectedKey]}
             items={menuItems}
             onClick={({ key }) => navigate(key)}
             style={{

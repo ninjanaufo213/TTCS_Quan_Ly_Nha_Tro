@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.dto.ViewingRequest;
 import com.example.demo.dto.ViewingResponse;
+import com.example.demo.integration.esms.EsmsSmsSender;
 import com.example.demo.model.RentRequest;
 import com.example.demo.model.Room;
 import com.example.demo.model.Tenant;
@@ -31,17 +32,20 @@ public class ViewingService {
     private final TenantRepository tenantRepository;
     private final AuthService authService;
     private final NotificationService notificationService;
+    private final EsmsSmsSender esmsSmsSender;
 
     public ViewingService(RentRequestRepository rentRequestRepository,
                           RoomRepository roomRepository,
                           TenantRepository tenantRepository,
                           AuthService authService,
-                          NotificationService notificationService) {
+                          NotificationService notificationService,
+                          EsmsSmsSender esmsSmsSender) {
         this.rentRequestRepository = rentRequestRepository;
         this.roomRepository = roomRepository;
         this.tenantRepository = tenantRepository;
         this.authService = authService;
         this.notificationService = notificationService;
+        this.esmsSmsSender = esmsSmsSender;
     }
 
     public ViewingResponse createViewing(ViewingRequest request) {
@@ -201,6 +205,15 @@ public class ViewingService {
                 rentRequest.getRequestId()
         );
 
+        if (saved.getTenant() != null && saved.getTenant().getUser() != null) {
+            esmsSmsSender.sendViewingApprovedSms(
+                    saved.getTenant().getUser().getPhone(),
+                    saved.getRoom() != null ? saved.getRoom().getName() : "",
+                    saved.getVisitDate(),
+                    saved.getVisitTime()
+            );
+        }
+
         return mapToResponse(saved);
     }
 
@@ -312,4 +325,3 @@ public class ViewingService {
                 .build();
     }
 }
-
