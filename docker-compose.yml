@@ -11,11 +11,18 @@ services:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-    
+    # Thêm healthcheck để kiểm tra xem MySQL đã thực sự sẵn sàng chưa
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   backend:
     build: ./backend/api
     image: vinhcute22/room-backend:latest
     container_name: room_backend
+    restart: always # Thêm dòng này để nếu có lỗi kết nối tạm thời, backend sẽ tự restart lại
     ports:
       - "8080:8080"
     environment:
@@ -23,8 +30,9 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ""
     depends_on:
-      - db
-      
+      db:
+        condition: service_healthy # Yêu cầu db phải pass qua vòng healthcheck trên thì mới start backend
+
   frontend:
     image: vinhcute22/room-frontend:latest
     container_name: room_frontend
@@ -32,7 +40,8 @@ services:
     ports:
       - "3000:80"
     depends_on:
-      - backend
-    
+      backend:
+        condition: service_started # Hoặc dùng service_healthy nếu backend của bạn có cấu hình Spring Boot Actuator
+
 volumes:
   mysql_data:
