@@ -48,7 +48,7 @@ jobs:
           context: ./frontend
           push: true
           build-args: |
-            REACT_APP_API_BASE_URL=${{ secrets.REACT_APP_API_BASE_URL }}
+            
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/ttcs-room-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/ttcs-room-frontend:${{ github.sha }}

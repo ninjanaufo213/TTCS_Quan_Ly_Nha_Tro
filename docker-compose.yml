@@ -1,0 +1,55 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: room_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: room_management_db
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_ROOT_HOST: "%"
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    deploy:
+      resources:
+        limits:
+          memory: 300M # Giới hạn RAM cho DB để không làm treo EC2
+
+  backend:
+    image: vinhcute22/room-backend:latest 
+    container_name: room_backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=mysql+pymysql://root:@db:3306/room_management_db
+      - SECRET_KEY=hi
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - GEMINI_API_KEY=your_key
+    ports:
+      - "8000:8000"
+    deploy:
+      resources:
+        limits:
+          memory: 250M
+
+  frontend:
+    image: vinhcute22/room-frontend:latest
+    container_name: room_frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_API_BASE_URL=http://18.213.151.35:8000/api/v2
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+    
+
+volumes:
+  mysql_data:
