@@ -50,7 +50,7 @@ jobs:
           build-args: |
             
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/ttcs-room-frontend:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/ttcs-room-frontend:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/room-frontend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/room-frontend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
