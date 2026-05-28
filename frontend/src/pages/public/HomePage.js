@@ -37,7 +37,7 @@ import '../../styles/HomePage.css';
 const HomePage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState('suggest');
+  const [activeTab, setActiveTab] = useState('new');
   const [savedListings, setSavedListings] = useState(new Set());
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -441,16 +441,16 @@ const HomePage = () => {
             <div className="content-tabs animate-fade-in-up" style={{ animationDelay: '200ms' }}>
               <div className="tab-list">
                 <div
-                  className={`tab-item ${activeTab === 'suggest' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('suggest')}
-                >
-                  Đề xuất cho bạn
-                </div>
-                <div
                   className={`tab-item ${activeTab === 'new' ? 'active' : ''}`}
                   onClick={() => setActiveTab('new')}
                 >
                   Mới đăng gần đây
+                </div>
+                <div
+                  className={`tab-item ${activeTab === 'suggest' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('suggest')}
+                >
+                  Đề xuất theo vị trí
                 </div>
                 <div
                   className={`tab-item ${activeTab === 'video' ? 'active' : ''}`}
