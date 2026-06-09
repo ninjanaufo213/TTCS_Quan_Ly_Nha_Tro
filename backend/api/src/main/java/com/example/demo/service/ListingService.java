@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.dto.ListingResponse;
 import com.example.demo.model.Listing;
 import com.example.demo.repository.ListingRepository;
+import com.example.demo.repository.ReviewRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -15,13 +16,16 @@ public class ListingService {
 
     private final ListingRepository listingRepository;
     private final com.example.demo.repository.RoomRepository roomRepository;
+    private final ReviewRepository reviewRepository;
     private final AuthService authService;
 
     public ListingService(ListingRepository listingRepository,
                           com.example.demo.repository.RoomRepository roomRepository,
+                          ReviewRepository reviewRepository,
                           AuthService authService) {
         this.listingRepository = listingRepository;
         this.roomRepository = roomRepository;
+        this.reviewRepository = reviewRepository;
         this.authService = authService;
     }
 
@@ -181,7 +185,13 @@ public class ListingService {
 
     private ListingResponse mapToResponse(Listing listing) {
         ListingResponse.RoomInfo roomInfo = null;
+        Double averageRating = null;
+        Long totalReviews = 0L;
         if (listing.getRoom() != null) {
+            Integer roomId = listing.getRoom().getRoomId();
+            averageRating = reviewRepository.averageRatingByRoomId(roomId);
+            totalReviews = reviewRepository.countByRoom_RoomId(roomId);
+
             String district = "";
             String ward = "";
             String address = "";
@@ -214,7 +224,7 @@ public class ListingService {
             }
 
             roomInfo = ListingResponse.RoomInfo.builder()
-                    .roomId(listing.getRoom().getRoomId())
+                    .roomId(roomId)
                     .houseId(houseId)
                     .houseName(houseName)
                     .name(listing.getRoom().getName())
@@ -241,6 +251,8 @@ public class ListingService {
                 .viewsCount(listing.getViewsCount())
                 .isPublished(listing.getIsPublished())
                 .createdAt(listing.getCreatedAt())
+                .averageRating(averageRating)
+                .totalReviews(totalReviews)
                 .room(roomInfo)
                 .build();
     }

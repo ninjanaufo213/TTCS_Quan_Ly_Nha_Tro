@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Button, Tag, Skeleton, Empty, Breadcrumb,
-  Row, Col, Divider, Image, Modal, Form, DatePicker, TimePicker, App, message as antdMessage
+  Row, Col, Divider, Image, Modal, Form, DatePicker, TimePicker, message as antdMessage, Rate, List
 } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -21,6 +21,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { authService } from '../../services/authService';
 import { viewingService } from '../../services/viewingService';
+import { reviewService } from '../../services/reviewService';
 import MapView from '../../components/MapView';
 import '../../styles/ListingDetail.css';
 
@@ -37,6 +38,7 @@ const ListingDetail = () => {
   const [showPhone, setShowPhone] = useState(false);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [requestLoading, setRequestLoading] = useState(false);
+  const [reviewSummary, setReviewSummary] = useState({ average_rating: null, total_reviews: 0, reviews: [] });
   const [requestForm] = Form.useForm();
   const lastFetchedIdRef = useRef(null);
 
@@ -61,6 +63,25 @@ const ListingDetail = () => {
     fetchListing();
   }, [id]);
 
+  useEffect(() => {
+    const roomId = listing?.room?.roomId || listing?.room?.room_id;
+    if (!roomId) {
+      setReviewSummary({ average_rating: null, total_reviews: 0, reviews: [] });
+      return;
+    }
+
+    const fetchReviews = async () => {
+      try {
+        const data = await reviewService.getRoomReviews(roomId);
+        setReviewSummary(data || { average_rating: null, total_reviews: 0, reviews: [] });
+      } catch (err) {
+        console.error('Lỗi tải đánh giá phòng:', err);
+        setReviewSummary({ average_rating: null, total_reviews: 0, reviews: [] });
+      }
+    };
+    fetchReviews();
+  }, [listing]);
+
   const formatPrice = (price) => {
     if (!price) return 'Thỏa thuận';
     if (price >= 1000000) return `${(price / 1000000).toFixed(1)} triệu/tháng`;
@@ -70,6 +91,13 @@ const ListingDetail = () => {
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
     return new Date(dateStr).toLocaleDateString('vi-VN', {
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    });
+  };
+
+  const formatReviewDate = (dateStr) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleString('vi-VN', {
       day: '2-digit', month: '2-digit', year: 'numeric'
     });
   };
@@ -300,6 +328,54 @@ const ListingDetail = () => {
                       </div>
                     ))}
                 </div>
+              </div>
+
+              <div className="detail-card">
+                <h2 className="section-heading">Đánh giá phòng</h2>
+                {(reviewSummary.total_reviews || reviewSummary.totalReviews || 0) > 0 ? (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                      <Rate disabled allowHalf value={Number(reviewSummary.average_rating ?? reviewSummary.averageRating ?? 0)} />
+                      <span style={{ color: '#475569', fontWeight: 600 }}>
+                        {Number(reviewSummary.average_rating ?? reviewSummary.averageRating ?? 0).toFixed(1)}
+                      </span>
+                      <span style={{ color: '#64748b' }}>
+                        ({reviewSummary.total_reviews ?? reviewSummary.totalReviews} đánh giá)
+                      </span>
+                    </div>
+                    <List
+                      itemLayout="vertical"
+                      dataSource={reviewSummary.reviews || []}
+                      renderItem={(review) => (
+                        <List.Item key={review.review_id || review.reviewId}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                            <strong>{review.tenant_name || review.tenantName || 'Khách thuê'}</strong>
+                            <span style={{ color: '#94a3b8' }}>{formatReviewDate(review.created_at || review.createdAt)}</span>
+                          </div>
+                          <Rate disabled value={review.rating || 0} style={{ fontSize: 16, marginTop: 4 }} />
+                          {review.comment && (
+                            <p style={{ margin: '8px 0 0', color: '#475569' }}>{review.comment}</p>
+                          )}
+                          {(review.landlord_reply || review.landlordReply) && (
+                            <div style={{
+                              marginTop: 10,
+                              padding: '10px 12px',
+                              background: '#f8fafc',
+                              borderLeft: '3px solid #2563eb',
+                              borderRadius: 8,
+                              color: '#334155'
+                            }}>
+                              <strong>Phản hồi chủ trọ: </strong>
+                              <span>{review.landlord_reply || review.landlordReply}</span>
+                            </div>
+                          )}
+                        </List.Item>
+                      )}
+                    />
+                  </>
+                ) : (
+                  <Empty description="Chưa có đánh giá cho phòng này" />
+                )}
               </div>
             </Col>
 

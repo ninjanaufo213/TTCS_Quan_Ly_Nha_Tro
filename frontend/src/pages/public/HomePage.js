@@ -133,6 +133,8 @@ const HomePage = () => {
             images,
             totalImages: images.length,
             distance: l.distance,
+            averageRating: l.average_rating ?? l.averageRating ?? null,
+            totalReviews: l.total_reviews ?? l.totalReviews ?? 0,
             createdAt: l.created_at || l.createdAt
               ? new Date(l.created_at || l.createdAt).toLocaleDateString('vi-VN')
               : '',
@@ -218,6 +220,8 @@ const HomePage = () => {
             description: l.description || room.description || '',
             images,
             totalImages: images.length,
+            averageRating: l.average_rating ?? l.averageRating ?? null,
+            totalReviews: l.total_reviews ?? l.totalReviews ?? 0,
             createdAt: l.created_at || l.createdAt
               ? new Date(l.created_at || l.createdAt).toLocaleDateString('vi-VN')
               : '',
@@ -298,6 +302,18 @@ const HomePage = () => {
               <EnvironmentOutlined style={{ marginRight: '6px' }} />
               {listing.addressLine || 'Chưa có địa chỉ'}
             </div>
+
+            {(listing.totalReviews || 0) > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#f59e0b', margin: '6px 0' }}>
+                <StarFilled />
+                <span style={{ fontWeight: 600 }}>
+                  {Number(listing.averageRating || 0).toFixed(1)}
+                </span>
+                <span style={{ color: '#64748b' }}>
+                  ({listing.totalReviews} đánh giá)
+                </span>
+              </div>
+            )}
 
             <div className="listing-meta">
               <span className="price">{formatPrice(listing.price)}/tháng</span>
