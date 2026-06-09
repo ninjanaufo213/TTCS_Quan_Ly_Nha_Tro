@@ -22,4 +22,5 @@ public interface RentedRoomRepository extends JpaRepository<RentedRoom, Integer>
             LocalDate endDate
     );
     boolean existsByRoom_RoomIdAndIsActiveTrueAndRrIdNot(Integer roomId, Integer rrId);
+    boolean existsByTenant_TenantIdAndRoom_RoomIdAndIsActiveTrue(Integer tenantId, Integer roomId);
 }

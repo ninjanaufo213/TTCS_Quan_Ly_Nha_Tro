@@ -1,22 +1,27 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Card, Col, Descriptions, Row, Select, Spin, Typography } from 'antd';
+import { Alert, App, Button, Card, Col, Descriptions, Form, Input, Rate, Row, Select, Spin, Typography } from 'antd';
 import { rentedRoomService } from '../../services/rentedRoomService';
 import { houseService } from '../../services/houseService';
+import { reviewService } from '../../services/reviewService';
 
 const { Title, Text } = Typography;
 
 export default function TenantRoomInfo() {
+  const { message } = App.useApp();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
 
   const [contracts, setContracts] = useState([]);
   const [selectedRrId, setSelectedRrId] = useState(null);
   const [house, setHouse] = useState(null);
+  const [reviewForm] = Form.useForm();
 
   const selectedContract = useMemo(
     () => contracts.find((c) => c.rr_id === selectedRrId) || null,
     [contracts, selectedRrId]
   );
+  const selectedRoomId = selectedContract?.room_id || selectedContract?.room?.room_id || selectedContract?.room?.roomId;
 
   useEffect(() => {
     const load = async () => {
@@ -39,7 +44,7 @@ export default function TenantRoomInfo() {
   useEffect(() => {
     const loadHouse = async () => {
       setHouse(null);
-          const houseId = selectedContract?.room?.house_id;
+      const houseId = selectedContract?.room?.house_id;
       if (!houseId) return;
       try {
         const houseData = await houseService.getById(houseId);
@@ -50,6 +55,41 @@ export default function TenantRoomInfo() {
     };
     loadHouse();
   }, [selectedContract?.room?.house_id]);
+
+  useEffect(() => {
+    const loadReview = async () => {
+      reviewForm.resetFields();
+      if (!selectedRoomId) return;
+      try {
+        const review = await reviewService.getMyReview(selectedRoomId);
+        if (review) {
+          reviewForm.setFieldsValue({
+            rating: review.rating,
+            comment: review.comment || '',
+          });
+        }
+      } catch (e) {
+        message.error(e?.response?.data?.message || e?.message || 'Không thể tải đánh giá phòng.');
+      }
+    };
+    loadReview();
+  }, [selectedRoomId, reviewForm, message]);
+
+  const handleSaveReview = async (values) => {
+    if (!selectedRoomId) return;
+    setReviewLoading(true);
+    try {
+      await reviewService.saveMyReview(selectedRoomId, {
+        rating: values.rating,
+        comment: values.comment,
+      });
+      message.success('Đã lưu đánh giá phòng.');
+    } catch (e) {
+      message.error(e?.response?.data?.message || e?.message || 'Không thể lưu đánh giá phòng.');
+    } finally {
+      setReviewLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -116,6 +156,26 @@ export default function TenantRoomInfo() {
               <Descriptions.Item label="Sức chứa">{selectedContract?.room?.capacity ?? '-'}</Descriptions.Item>
               <Descriptions.Item label="Mô tả">{selectedContract?.room?.description || '-'}</Descriptions.Item>
             </Descriptions>
+          </Card>
+        </Col>
+
+        <Col xs={24}>
+          <Card title="Đánh giá phòng" bordered>
+            <Form form={reviewForm} layout="vertical" onFinish={handleSaveReview}>
+              <Form.Item
+                name="rating"
+                label="Số sao"
+                rules={[{ required: true, message: 'Vui lòng chọn số sao đánh giá.' }]}
+              >
+                <Rate />
+              </Form.Item>
+              <Form.Item name="comment" label="Nhận xét">
+                <Input.TextArea rows={4} maxLength={1000} showCount placeholder="Chia sẻ trải nghiệm thuê phòng của bạn" />
+              </Form.Item>
+              <Button type="primary" htmlType="submit" loading={reviewLoading}>
+                Lưu đánh giá
+              </Button>
+            </Form>
           </Card>
         </Col>
       </Row>

@@ -8,7 +8,8 @@ import {
   DollarOutlined,
   NotificationOutlined,
   CalendarOutlined,
-  BellOutlined
+  BellOutlined,
+  StarOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { authService } from '../services/authService';
@@ -57,6 +58,11 @@ const Layout = ({ children }) => {
       key: '/app/listings',
       icon: <NotificationOutlined />,
       label: 'Quản lý bài đăng',
+    },
+    {
+      key: '/app/reviews',
+      icon: <StarOutlined />,
+      label: 'Đánh giá',
     },
     {
       key: '/app/viewings',

@@ -32,6 +32,12 @@ public class Review {
     @Column(columnDefinition = "TEXT")
     private String comment;
 
+    @Column(name = "landlord_reply", columnDefinition = "TEXT")
+    private String landlordReply;
+
+    @Column(name = "landlord_replied_at")
+    private LocalDateTime landlordRepliedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

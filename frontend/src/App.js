@@ -13,6 +13,7 @@ import Dashboard from './pages/landlord/Dashboard';
 import Houses from './pages/landlord/Houses';
 import Rooms from './pages/landlord/Rooms';
 import Listings from './pages/landlord/Listings';
+import Reviews from './pages/landlord/Reviews';
 import Contracts from './pages/landlord/Contracts';
 import Invoices from './pages/landlord/Invoices';
 import Reports from './pages/landlord/Reports';
@@ -145,6 +146,7 @@ function App() {
                             <Route path="houses" element={<Houses />} />
                             <Route path="rooms" element={<Rooms />} />
                             <Route path="listings" element={<Listings />} />
+                            <Route path="reviews" element={<Reviews />} />
                             <Route path="contracts" element={<Contracts />} />
                             <Route path="invoices" element={<Invoices />} />
                             <Route path="reports" element={<Reports />} />

@@ -19,6 +19,8 @@ public class ListingResponse {
     private Boolean isPublished;
     private LocalDateTime createdAt;
     private Double distance;
+    private Double averageRating;
+    private Long totalReviews;
     
     private RoomInfo room;
 
