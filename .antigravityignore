@@ -1,0 +1,30 @@
+# Các thư mục chứa thư viện (Tuyệt đối không cho AI đọc)
+node_modules/
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+
+# Các file Build / Output của Frontend & Backend
+dist/
+build/
+.next/
+out/
+target/
+*.jar
+
+# Các file cấu hình hệ thống và môi trường độc hại cho Token
+.git/
+.idea/
+.vscode/
+.env
+.env.*
+*.log
+
+# File tài liệu hoặc ảnh quá nặng
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.pdf

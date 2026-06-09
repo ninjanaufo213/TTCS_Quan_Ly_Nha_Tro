@@ -5,77 +5,79 @@ import {
   Col,
   Statistic,
   DatePicker,
-  Button,
-  // message,
   Space,
-  Typography, App
+  Typography,
+  App,
+  Table,
+  Spin
 } from 'antd';
 import {
   DollarOutlined,
   HomeOutlined,
-  UserOutlined,
-  FileTextOutlined,
-  RobotOutlined
+  PieChartOutlined
 } from '@ant-design/icons';
-import { reportsService } from '../../services/reportsService';
-import { aiService } from '../../services/aiService';
+import { invoiceService } from '../../services/invoiceService';
 import dayjs from 'dayjs';
 
 const { Title } = Typography;
 
 const Reports = () => {
-  const [systemOverview, setSystemOverview] = useState({});
-  const [revenueStats, setRevenueStats] = useState({});
-  const [aiReport, setAiReport] = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
   const { message } = App.useApp();
 
   // Start/End dates for reports
   const [startDate, setStartDate] = useState(dayjs().subtract(30, 'days'));
   const [endDate, setEndDate] = useState(dayjs());
 
+  // Invoices data
+  const [invoices, setInvoices] = useState([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
+  const [billStats, setBillStats] = useState({ totalRevenue: 0, roomFeeRevenue: 0, serviceFeeRevenue: 0 });
+
   useEffect(() => {
-    fetchSystemOverview();
-    fetchRevenueStats();
+    fetchInvoices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [startDate, endDate]);
 
-  const fetchSystemOverview = async () => {
+  const fetchInvoices = async () => {
     try {
-      const data = await reportsService.getSystemOverview();
-      setSystemOverview(data);
-    } catch (error) {
-      message.error('Lỗi khi tải tổng quan hệ thống!');
-    }
-  };
+      setInvoicesLoading(true);
+      const data = await invoiceService.getAll();
+      const start = startDate?.startOf('day');
+      const end = endDate?.endOf('day');
 
-  const fetchRevenueStats = async () => {
-    try {
-      const start = startDate?.format('YYYY-MM-DD');
-      const end = endDate?.format('YYYY-MM-DD');
-      if (!start || !end) return;
-      const data = await reportsService.getRevenueStats(start, end);
-      setRevenueStats(data);
-    } catch (error) {
-      message.error('Lỗi khi tải thống kê doanh thu!');
-    }
-  };
+      const paidInvoices = data.filter(inv => {
+        if (!inv.is_paid) return false;
+        const date = dayjs(inv.payment_date || inv.created_at);
+        if (start && date.isBefore(start)) return false;
+        if (end && date.isAfter(end)) return false;
+        return true;
+      });
 
-  const generateAIReport = async () => {
-    try {
-      setAiLoading(true);
-      const start = startDate?.format('YYYY-MM-DD');
-      const end = endDate?.format('YYYY-MM-DD');
-      if (!start || !end) {
-        message.warning('Vui lòng chọn khoảng thời gian hợp lệ.');
-        return;
-      }
-      const data = await aiService.generateRevenueReport(start, end);
-      setAiReport(data?.report || '');
+      let total = 0;
+      let room = 0;
+      let service = 0;
+
+      paidInvoices.forEach(inv => {
+        const p = Number(inv.price) || 0;
+        const wp = Number(inv.water_price) || 0;
+        const ip = Number(inv.internet_price) || 0;
+        const ep = Number(inv.electricity_price) || 0;
+        const gp = Number(inv.general_price) || 0;
+
+        const serv = wp + ip + ep + gp;
+        const totalAmount = Number(inv.total_amount) || 0;
+
+        room += p;
+        service += serv;
+        total += totalAmount;
+      });
+
+      setInvoices(paidInvoices);
+      setBillStats({ totalRevenue: total, roomFeeRevenue: room, serviceFeeRevenue: service });
     } catch (error) {
-      message.error('Lỗi khi tạo báo cáo AI!');
+      message.error('Lỗi khi tải danh sách hóa đơn!');
     } finally {
-      setAiLoading(false);
+      setInvoicesLoading(false);
     }
   };
 
@@ -89,198 +91,118 @@ const Reports = () => {
     return date.isBefore(startDate, 'day');
   };
 
+  const invoiceColumns = [
+    {
+      title: 'Mã HĐ',
+      dataIndex: 'invoice_id',
+      key: 'invoice_id',
+    },
+    {
+      title: 'Phòng',
+      key: 'room',
+      render: (_, record) => record.rented_room?.room?.name || 'N/A'
+    },
+    {
+      title: 'Ngày thanh toán',
+      key: 'payment_date',
+      render: (_, record) => dayjs(record.payment_date || record.created_at).format('DD/MM/YYYY')
+    },
+    {
+      title: 'Tiền phòng',
+      key: 'price',
+      render: (_, record) => `${(Number(record.price) || 0).toLocaleString()} VNĐ`
+    },
+    {
+      title: 'Tiền dịch vụ',
+      key: 'service_fee',
+      render: (_, record) => {
+        const wp = Number(record.water_price) || 0;
+        const ip = Number(record.internet_price) || 0;
+        const ep = Number(record.electricity_price) || 0;
+        const gp = Number(record.general_price) || 0;
+        return `${(wp + ip + ep + gp).toLocaleString()} VNĐ`;
+      }
+    },
+    {
+      title: 'Tổng cộng',
+      key: 'total_amount',
+      render: (_, record) => <strong style={{ color: '#3f8600' }}>{`${(Number(record.total_amount) || 0).toLocaleString()} VNĐ`}</strong>
+    }
+  ];
+
   return (
     <div>
-      <Title level={2} style={{ marginBottom: 16 }}>Báo cáo & Phân tích</Title>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <Title level={2} style={{ margin: 0 }}>Thống kê doanh thu</Title>
+        <Space size={8}>
+          <span style={{ fontWeight: 500 }}>Thời gian:</span>
+          <DatePicker
+            value={startDate}
+            onChange={(d) => setStartDate(d)}
+            format="DD/MM/YYYY"
+            placeholder="Bắt đầu"
+            disabledDate={disabledStartDate}
+          />
+          <span style={{ color: '#999' }}>đến</span>
+          <DatePicker
+            value={endDate}
+            onChange={(d) => setEndDate(d)}
+            format="DD/MM/YYYY"
+            placeholder="Kết thúc"
+            disabledDate={disabledEndDate}
+          />
+        </Space>
+      </div>
 
-      {/* System Overview */}
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="Tổng nhà trọ"
-              value={systemOverview.total_houses ?? 0}
-              prefix={<HomeOutlined />}
-              valueStyle={{ color: '#3f8600' }}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="Tỷ lệ lấp đầy"
-              value={systemOverview.occupancy_rate ?? 0}
-              suffix="%"
-              prefix={<UserOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="Hợp đồng đang hoạt động"
-              value={systemOverview.active_contracts ?? 0}
-              prefix={<FileTextOutlined />}
-              valueStyle={{ color: '#722ed1' }}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="Doanh thu tháng này"
-              value={systemOverview.current_month_revenue ?? 0}
-              prefix={<DollarOutlined />}
-              valueStyle={{ color: '#cf1322' }}
-              formatter={(value) => `${(Number(value) || 0).toLocaleString()} VNĐ`}
-            />
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Revenue Statistics */}
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={10}>
-          <Card title="Thống kê doanh thu" extra={
-            <Space size={8}>
-              <DatePicker
-                value={startDate}
-                onChange={(d) => setStartDate(d)}
-                format="DD/MM/YYYY"
-                placeholder="Bắt đầu"
-                disabledDate={disabledStartDate}
+      <Spin spinning={invoicesLoading}>
+        <Row gutter={16} style={{ marginBottom: 24 }}>
+          <Col span={8}>
+            <Card>
+              <Statistic
+                title="Tổng doanh thu hóa đơn"
+                value={billStats.totalRevenue}
+                prefix={<DollarOutlined />}
+                valueStyle={{ color: '#3f8600' }}
+                formatter={(value) => `${Number(value).toLocaleString()} VNĐ`}
               />
-              <span style={{ color: '#999' }}>đến</span>
-              <DatePicker
-                value={endDate}
-                onChange={(d) => setEndDate(d)}
-                format="DD/MM/YYYY"
-                placeholder="Kết thúc"
-                disabledDate={disabledEndDate}
+            </Card>
+          </Col>
+          <Col span={8}>
+            <Card>
+              <Statistic
+                title="Doanh thu tiền phòng"
+                value={billStats.roomFeeRevenue}
+                prefix={<HomeOutlined />}
+                valueStyle={{ color: '#1890ff' }}
+                formatter={(value) => `${Number(value).toLocaleString()} VNĐ`}
               />
-              <Button onClick={fetchRevenueStats}>Cập nhật</Button>
-            </Space>
-          }>
-            <Row gutter={16}>
-              <Col span={12}>
-                <Statistic
-                  title="Tổng doanh thu"
-                  value={revenueStats.total_revenue ?? 0}
-                  formatter={(value) => `${(Number(value) || 0).toLocaleString()} VNĐ`}
-                  valueStyle={{ color: '#3f8600' }}
-                />
-              </Col>
-              <Col span={12}>
-                <Statistic
-                  title="Hóa đơn đã thanh toán"
-                  value={revenueStats.paid_invoices ?? 0}
-                  valueStyle={{ color: '#1890ff' }}
-                />
-              </Col>
-            </Row>
-            <Row gutter={16} style={{ marginTop: 16 }}>
-              <Col span={12}>
-                <Statistic
-                  title="Hóa đơn chưa thanh toán"
-                  value={revenueStats.pending_invoices ?? 0}
-                  valueStyle={{ color: '#cf1322' }}
-                />
-              </Col>
-              <Col span={12}>
-                <Statistic
-                  title="Doanh thu TB/tháng"
-                  value={revenueStats.avg_monthly_revenue ?? 0}
-                  formatter={(value) => `${(Number(value) || 0).toLocaleString()} VNĐ`}
-                  valueStyle={{ color: '#722ed1' }}
-                />
-              </Col>
-            </Row>
-          </Card>
-        </Col>
-        <Col span={14}>
-          <Card title="AI Phân tích doanh thu" extra={
-            <Button
-              type="primary"
-              icon={<RobotOutlined />}
-              loading={aiLoading}
-              onClick={generateAIReport}
-            >
-              Phân tích AI
-            </Button>
-          }>
-            {aiReport ? (
-              <div style={{
-                fontSize: '14px',
-                lineHeight: '1.8',
-                maxHeight: '550px',
-                overflowY: 'auto',
-                padding: '12px',
-                backgroundColor: '#f9f9f9',
-                borderRadius: '8px',
-                border: '1px solid #e8e8e8'
-              }}>
-                {aiReport.split('\n').map((line, index) => {
-                  if (line.trim().startsWith('##')) {
-                    return (
-                      <h3 key={index} style={{
-                        color: '#1890ff',
-                        marginTop: index === 0 ? '0' : '16px',
-                        marginBottom: '8px',
-                        fontSize: '16px',
-                        fontWeight: 'bold'
-                      }}>
-                        {line.replace(/^#+\s*/, '')}
-                      </h3>
-                    );
-                  }
-                  else if (line.trim().startsWith('-') || line.trim().startsWith('*') || line.trim().startsWith('\u2022')) {
-                    const content = line.replace(/^[-*\u2022]\s*/, '');
-                    const parts = content.split(/\*\*|__/);
-                    return (
-                      <div key={index} style={{
-                        marginLeft: '16px',
-                        marginBottom: '6px',
-                        display: 'flex',
-                        alignItems: 'flex-start'
-                      }}>
-                        <span style={{ color: '#1890ff', marginRight: '8px', fontWeight: 'bold' }}>•</span>
-                        <span>{parts.map((part, i) => i % 2 === 1 ? <strong key={i} style={{ color: '#1890ff' }}>{part}</strong> : part)}</span>
-                      </div>
-                    );
-                  }
-                  else if (line.includes('**') || line.includes('__')) {
-                    const parts = line.split(/\*\*|__/);
-                    return (
-                      <p key={index} style={{ marginBottom: '8px' }}>
-                        {parts.map((part, i) =>
-                          i % 2 === 1 ? <strong key={i} style={{ color: '#1890ff' }}>{part}</strong> : part
-                        )}
-                      </p>
-                    );
-                  }
-                  else if (line.trim()) {
-                    return (
-                      <p key={index} style={{ marginBottom: '8px', color: '#333' }}>
-                        {line}
-                      </p>
-                    );
-                  }
-                  return <div key={index} style={{ height: '8px' }} />;
-                })}
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', color: '#999', padding: '20px' }}>
-                <RobotOutlined style={{ fontSize: '48px', marginBottom: '16px', color: '#d9d9d9' }} />
-                <p>Nhấn "Phân tích AI" để xem báo cáo thông minh</p>
-              </div>
-            )}
-          </Card>
-        </Col>
-      </Row>
+            </Card>
+          </Col>
+          <Col span={8}>
+            <Card>
+              <Statistic
+                title="Doanh thu tiền dịch vụ"
+                value={billStats.serviceFeeRevenue}
+                prefix={<PieChartOutlined />}
+                valueStyle={{ color: '#722ed1' }}
+                formatter={(value) => `${Number(value).toLocaleString()} VNĐ`}
+              />
+            </Card>
+          </Col>
+        </Row>
+        
+        <Card title="Chi tiết các hóa đơn đã thanh toán">
+          <Table 
+            dataSource={invoices} 
+            columns={invoiceColumns} 
+            rowKey="invoice_id" 
+            pagination={{ pageSize: 10 }}
+          />
+        </Card>
+      </Spin>
     </div>
   );
 };
 
-
 export default Reports;
+
