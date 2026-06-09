@@ -34,10 +34,13 @@ public class ListingController {
             @RequestParam(required = false) java.math.BigDecimal minPrice,
             @RequestParam(required = false) java.math.BigDecimal maxPrice,
             @RequestParam(required = false) Double minArea,
-            @RequestParam(required = false) Double maxArea
+            @RequestParam(required = false) Double maxArea,
+            @RequestParam(required = false) Double latitude,
+            @RequestParam(required = false) Double longitude,
+            @RequestParam(required = false) Double radius
     ) {
         return ResponseEntity.ok(
-                listingService.searchPublishedListings(keyword, district, ward, minPrice, maxPrice, minArea, maxArea)
+                listingService.searchPublishedListings(keyword, district, ward, minPrice, maxPrice, minArea, maxArea, latitude, longitude, radius)
         );
     }
 

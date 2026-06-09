@@ -51,11 +51,40 @@ public class ListingService {
                                                          BigDecimal minPrice,
                                                          BigDecimal maxPrice,
                                                          Double minArea,
-                                                         Double maxArea) {
-        return listingRepository.searchPublishedListings(keyword, district, ward, minPrice, maxPrice, minArea, maxArea)
-                .stream()
+                                                         Double maxArea,
+                                                         Double latitude,
+                                                         Double longitude,
+                                                         Double radius) {
+        List<Listing> listings = listingRepository.searchPublishedListings(keyword, district, ward, minPrice, maxPrice, minArea, maxArea);
+
+        if (latitude != null && longitude != null && radius != null) {
+            listings = listings.stream().filter(l -> {
+                if (l.getRoom() == null || l.getRoom().getHouse() == null || 
+                    l.getRoom().getHouse().getLatitude() == null || 
+                    l.getRoom().getHouse().getLongitude() == null) {
+                    return false;
+                }
+                double dist = calculateDistance(latitude, longitude, 
+                                                l.getRoom().getHouse().getLatitude(), 
+                                                l.getRoom().getHouse().getLongitude());
+                return dist <= radius;
+            }).collect(Collectors.toList());
+        }
+
+        return listings.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+        double earthRadius = 6371; // km
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                   Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                   Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return earthRadius * c;
     }
 
     public List<ListingResponse> getRecommendedListings(Double latitude, Double longitude, Double radius, Integer limit) {

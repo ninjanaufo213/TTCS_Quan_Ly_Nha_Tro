@@ -10,7 +10,8 @@ import {
   Badge,
   Empty,
   Select,
-  Drawer
+  Drawer,
+  Slider
 } from 'antd';
 import {
   SearchOutlined,
@@ -32,6 +33,7 @@ import { listingService } from '../../services/listingService';
 import SharedHeader from '../../components/SharedHeader';
 import SharedFooter from '../../components/SharedFooter';
 import LocationSelector from '../../components/LocationSelector';
+import MapPicker from '../../components/MapPicker';
 import '../../styles/HomePage.css';
 
 const HomePage = () => {
@@ -48,6 +50,8 @@ const HomePage = () => {
   const [addressData, setAddressData] = useState({});
   const [selectedPriceRange, setSelectedPriceRange] = useState(null);
   const [selectedAreaRange, setSelectedAreaRange] = useState(null);
+  const [mapLocation, setMapLocation] = useState(null);
+  const [searchRadius, setSearchRadius] = useState(2); // 2 km default
 
   // Listings data
   const [listings, setListings] = useState([]);
@@ -184,6 +188,9 @@ const HomePage = () => {
         maxPrice,
         minArea,
         maxArea,
+        latitude: mapLocation ? mapLocation.lat : undefined,
+        longitude: mapLocation ? mapLocation.lng : undefined,
+        radius: mapLocation ? searchRadius : undefined,
       };
 
       try {
@@ -227,7 +234,7 @@ const HomePage = () => {
 
     const timeoutId = setTimeout(fetchSearchResults, 350);
     return () => clearTimeout(timeoutId);
-  }, [searchKeyword, addressData, selectedPriceRange, selectedAreaRange]);
+  }, [searchKeyword, addressData, selectedPriceRange, selectedAreaRange, mapLocation, searchRadius]);
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll);
@@ -554,6 +561,8 @@ const HomePage = () => {
                 setAddressData({});
                 setSelectedPriceRange(null);
                 setSelectedAreaRange(null);
+                setMapLocation(null);
+                setSearchRadius(2);
               }}
             >
               Xóa bộ lọc
@@ -608,6 +617,33 @@ const HomePage = () => {
               onChange={v => setSelectedAreaRange(v)}
               allowClear
             />
+          </div>
+
+          <Divider style={{ margin: '8px 0' }} />
+
+          <div>
+            <div style={{ marginBottom: '12px', fontSize: '16px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <EnvironmentOutlined style={{ color: '#1890ff' }} /> Tìm quanh vị trí
+            </div>
+            <MapPicker 
+              initialPosition={mapLocation || undefined} 
+              onChange={(pos) => setMapLocation(pos)} 
+            />
+            {mapLocation && (
+              <div style={{ marginTop: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span>Bán kính tìm kiếm:</span>
+                  <span style={{ fontWeight: 'bold', color: '#1890ff' }}>{searchRadius} km</span>
+                </div>
+                <Slider 
+                  min={0.5} 
+                  max={20} 
+                  step={0.5} 
+                  value={searchRadius} 
+                  onChange={(val) => setSearchRadius(val)} 
+                />
+              </div>
+            )}
           </div>
         </div>
       </Drawer>

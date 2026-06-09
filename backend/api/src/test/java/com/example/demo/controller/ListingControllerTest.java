@@ -34,8 +34,18 @@ public class ListingControllerTest {
     @MockBean
     private ListingService listingService;
 
-    @MockBean
-    private com.example.demo.service.FileStorageService fileStorageService;
+    // Use TestConfiguration instead of MockBean for FileStorageService to allow setup before context loads
+
+    @org.springframework.boot.test.context.TestConfiguration
+    static class MockConfig {
+        @org.springframework.context.annotation.Bean
+        @org.springframework.context.annotation.Primary
+        public com.example.demo.service.FileStorageService fileStorageService() {
+            com.example.demo.service.FileStorageService mock = org.mockito.Mockito.mock(com.example.demo.service.FileStorageService.class);
+            org.mockito.Mockito.when(mock.getUploadRoot()).thenReturn(java.nio.file.Paths.get("uploads"));
+            return mock;
+        }
+    }
 
     @Test
     void createListing_Success() throws Exception {
@@ -83,5 +93,26 @@ public class ListingControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].listing_id").value(1))
                 .andExpect(jsonPath("$[0].distance").value(2.5));
+    }
+
+    @Test
+    void searchPublishedListings_WithLocation_Success() throws Exception {
+        java.util.List<ListingResponse> mockResponse = java.util.Collections.singletonList(
+                ListingResponse.builder()
+                        .listingId(2)
+                        .title("Phong tro quan Cau Giay")
+                        .build()
+        );
+
+        when(listingService.searchPublishedListings(any(), any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(mockResponse);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/listings/search")
+                        .param("latitude", "21.03")
+                        .param("longitude", "105.80")
+                        .param("radius", "2.0")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].listing_id").value(2))
+                .andExpect(jsonPath("$[0].title").value("Phong tro quan Cau Giay"));
     }
 }
