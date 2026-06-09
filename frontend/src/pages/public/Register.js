@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Form, Input, Button, Card, Typography, App, Radio, Select } from 'antd';
 import { UserOutlined, MailOutlined, PhoneOutlined, LockOutlined, SearchOutlined, HomeOutlined, SafetyOutlined } from '@ant-design/icons';
 import { authService } from '../../services/authService';
@@ -30,17 +30,26 @@ const Register = () => {
   const { message } = App.useApp(); // Use App context for message
   const [loading, setLoading] = useState(false);
   const [registerStep, setRegisterStep] = useState('details');
+  const [registrationDetails, setRegistrationDetails] = useState(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [form] = Form.useForm();
+  const initialRole = searchParams.get('role')?.toUpperCase() === 'TENANT' ? 'TENANT' : 'LANDLORD';
 
   const onFinish = async (values) => {
-    const isLandlord = values.role === 'LANDLORD';
+    const allValues = {
+      ...registrationDetails,
+      ...form.getFieldsValue(true),
+      ...values,
+    };
+    const isLandlord = allValues.role === 'LANDLORD';
     if (isLandlord && registerStep === 'details') {
+      setRegistrationDetails(allValues);
       setRegisterStep('bank');
       message.info('Vui lòng bổ sung thông tin ngân hàng cho chủ trọ.');
       return;
     }
-    if (values.password !== values.confirmPassword) {
+    if (allValues.password !== allValues.confirmPassword) {
       message.error('Mật khẩu xác nhận không khớp');
       return;
     }
@@ -56,7 +65,7 @@ const Register = () => {
         bank_account_number,
         bank_account_name,
         bank_code,
-      } = values;
+      } = allValues;
       await authService.register({
         fullname,
         phone,
@@ -302,10 +311,13 @@ const Register = () => {
                   <Form.Item
                     label={<span style={{ fontSize: '16px', fontWeight: '500' }}>Vai trò</span>}
                     name="role"
-                    initialValue="LANDLORD"
+                    initialValue={initialRole}
                     style={{ marginBottom: '16px', textAlign: 'center' }}
                   >
-                    <Radio.Group onChange={() => setRegisterStep('details')}>
+                    <Radio.Group onChange={() => {
+                      setRegisterStep('details');
+                      setRegistrationDetails(null);
+                    }}>
                       <Radio value="LANDLORD" style={{ fontSize: '15px', marginRight: '24px' }}>Tôi là Chủ trọ</Radio>
                       <Radio value="TENANT" style={{ fontSize: '15px' }}>Tôi là Khách thuê</Radio>
                     </Radio.Group>
