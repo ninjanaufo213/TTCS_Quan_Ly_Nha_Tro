@@ -204,8 +204,7 @@ const Listings = () => {
 
   return (
     <div>
-      <Card
-        title={
+      <Card className="dash-animate-fade-in-up"         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <FileTextOutlined style={{ color: '#1677ff' }} />
             <span>Quản lý bài đăng</span>
@@ -230,8 +229,7 @@ const Listings = () => {
           </Space>
         }
       >
-        <Table
-          columns={columns}
+        <Table className="dash-animate-fade-in-up"           columns={columns}
           dataSource={filteredListings}
           rowKey="listingId"
           loading={loading}
@@ -266,12 +264,15 @@ const Listings = () => {
             rules={[{ required: true, message: 'Vui lòng chọn phòng!' }]}
           >
             <Select placeholder="Chọn phòng muốn đăng tin">
-              {rooms.map(room => (
-                <Option key={room.room_id} value={room.room_id}>
-                  {room.name} – {(room.price || 0).toLocaleString()} VNĐ
-                  {room.is_available ? ' (Trống)' : ' (Đã thuê)'}
-                </Option>
-              ))}
+              {rooms.map(room => {
+                const houseName = housesById[room.house_id]?.name || 'Không rõ nhà';
+                return (
+                  <Option key={room.room_id} value={room.room_id}>
+                    {houseName} - {room.name} – {(room.price || 0).toLocaleString()} VNĐ
+                    {room.is_available ? ' (Trống)' : ' (Đã thuê)'}
+                  </Option>
+                );
+              })}
             </Select>
           </Form.Item>
 

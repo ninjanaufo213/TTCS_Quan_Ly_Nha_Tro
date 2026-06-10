@@ -668,14 +668,13 @@ const Contracts = () => {
   return (
     <div>
       {error && (
-        <Card style={{ marginBottom: 16, borderColor: '#ff4d4f', backgroundColor: '#fff1f0' }}>
+        <Card className="dash-animate-fade-in-up" style={{ marginBottom: 16, borderColor: '#ff4d4f', backgroundColor: '#fff1f0' }}>
           <p style={{ color: '#ff4d4f', margin: 0 }}>
             <strong>Lỗi:</strong> {error}
           </p>
         </Card>
       )}
-      <Card
-        title={`Quản lý hợp đồng thuê${roomId ? ` - ${rooms.find(r => r.room_id === parseInt(roomId))?.name || 'Phòng ' + roomId}` : ''}`}
+      <Card className="dash-animate-fade-in-up"         title={`Quản lý hợp đồng thuê${roomId ? ` - ${rooms.find(r => r.room_id === parseInt(roomId))?.name || 'Phòng ' + roomId}` : ''}`}
         extra={
           action !== 'create' && (
             <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
@@ -802,8 +801,7 @@ const Contracts = () => {
         {action !== 'create' && (
           <>
             {filteredContracts.length > 0 ? (
-              <Table
-                columns={columns}
+              <Table className="dash-animate-fade-in-up"                 columns={columns}
                 dataSource={filteredContracts}
                 rowKey="rr_id"
                 loading={loading}
@@ -826,9 +824,8 @@ const Contracts = () => {
         )}
       </Card>
 
-      <Card title="Yêu cầu gia hạn hợp đồng" style={{ marginTop: 16 }}>
-        <Table
-          rowKey="extensionRequestId"
+      <Card className="dash-animate-fade-in-up" title="Yêu cầu gia hạn hợp đồng" style={{ marginTop: 16 }}>
+        <Table className="dash-animate-fade-in-up"           rowKey="extensionRequestId"
           loading={extensionLoading}
           dataSource={extensionRequests}
           columns={extensionColumns}

@@ -118,9 +118,8 @@ const ContractRequests = () => {
   ];
 
   return (
-    <Card title="Yêu cầu hợp đồng">
-      <Table
-        rowKey="contractRequestId"
+    <Card className="dash-animate-fade-in-up" title="Yêu cầu hợp đồng">
+      <Table className="dash-animate-fade-in-up"         rowKey="contractRequestId"
         loading={loading}
         dataSource={requests}
         columns={columns}

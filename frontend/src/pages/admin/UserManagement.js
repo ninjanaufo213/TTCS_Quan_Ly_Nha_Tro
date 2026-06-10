@@ -205,8 +205,7 @@ const UserManagement = () => {
           { label: 'Đang khóa', value: stats.locked, color: '#e94560', icon: <StopOutlined /> },
         ].map((s) => (
           <Col span={6} key={s.label}>
-            <Card
-              bodyStyle={{ padding: '16px 20px' }}
+            <Card className="dash-animate-fade-in-up"               bodyStyle={{ padding: '16px 20px' }}
               style={{
                 borderRadius: 12,
                 background: `${s.color}10`,
@@ -224,8 +223,7 @@ const UserManagement = () => {
         ))}
       </Row>
 
-      <Card
-        title={
+      <Card className="dash-animate-fade-in-up"         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <TeamOutlined style={{ color: '#0f3460' }} />
             <span>Quản lý người dùng</span>
@@ -256,8 +254,7 @@ const UserManagement = () => {
           </Space>
         }
       >
-        <Table
-          columns={columns}
+        <Table className="dash-animate-fade-in-up"           columns={columns}
           dataSource={filtered}
           rowKey="userId"
           loading={loading}

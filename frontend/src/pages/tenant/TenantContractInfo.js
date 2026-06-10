@@ -138,8 +138,7 @@ export default function TenantContractInfo() {
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} lg={16}>
-          <Card
-            title="Hợp đồng thuê phòng"
+          <Card className="dash-animate-fade-in-up"             title="Hợp đồng thuê phòng"
             bordered
             extra={<ContractStatusTag endDate={selectedContract?.end_date} isActive={selectedContract?.is_active} />}
           >

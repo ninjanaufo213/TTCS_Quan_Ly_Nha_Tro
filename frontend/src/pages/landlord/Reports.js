@@ -191,8 +191,8 @@ const Reports = () => {
           </Col>
         </Row>
         
-        <Card title="Chi tiết các hóa đơn đã thanh toán">
-          <Table 
+        <Card className="dash-animate-fade-in-up" title="Chi tiết các hóa đơn đã thanh toán">
+          <Table className="dash-animate-fade-in-up" 
             dataSource={invoices} 
             columns={invoiceColumns} 
             rowKey="invoice_id" 

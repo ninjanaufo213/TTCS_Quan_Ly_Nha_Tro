@@ -102,7 +102,7 @@ export default function TenantServicesInfo() {
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} lg={12}>
-          <Card title="Bảng giá dịch vụ" bordered>
+          <Card className="dash-animate-fade-in-up" title="Bảng giá dịch vụ" bordered>
             <Descriptions column={1} size="middle">
               <Descriptions.Item label="Giá điện">{formatMoney(selectedContract?.electricity_unit_price)} đ/kWh</Descriptions.Item>
               <Descriptions.Item label="Số điện đầu">{selectedContract?.initial_electricity_num ?? '-'}</Descriptions.Item>
@@ -116,7 +116,7 @@ export default function TenantServicesInfo() {
         </Col>
 
         <Col xs={24} lg={12}>
-          <Card title="Hóa đơn gần đây" bordered>
+          <Card className="dash-animate-fade-in-up" title="Hóa đơn gần đây" bordered>
             <List
               dataSource={invoices}
               locale={{ emptyText: 'Chưa có hóa đơn.' }}

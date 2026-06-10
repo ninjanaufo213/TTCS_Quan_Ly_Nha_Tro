@@ -27,3 +27,25 @@ code {
 .notification-item:hover {
   background: #e6f4ff;
 }
+
+/* Animations */
+@keyframes dashFadeInUp {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.dash-animate-fade-in-up {
+  animation: dashFadeInUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+}
+
+.dash-animate-fade-in-up[style*="--i"] {
+  animation-delay: calc(var(--i) * 0.1s);
+}
+
+.dash-hover-scale {
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.dash-hover-scale:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}

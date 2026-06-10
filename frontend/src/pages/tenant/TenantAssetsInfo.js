@@ -18,7 +18,7 @@ export default function TenantAssetsInfo() {
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} lg={14}>
-          <Card title="Danh sách tài sản" bordered>
+          <Card className="dash-animate-fade-in-up" title="Danh sách tài sản" bordered>
             <List
               dataSource={demoAssets}
               locale={{ emptyText: 'Chưa có tài sản (demo UI).' }}

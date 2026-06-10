@@ -110,7 +110,7 @@ export default function TenantLayout() {
 
         <Content style={{ margin: '24px 20px', padding: 0, minHeight: 'calc(100vh - 112px)' }}>
           <div style={{ padding: 24, background: '#fff', borderRadius: 8 }}>
-            <Outlet />
+            <div className="dash-animate-fade-in-up"><Outlet /></div>
           </div>
         </Content>
       </AntLayout>

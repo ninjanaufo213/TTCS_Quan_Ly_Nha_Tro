@@ -168,8 +168,7 @@ const Reviews = () => {
 
   return (
     <>
-      <Card
-        title={
+      <Card className="dash-animate-fade-in-up"         title={
           <Space direction="vertical" size={0}>
             <Title level={3} style={{ margin: 0 }}>Đánh giá phòng trọ</Title>
             <Text type="secondary">Xem và phản hồi đánh giá của khách thuê cho các phòng thuộc nhà trọ của bạn.</Text>
@@ -177,8 +176,7 @@ const Reviews = () => {
         }
         extra={<Button icon={<ReloadOutlined />} onClick={loadReviews}>Tải lại</Button>}
       >
-        <Table
-          rowKey={(record) => getValue(record, 'review_id', 'reviewId')}
+        <Table className="dash-animate-fade-in-up"           rowKey={(record) => getValue(record, 'review_id', 'reviewId')}
           columns={columns}
           dataSource={reviews}
           loading={loading}

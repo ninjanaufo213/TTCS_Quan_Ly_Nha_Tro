@@ -161,7 +161,7 @@ const AdminDashboard = () => {
       {/* Stat Cards */}
       <Row gutter={[20, 20]} style={{ marginBottom: 28 }}>
         <Col xs={24} sm={12} lg={6}>
-          <Card style={statCardStyle('#0f3460')} bodyStyle={{ padding: '20px 24px' }}>
+          <Card className="dash-animate-fade-in-up" style={statCardStyle('#0f3460')} bodyStyle={{ padding: '20px 24px' }}>
             <Statistic
               title={<span style={{ color: '#555', fontWeight: 500 }}>Tổng người dùng</span>}
               value={stats.totalUsers}
@@ -174,7 +174,7 @@ const AdminDashboard = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card style={statCardStyle('#e94560')} bodyStyle={{ padding: '20px 24px' }}>
+          <Card className="dash-animate-fade-in-up" style={statCardStyle('#e94560')} bodyStyle={{ padding: '20px 24px' }}>
             <Statistic
               title={<span style={{ color: '#555', fontWeight: 500 }}>Tổng tin đăng</span>}
               value={stats.totalListings}
@@ -187,7 +187,7 @@ const AdminDashboard = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card style={statCardStyle('#f5a623')} bodyStyle={{ padding: '20px 24px' }}>
+          <Card className="dash-animate-fade-in-up" style={statCardStyle('#f5a623')} bodyStyle={{ padding: '20px 24px' }}>
             <Statistic
               title={<span style={{ color: '#555', fontWeight: 500 }}>Chờ duyệt</span>}
               value={stats.pendingListings}
@@ -200,7 +200,7 @@ const AdminDashboard = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card style={statCardStyle('#52c41a')} bodyStyle={{ padding: '20px 24px' }}>
+          <Card className="dash-animate-fade-in-up" style={statCardStyle('#52c41a')} bodyStyle={{ padding: '20px 24px' }}>
             <Statistic
               title={<span style={{ color: '#555', fontWeight: 500 }}>Đã duyệt</span>}
               value={stats.approvedListings}
@@ -218,8 +218,7 @@ const AdminDashboard = () => {
       <Row gutter={[20, 20]}>
         {/* Area Demand Chart */}
         <Col xs={24} lg={14}>
-          <Card
-            title={
+          <Card className="dash-animate-fade-in-up"             title={
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <EnvironmentOutlined style={{ color: '#e94560' }} />
                 <span>Khu vực có nhu cầu thuê cao</span>
@@ -228,8 +227,7 @@ const AdminDashboard = () => {
             style={{ borderRadius: 16, border: '1px solid #f0f0f0', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
             loading={loading}
           >
-            <Table
-              dataSource={areaDemand}
+            <Table className="dash-animate-fade-in-up"               dataSource={areaDemand}
               columns={areaColumns}
               rowKey="district"
               pagination={false}
@@ -241,8 +239,7 @@ const AdminDashboard = () => {
 
         {/* Recent Listings */}
         <Col xs={24} lg={10}>
-          <Card
-            title={
+          <Card className="dash-animate-fade-in-up"             title={
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <ClockCircleOutlined style={{ color: '#f5a623' }} />
                 <span>Tin đăng gần đây</span>

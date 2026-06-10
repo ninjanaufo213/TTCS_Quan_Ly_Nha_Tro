@@ -3,7 +3,6 @@ import {
   Input,
   Button,
   Card,
-  Avatar,
   Row,
   Col,
   Divider,
@@ -18,17 +17,12 @@ import {
   FilterOutlined,
   HeartOutlined,
   HeartFilled,
-  PhoneOutlined,
-  PlayCircleOutlined,
   StarFilled,
-  ArrowRightOutlined,
   MessageOutlined,
   ArrowUpOutlined,
-  EnvironmentOutlined,
-  UserOutlined
+  EnvironmentOutlined
 } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { authService } from '../../services/authService';
 import { listingService } from '../../services/listingService';
 import SharedHeader from '../../components/SharedHeader';
 import SharedFooter from '../../components/SharedFooter';
@@ -42,7 +36,6 @@ const HomePage = () => {
   const [activeTab, setActiveTab] = useState('new');
   const [savedListings, setSavedListings] = useState(new Set());
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
   // Search States
@@ -54,7 +47,6 @@ const HomePage = () => {
   const [searchRadius, setSearchRadius] = useState(2); // 2 km default
 
   // Listings data
-  const [listings, setListings] = useState([]);
   const [filteredListings, setFilteredListings] = useState([]);
 
   // Recommendations data
@@ -98,8 +90,6 @@ const HomePage = () => {
   ];
 
   useEffect(() => {
-    setIsLoaded(true);
-
     const fetchRecommendations = async (lat, lng) => {
       setLoadingRecommendations(true);
       try {
@@ -227,11 +217,9 @@ const HomePage = () => {
               : '',
           };
         });
-        setListings(mapped);
         setFilteredListings(mapped);
       } catch (err) {
         console.error('Lỗi tải bài đăng:', err);
-        setListings([]);
         setFilteredListings([]);
       }
     };
@@ -276,7 +264,7 @@ const HomePage = () => {
     <Card
       key={listing.id}
       className="listing-card animate-fade-in-up"
-      style={{ animationDelay: `${(index % 8) * 100}ms`, cursor: 'pointer' }}
+      style={{ '--i': index % 8, cursor: 'pointer' }}
       onClick={() => navigate(`/listings/${listing.id}`)}
     >
       <Row gutter={24}>
@@ -335,6 +323,7 @@ const HomePage = () => {
               <div className="actions">
                 <Button
                   type="link"
+                  className={`heart-btn-animate ${savedListings.has(listing.id) ? 'is-active' : ''}`}
                   icon={
                     savedListings.has(listing.id) ? (
                       <HeartFilled style={{ color: '#ef4444', fontSize: '20px' }} />
@@ -395,7 +384,7 @@ const HomePage = () => {
           {menuCategories.map(cat => (
             <a
               key={cat.key}
-              href="#"
+              href="#/"
               className={`menu-item ${cat.key === 'rooms' ? 'active' : ''}`}
               onClick={(e) => e.preventDefault()}
             >
@@ -416,19 +405,13 @@ const HomePage = () => {
         }}
       >
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <h1 style={{ color: 'white', fontSize: '36px', fontWeight: 700, marginBottom: '16px' }}>
+          <h1 className="hero-banner-title" style={{ color: 'white', fontSize: '36px', fontWeight: 700, marginBottom: '16px' }}>
             Không Gian Sống Lý Tưởng
           </h1>
-          <p style={{ color: '#f0f0f0', fontSize: '18px', marginBottom: '40px' }}>
+          <p className="hero-banner-subtitle" style={{ color: '#f0f0f0', fontSize: '18px', marginBottom: '40px' }}>
             Hàng ngàn phòng trọ, căn hộ, nhà nguyên căn cao cấp đang chờ bạn khám phá.
           </p>
-          <div style={{
-            background: 'white',
-            padding: '8px',
-            borderRadius: '32px',
-            display: 'flex',
-            boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
-          }}>
+          <div className="hero-search-wrapper">
             <Input
               size="large"
               bordered={false}
@@ -543,6 +526,7 @@ const HomePage = () => {
           icon={<MessageOutlined />}
           size="large"
           className="float-button chat-button"
+          style={{ '--i': 0 }}
           title="Chat với chúng tôi"
         />
         {showBackToTop && (
@@ -552,6 +536,7 @@ const HomePage = () => {
             icon={<ArrowUpOutlined />}
             size="large"
             className="float-button back-to-top-button"
+            style={{ '--i': 1 }}
             onClick={scrollToTop}
             title="Lên đầu trang"
           />

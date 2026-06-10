@@ -169,9 +169,8 @@ const Viewings = () => {
   ];
 
   return (
-    <Card title="Lịch đặt xem phòng">
-      <Table
-        rowKey="requestId"
+    <Card className="dash-animate-fade-in-up" title="Lịch đặt xem phòng">
+      <Table className="dash-animate-fade-in-up"         rowKey="requestId"
         loading={loading}
         dataSource={viewings}
         columns={columns}

@@ -362,9 +362,8 @@ const Dashboard = () => {
       {/* Content Rows */}
       <Row gutter={16}>
         <Col xs={24} lg={12}>
-          <Card title="Nhà trọ gần đây" style={{ height: 400 }}>
-            <Table
-              columns={houseColumns}
+          <Card className="dash-animate-fade-in-up" title="Nhà trọ gần đây" style={{ height: 400 }}>
+            <Table className="dash-animate-fade-in-up"               columns={houseColumns}
               dataSource={recentData}
               rowKey="house_id"
               pagination={false}
@@ -374,9 +373,8 @@ const Dashboard = () => {
           </Card>
         </Col>
         <Col xs={24} lg={12}>
-          <Card title="Hóa đơn chưa thanh toán" style={{ height: 400 }}>
-            <Table
-              columns={invoiceColumns}
+          <Card className="dash-animate-fade-in-up" title="Hóa đơn chưa thanh toán" style={{ height: 400 }}>
+            <Table className="dash-animate-fade-in-up"               columns={invoiceColumns}
               dataSource={pendingInvoices}
               rowKey="invoice_id"
               pagination={false}
@@ -389,8 +387,7 @@ const Dashboard = () => {
 
       <Row gutter={16} style={{ marginTop: 24 }}>
         <Col xs={24}>
-          <Card
-            title={
+          <Card className="dash-animate-fade-in-up"             title={
               <span>
                 <ClockCircleOutlined style={{ color: '#f59e0b', marginRight: 8 }} />
                 Yêu cầu xem phòng
@@ -402,8 +399,7 @@ const Dashboard = () => {
               </span>
             }
           >
-            <Table
-              columns={viewingColumns}
+            <Table className="dash-animate-fade-in-up"               columns={viewingColumns}
               dataSource={activeRequests}
               rowKey="requestId"
               pagination={{ pageSize: 5, showTotal: (t) => `Tổng ${t} yêu cầu` }}

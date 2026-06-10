@@ -139,7 +139,7 @@ export default function TenantRoomInfo() {
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} lg={12}>
-          <Card title="Nhà trọ" bordered>
+          <Card className="dash-animate-fade-in-up" title="Nhà trọ" bordered>
             <Descriptions column={1} size="middle">
               <Descriptions.Item label="Tên nhà trọ">{house?.name || '-'}</Descriptions.Item>
               <Descriptions.Item label="Địa chỉ">
@@ -150,7 +150,7 @@ export default function TenantRoomInfo() {
         </Col>
 
         <Col xs={24} lg={12}>
-          <Card title="Phòng" bordered>
+          <Card className="dash-animate-fade-in-up" title="Phòng" bordered>
             <Descriptions column={1} size="middle">
               <Descriptions.Item label="Tên phòng">{selectedContract?.room?.name || `#${selectedContract?.room_id}`}</Descriptions.Item>
               <Descriptions.Item label="Sức chứa">{selectedContract?.room?.capacity ?? '-'}</Descriptions.Item>
@@ -160,7 +160,7 @@ export default function TenantRoomInfo() {
         </Col>
 
         <Col xs={24}>
-          <Card title="Đánh giá phòng" bordered>
+          <Card className="dash-animate-fade-in-up" title="Đánh giá phòng" bordered>
             <Form form={reviewForm} layout="vertical" onFinish={handleSaveReview}>
               <Form.Item
                 name="rating"

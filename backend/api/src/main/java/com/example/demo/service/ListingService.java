@@ -18,15 +18,18 @@ public class ListingService {
     private final com.example.demo.repository.RoomRepository roomRepository;
     private final ReviewRepository reviewRepository;
     private final AuthService authService;
+    private final GeminiService geminiService;
 
     public ListingService(ListingRepository listingRepository,
                           com.example.demo.repository.RoomRepository roomRepository,
                           ReviewRepository reviewRepository,
-                          AuthService authService) {
+                          AuthService authService,
+                          GeminiService geminiService) {
         this.listingRepository = listingRepository;
         this.roomRepository = roomRepository;
         this.reviewRepository = reviewRepository;
         this.authService = authService;
+        this.geminiService = geminiService;
     }
 
     public List<ListingResponse> getAllListings() {
@@ -140,11 +143,15 @@ public class ListingService {
                 .room(room)
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .isPublished(true)
+                .isPublished(false) // Đặt về false để chờ duyệt (hoặc Gemini duyệt)
                 .viewsCount(0)
                 .build();
 
         listing = listingRepository.save(listing);
+        
+        // Gọi AI check hình ảnh không đồng bộ
+        geminiService.analyzeAndApproveListingAsync(listing);
+        
         return mapToResponse(listing);
     }
 

@@ -342,8 +342,7 @@ const Rooms = () => {
 
   return (
     <div>
-      <Card
-        title={`Quản lý phòng trọ${houseId ? ` - ${houses.find(h => h.house_id === parseInt(houseId))?.name}` : ''}`}
+      <Card className="dash-animate-fade-in-up"         title={`Quản lý phòng trọ${houseId ? ` - ${houses.find(h => h.house_id === parseInt(houseId))?.name}` : ''}`}
         extra={
           <Space>
             {!houseId && (
@@ -372,8 +371,7 @@ const Rooms = () => {
           </Space>
         }
       >
-        <Table
-          columns={columns}
+        <Table className="dash-animate-fade-in-up"           columns={columns}
           dataSource={rooms}
           rowKey="room_id"
           loading={loading}

@@ -147,7 +147,7 @@ const Layout = ({ children }) => {
           borderRadius: 8,
           minHeight: 'calc(100vh - 112px)'
         }}>
-          <Outlet />
+          <div className="dash-animate-fade-in-up"><Outlet /></div>
         </Content>
       </AntLayout>
     </AntLayout>

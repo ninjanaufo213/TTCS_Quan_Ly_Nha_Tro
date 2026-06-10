@@ -201,16 +201,14 @@ const Houses = () => {
 
   return (
     <div>
-      <Card
-        title="Quản lý nhà trọ"
+      <Card className="dash-animate-fade-in-up"         title="Quản lý nhà trọ"
         extra={
           <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
             Tạo nhà trọ mới
           </Button>
         }
       >
-        <Table
-          columns={columns}
+        <Table className="dash-animate-fade-in-up"           columns={columns}
           dataSource={houses}
           rowKey="house_id"
           loading={loading}

@@ -108,7 +108,7 @@ export default function MyRental() {
 
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={12}>
-          <Card title="Thông tin phòng / trọ" bordered>
+          <Card className="dash-animate-fade-in-up" title="Thông tin phòng / trọ" bordered>
             <Descriptions column={1} size="middle">
               <Descriptions.Item label="Nhà trọ">{demoHouse?.name || '-'}</Descriptions.Item>
               <Descriptions.Item label="Địa chỉ">
@@ -122,8 +122,7 @@ export default function MyRental() {
         </Col>
 
         <Col xs={24} lg={12}>
-          <Card
-            title="Thông tin hợp đồng"
+          <Card className="dash-animate-fade-in-up"             title="Thông tin hợp đồng"
             extra={<ContractStatusTag endDate={selectedContract?.end_date} isActive={selectedContract?.is_active} />}
             bordered
           >
@@ -147,7 +146,7 @@ export default function MyRental() {
         </Col>
 
         <Col xs={24} lg={12}>
-          <Card title="Tiền điện / nước / wifi / dịch vụ" bordered>
+          <Card className="dash-animate-fade-in-up" title="Tiền điện / nước / wifi / dịch vụ" bordered>
             <Descriptions column={1} size="middle">
               <Descriptions.Item label="Giá điện">
                 {selectedContract?.electricity_unit_price ? `${formatMoney(selectedContract.electricity_unit_price)} đ/kWh` : '-'}
@@ -171,7 +170,7 @@ export default function MyRental() {
         </Col>
 
         <Col xs={24}>
-          <Card title="Hóa đơn gần đây" bordered>
+          <Card className="dash-animate-fade-in-up" title="Hóa đơn gần đây" bordered>
             <List
               dataSource={demoInvoices.slice(0, 5)}
               locale={{ emptyText: 'Chưa có hóa đơn (demo UI).' }}

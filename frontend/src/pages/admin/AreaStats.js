@@ -183,8 +183,7 @@ const AreaStats = () => {
       {/* Summary Cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={8}>
-          <Card
-            style={{ borderRadius: 14, background: 'linear-gradient(135deg, #e94560, #c0392b)', border: 'none' }}
+          <Card className="dash-animate-fade-in-up"             style={{ borderRadius: 14, background: 'linear-gradient(135deg, #e94560, #c0392b)', border: 'none' }}
             bodyStyle={{ padding: '20px 24px' }}
           >
             <Statistic
@@ -196,8 +195,7 @@ const AreaStats = () => {
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card
-            style={{ borderRadius: 14, background: 'linear-gradient(135deg, #0f3460, #16213e)', border: 'none' }}
+          <Card className="dash-animate-fade-in-up"             style={{ borderRadius: 14, background: 'linear-gradient(135deg, #0f3460, #16213e)', border: 'none' }}
             bodyStyle={{ padding: '20px 24px' }}
           >
             <Statistic
@@ -209,8 +207,7 @@ const AreaStats = () => {
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card
-            style={{ borderRadius: 14, background: 'linear-gradient(135deg, #7b61ff, #4c38c7)', border: 'none' }}
+          <Card className="dash-animate-fade-in-up"             style={{ borderRadius: 14, background: 'linear-gradient(135deg, #7b61ff, #4c38c7)', border: 'none' }}
             bodyStyle={{ padding: '20px 24px' }}
           >
             <Statistic
@@ -226,8 +223,7 @@ const AreaStats = () => {
       <Row gutter={[20, 20]}>
         {/* Main Table */}
         <Col xs={24} lg={16}>
-          <Card
-            title={
+          <Card className="dash-animate-fade-in-up"             title={
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <RiseOutlined style={{ color: '#e94560' }} />
                 <span>Xếp hạng khu vực theo nhu cầu</span>
@@ -236,8 +232,7 @@ const AreaStats = () => {
             style={{ borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
             loading={loading}
           >
-            <Table
-              dataSource={areaData}
+            <Table className="dash-animate-fade-in-up"               dataSource={areaData}
               columns={columns}
               rowKey="district"
               pagination={false}
@@ -249,8 +244,7 @@ const AreaStats = () => {
         {/* Side panels */}
         <Col xs={24} lg={8}>
           {/* Price Range Chart */}
-          <Card
-            title="Phân bổ giá thuê"
+          <Card className="dash-animate-fade-in-up"             title="Phân bổ giá thuê"
             style={{ borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 16 }}
           >
             {priceRanges.map((p) => (
@@ -270,8 +264,7 @@ const AreaStats = () => {
           </Card>
 
           {/* Quick Insights */}
-          <Card
-            title={
+          <Card className="dash-animate-fade-in-up"             title={
               <span>
                 <FireOutlined style={{ color: '#e94560', marginRight: 6 }} />
                 Điểm nóng hot

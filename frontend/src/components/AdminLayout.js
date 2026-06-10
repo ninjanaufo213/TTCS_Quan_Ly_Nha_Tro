@@ -114,7 +114,7 @@ const AdminLayout = () => {
             borderRadius: 12,
             minHeight: 'calc(100vh - 128px)',
           }}>
-            <Outlet />
+            <div className="dash-animate-fade-in-up"><Outlet /></div>
           </Content>
         </AntLayout>
       </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Card, Table, Button, Tag, Space, Modal, Descriptions,
-  App, Input, Select, Row, Col, Statistic, Badge, Typography, Avatar
+  App, Input, Select, Row, Col, Statistic, Badge, Typography, Avatar, Image
 } from 'antd';
 import {
   CheckOutlined,
@@ -200,7 +200,7 @@ const RoomApproval = () => {
       {/* Header Stats */}
       <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
         <Col span={8}>
-          <Card style={{ borderRadius: 12, background: '#fffbe6', border: '1px solid #ffe58f' }} bodyStyle={{ padding: '16px 20px' }}>
+          <Card className="dash-animate-fade-in-up" style={{ borderRadius: 12, background: '#fffbe6', border: '1px solid #ffe58f' }} bodyStyle={{ padding: '16px 20px' }}>
             <Statistic
               title="Chờ duyệt"
               value={pendingCount}
@@ -210,7 +210,7 @@ const RoomApproval = () => {
           </Card>
         </Col>
         <Col span={8}>
-          <Card style={{ borderRadius: 12, background: '#f6ffed', border: '1px solid #b7eb8f' }} bodyStyle={{ padding: '16px 20px' }}>
+          <Card className="dash-animate-fade-in-up" style={{ borderRadius: 12, background: '#f6ffed', border: '1px solid #b7eb8f' }} bodyStyle={{ padding: '16px 20px' }}>
             <Statistic
               title="Đã duyệt"
               value={approvedCount}
@@ -220,7 +220,7 @@ const RoomApproval = () => {
           </Card>
         </Col>
         <Col span={8}>
-          <Card style={{ borderRadius: 12, background: '#e6f4ff', border: '1px solid #91caff' }} bodyStyle={{ padding: '16px 20px' }}>
+          <Card className="dash-animate-fade-in-up" style={{ borderRadius: 12, background: '#e6f4ff', border: '1px solid #91caff' }} bodyStyle={{ padding: '16px 20px' }}>
             <Statistic
               title="Tổng tin"
               value={listings.length}
@@ -231,8 +231,7 @@ const RoomApproval = () => {
         </Col>
       </Row>
 
-      <Card
-        title={
+      <Card className="dash-animate-fade-in-up"         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <CheckCircleOutlined style={{ color: '#52c41a' }} />
             <span>Duyệt tin đăng phòng trọ</span>
@@ -262,8 +261,7 @@ const RoomApproval = () => {
           </Space>
         }
       >
-        <Table
-          columns={columns}
+        <Table className="dash-animate-fade-in-up"           columns={columns}
           dataSource={filtered}
           rowKey="listingId"
           loading={loading}
@@ -346,9 +344,28 @@ const RoomApproval = () => {
             {detailModal.record.description && (
               <div style={{ marginTop: 16 }}>
                 <Text strong>Mô tả:</Text>
-                <Paragraph style={{ marginTop: 8, padding: 12, background: '#fafafa', borderRadius: 8 }}>
+                <Paragraph style={{ marginTop: 8, padding: 12, background: '#fafafa', borderRadius: 8, whiteSpace: 'pre-wrap' }}>
                   {detailModal.record.description}
                 </Paragraph>
+              </div>
+            )}
+            {(detailModal.record.room?.image_urls?.length > 0 || detailModal.record.room?.imageUrls?.length > 0) && (
+              <div style={{ marginTop: 16 }}>
+                <Text strong>Hình ảnh phòng:</Text>
+                <div style={{ marginTop: 8, display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8 }}>
+                  <Image.PreviewGroup>
+                    {(detailModal.record.room?.image_urls || detailModal.record.room?.imageUrls).map((img, idx) => (
+                      <Image
+                        key={idx}
+                        src={img}
+                        width={100}
+                        height={100}
+                        style={{ objectFit: 'cover', borderRadius: 8, flexShrink: 0 }}
+                        alt={`Ảnh phòng ${idx + 1}`}
+                      />
+                    ))}
+                  </Image.PreviewGroup>
+                </div>
               </div>
             )}
           </>

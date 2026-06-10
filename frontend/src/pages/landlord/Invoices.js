@@ -665,12 +665,11 @@ const Invoices = () => {
 
   return (
     <div>
-      <Card
-        title={`Quản lý hóa đơn${contractId ? ` - ${contracts.find(c => c.rr_id === Number(contractId))?.tenant_name}` : ''}`}
+      <Card className="dash-animate-fade-in-up"         title={`Quản lý hóa đơn${contractId ? ` - ${contracts.find(c => c.rr_id === Number(contractId))?.tenant_name}` : ''}`}
         extra={<Space wrap><Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>Tạo hóa đơn mới</Button></Space>}
       >
         {/* Thanh bộ lọc */}
-        <Card size="small" style={{ marginBottom: 16 }}>
+        <Card className="dash-animate-fade-in-up" size="small" style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'nowrap' }}>
               <div style={{ flex: '1 1 180px', minWidth: '150px' }}>
@@ -732,7 +731,7 @@ const Invoices = () => {
           </div>
         </Card>
 
-        <Table columns={columns} dataSource={filteredInvoices} rowKey="invoice_id" loading={loading} pagination={pagination} onChange={handleTableChange} />
+        <Table className="dash-animate-fade-in-up" columns={columns} dataSource={filteredInvoices} rowKey="invoice_id" loading={loading} pagination={pagination} onChange={handleTableChange} />
       </Card>
 
       {/* Modal tạo/sửa hóa đơn */}
@@ -914,7 +913,7 @@ const Invoices = () => {
       >
         {selectedInvoice && (
           <div>
-            <Card style={{ marginBottom: 16 }}>
+            <Card className="dash-animate-fade-in-up" style={{ marginBottom: 16 }}>
               <Row gutter={[16, 16]}>
                 <Col span={12}><div><strong>Mã hóa đơn:</strong> #{selectedInvoice.invoice_id}</div></Col>
                 <Col span={12}><div><strong>Trạng thái:</strong> <Tag color={selectedInvoice.is_paid ? 'green' : 'red'}>{selectedInvoice.is_paid ? 'Đã thanh toán' : 'Chưa thanh toán'}</Tag></div></Col>
@@ -941,7 +940,7 @@ const Invoices = () => {
               </Row>
             </Card>
 
-            <Card title="Chi tiết chi phí">
+            <Card className="dash-animate-fade-in-up" title="Chi tiết chi phí">
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid #f0f0f0' }}>

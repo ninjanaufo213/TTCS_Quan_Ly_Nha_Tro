@@ -234,12 +234,20 @@ const ListingDetail = () => {
               {/* Gallery */}
               <div className="gallery-section">
                 <div className="main-gallery-image">
-                  <Image
-                    src={images[selectedImage]}
-                    alt="Ảnh phòng trọ"
-                    preview={{ mask: <><ExpandOutlined /> Phóng to</> }}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
+                  <Image.PreviewGroup
+                    items={images}
+                    preview={{
+                      current: selectedImage,
+                      onChange: (current) => setSelectedImage(current),
+                    }}
+                  >
+                    <Image
+                      src={images[selectedImage]}
+                      alt="Ảnh phòng trọ"
+                      preview={{ mask: <><ExpandOutlined /> Phóng to</> }}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  </Image.PreviewGroup>
                   <div className="image-overlay-badge">
                     📷 {images.length} ảnh
                   </div>

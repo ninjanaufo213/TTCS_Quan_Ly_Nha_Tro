@@ -11,4 +11,3 @@ test_response.txt
 .system_generated/
 application.properties
 backend/api/src/main/resources/application.properties
-\n.env\n**/.env

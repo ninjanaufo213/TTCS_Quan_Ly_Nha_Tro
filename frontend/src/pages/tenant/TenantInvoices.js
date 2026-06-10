@@ -211,16 +211,14 @@ export default function TenantInvoices() {
 
   return (
     <div>
-      <Card
-        title="Hóa đơn & thanh toán"
+      <Card className="dash-animate-fade-in-up"         title="Hóa đơn & thanh toán"
         extra={(
           <Button icon={<ReloadOutlined />} onClick={loadInvoices} loading={loading}>
             Làm mới
           </Button>
         )}
       >
-        <Table
-          rowKey={(record) => record.invoice_id || record.invoiceId}
+        <Table className="dash-animate-fade-in-up"           rowKey={(record) => record.invoice_id || record.invoiceId}
           columns={columns}
           dataSource={invoices}
           loading={loading}
