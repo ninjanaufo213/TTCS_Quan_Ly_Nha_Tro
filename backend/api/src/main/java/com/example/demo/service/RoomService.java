@@ -110,6 +110,10 @@ public class RoomService {
                 .area(request.area())
                 .isAvailable(request.is_available() != null ? request.is_available() : true)
                 .description(request.description())
+                .waterPrice(request.water_price())
+                .internetPrice(request.internet_price())
+                .generalPrice(request.general_price())
+                .electricityPrice(request.electricity_price())
                 .build();
 
         Room savedRoom = roomRepository.save(room);
@@ -149,6 +153,10 @@ public class RoomService {
             room.setIsAvailable(request.is_available());
         }
         room.setDescription(request.description());
+        room.setWaterPrice(request.water_price());
+        room.setInternetPrice(request.internet_price());
+        room.setGeneralPrice(request.general_price());
+        room.setElectricityPrice(request.electricity_price());
 
         Room updatedRoom = roomRepository.save(room);
         return mapToResponse(updatedRoom);
@@ -220,6 +228,10 @@ public class RoomService {
                 room.getArea(),
                 room.getIsAvailable(),
                 room.getDescription(),
+                room.getWaterPrice(),
+                room.getInternetPrice(),
+                room.getGeneralPrice(),
+                room.getElectricityPrice(),
                 room.getCreatedAt(),
                 room.getUpdatedAt(),
                 imageDtos

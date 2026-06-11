@@ -46,6 +46,18 @@ public class Room {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "water_price", precision = 18, scale = 0)
+    private BigDecimal waterPrice;
+
+    @Column(name = "internet_price", precision = 18, scale = 0)
+    private BigDecimal internetPrice;
+
+    @Column(name = "general_price", precision = 18, scale = 0)
+    private BigDecimal generalPrice;
+
+    @Column(name = "electricity_price", precision = 18, scale = 0)
+    private BigDecimal electricityPrice;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

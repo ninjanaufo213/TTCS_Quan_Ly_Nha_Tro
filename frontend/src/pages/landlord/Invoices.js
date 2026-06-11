@@ -239,11 +239,12 @@ const Invoices = () => {
     const contract = activeContracts.find(c => c.rr_id === rrId) || contracts.find(c => c.rr_id === rrId);
     if (!contract) return;
 
+    const tenantsCount = contract.number_of_tenants || 1;
     form.setFieldsValue({
       price: contract.monthly_rent,
-      water_price: contract.water_price || 80000,
+      water_price: (contract.water_price || 80000) * tenantsCount,
       internet_price: contract.internet_price || 100000,
-      general_price: contract.general_price || 100000,
+      general_price: (contract.general_price || 100000) * tenantsCount,
     });
     setElectricityUnitPrice(contract.electricity_unit_price || 3500);
 

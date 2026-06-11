@@ -13,6 +13,10 @@ public record RoomResponse(
         Double area,
         Boolean isAvailable,
         String description,
+        BigDecimal waterPrice,
+        BigDecimal internetPrice,
+        BigDecimal generalPrice,
+        BigDecimal electricityPrice,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         List<RoomImageDto> images

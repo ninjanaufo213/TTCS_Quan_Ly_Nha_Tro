@@ -97,13 +97,38 @@ const Contracts = () => {
   const syncMonthlyRentFromRoom = (targetRoomId) => {
     const rid = Number(targetRoomId ?? form.getFieldValue('room_id'));
     if (!rid) {
-      form.setFieldsValue({ monthly_rent: undefined });
+      form.setFieldsValue({ 
+        monthly_rent: undefined,
+        water_price: undefined,
+        internet_price: undefined,
+        general_price: undefined,
+        electricity_unit_price: undefined
+      });
       return;
     }
 
     const selectedRoom = roomsMap[rid] || roomsAll.find(r => r.room_id === rid) || rooms.find(r => r.room_id === rid);
-    if (selectedRoom && selectedRoom.price !== undefined && selectedRoom.price !== null) {
-      form.setFieldsValue({ monthly_rent: selectedRoom.price });
+    if (selectedRoom) {
+      const updates = {};
+      if (selectedRoom.price !== undefined && selectedRoom.price !== null) {
+        updates.monthly_rent = selectedRoom.price;
+      }
+      if (selectedRoom.water_price !== undefined && selectedRoom.water_price !== null) {
+        updates.water_price = selectedRoom.water_price;
+      }
+      if (selectedRoom.internet_price !== undefined && selectedRoom.internet_price !== null) {
+        updates.internet_price = selectedRoom.internet_price;
+      }
+      if (selectedRoom.general_price !== undefined && selectedRoom.general_price !== null) {
+        updates.general_price = selectedRoom.general_price;
+      }
+      if (selectedRoom.electricity_price !== undefined && selectedRoom.electricity_price !== null) {
+        updates.electricity_unit_price = selectedRoom.electricity_price;
+      }
+      
+      if (Object.keys(updates).length > 0) {
+        form.setFieldsValue(updates);
+      }
     }
   };
 
@@ -1032,7 +1057,7 @@ const Contracts = () => {
             <Col span={8}>
               <Form.Item
                 name="water_price"
-                label="Giá tiền nước (VNĐ)"
+                label="Giá tiền nước (VNĐ/người/tháng)"
                 rules={[{ required: true, message: 'Vui lòng nhập giá tiền nước!' }]}
                 initialValue={80000}
               >
@@ -1047,7 +1072,7 @@ const Contracts = () => {
             <Col span={8}>
               <Form.Item
                 name="internet_price"
-                label="Giá tiền wifi (VNĐ)"
+                label="Giá tiền wifi (VNĐ/phòng/tháng)"
                 rules={[{ required: true, message: 'Vui lòng nhập giá tiền wifi!' }]}
                 initialValue={100000}
               >
@@ -1062,7 +1087,7 @@ const Contracts = () => {
             <Col span={8}>
               <Form.Item
                 name="general_price"
-                label="Giá dịch vụ chung (VNĐ)"
+                label="Giá dịch vụ chung (VNĐ/người/tháng)"
                 rules={[{ required: true, message: 'Vui lòng nhập giá dịch vụ!' }]}
                 initialValue={100000}
               >

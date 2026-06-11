@@ -46,5 +46,9 @@ public class ListingResponse {
         private java.util.List<String> imageUrls;
         private Double latitude;
         private Double longitude;
+        private BigDecimal waterPrice;
+        private BigDecimal internetPrice;
+        private BigDecimal generalPrice;
+        private BigDecimal electricityPrice;
     }
 }

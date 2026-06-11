@@ -196,10 +196,9 @@
   font-size: 16px;
 }
 
-/* STATS GRID */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 16px;
 }
 
@@ -246,6 +245,7 @@
   font-weight: 700;
   color: #0f172a;
   margin-top: 2px;
+  word-break: break-word;
 }
 
 .price-value {

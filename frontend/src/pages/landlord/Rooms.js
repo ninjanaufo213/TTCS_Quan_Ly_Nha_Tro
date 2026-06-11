@@ -447,6 +447,64 @@ const Rooms = () => {
             </Col>
           </Row>
 
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="water_price"
+                label="Giá nước (VNĐ/người/tháng)"
+              >
+                <InputNumber
+                  min={0}
+                  style={{ width: '100%' }}
+                  placeholder="Tiền nước"
+                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="internet_price"
+                label="Giá wifi (VNĐ/phòng/tháng)"
+              >
+                <InputNumber
+                  min={0}
+                  style={{ width: '100%' }}
+                  placeholder="Tiền wifi"
+                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="general_price"
+                label="Giá dịch vụ chung (VNĐ/người/tháng)"
+              >
+                <InputNumber
+                  min={0}
+                  style={{ width: '100%' }}
+                  placeholder="Dịch vụ chung"
+                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="electricity_price"
+                label="Đơn giá điện (VNĐ/kWh)"
+              >
+                <InputNumber
+                  min={0}
+                  style={{ width: '100%' }}
+                  placeholder="Đơn giá điện"
+                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
           <Form.Item
             name="house_id"
             label="Nhà trọ"
@@ -531,6 +589,18 @@ const Rooms = () => {
                     </Descriptions.Item>
                     <Descriptions.Item label="Trạng thái">
                       {detail?.is_available === true ? 'Trống' : detail?.is_available === false ? 'Đã thuê' : 'N/A'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Giá điện">
+                      {detail?.electricity_price != null ? `${Number(detail.electricity_price).toLocaleString()} VNĐ/kWh` : 'N/A'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Giá nước">
+                      {detail?.water_price != null ? `${Number(detail.water_price).toLocaleString()} VNĐ/người/tháng` : 'N/A'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Giá wifi">
+                      {detail?.internet_price != null ? `${Number(detail.internet_price).toLocaleString()} VNĐ/phòng/tháng` : 'N/A'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Dịch vụ chung">
+                      {detail?.general_price != null ? `${Number(detail.general_price).toLocaleString()} VNĐ/người/tháng` : 'N/A'}
                     </Descriptions.Item>
                     <Descriptions.Item label="Nhà trọ">
                       {houseName}

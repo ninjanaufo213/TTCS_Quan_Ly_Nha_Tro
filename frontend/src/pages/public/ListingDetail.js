@@ -16,6 +16,10 @@ import {
   ExpandOutlined,
   TeamOutlined,
   DollarOutlined,
+  ThunderboltOutlined,
+  DashboardOutlined,
+  WifiOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
@@ -276,7 +280,7 @@ const ListingDetail = () => {
                   </div>
                 </div>
 
-                <h1 className="detail-title">{listing.title}</h1>
+                <h1 className="detail-title">{listing.room?.name && listing.room?.houseName ? `${listing.room.name} - ${listing.room.houseName}` : listing.title}</h1>
 
                 <div className="detail-location">
                   <EnvironmentOutlined className="location-icon" />
@@ -320,7 +324,42 @@ const ListingDetail = () => {
 
                 <div className="description-section">
                   <h2 className="section-heading">Thông tin mô tả</h2>
-                  <p className="description-text">{listing.description || 'Không có mô tả.'}</p>
+                  <p className="description-text">{listing.room?.description || listing.description || 'Không có mô tả.'}</p>
+                </div>
+              </div>
+
+              {/* Chi phí dịch vụ */}
+              <div className="detail-card">
+                <h2 className="section-heading">Chi phí dịch vụ</h2>
+                <div className="stats-grid">
+                  <div className="stat-item">
+                    <ThunderboltOutlined className="stat-icon" style={{ color: '#eab308' }} />
+                    <div>
+                      <div className="stat-label">Giá điện</div>
+                      <div className="stat-value">{listing.room?.electricity_price != null ? `${Number(listing.room.electricity_price).toLocaleString()} VNĐ/kWh` : 'Theo giá nhà nước'}</div>
+                    </div>
+                  </div>
+                  <div className="stat-item">
+                    <DashboardOutlined className="stat-icon" style={{ color: '#3b82f6' }} />
+                    <div>
+                      <div className="stat-label">Giá nước</div>
+                      <div className="stat-value">{listing.room?.water_price != null ? `${Number(listing.room.water_price).toLocaleString()} VNĐ/người/tháng` : 'Miễn phí'}</div>
+                    </div>
+                  </div>
+                  <div className="stat-item">
+                    <WifiOutlined className="stat-icon" style={{ color: '#22c55e' }} />
+                    <div>
+                      <div className="stat-label">Giá wifi</div>
+                      <div className="stat-value">{listing.room?.internet_price != null ? `${Number(listing.room.internet_price).toLocaleString()} VNĐ/phòng/tháng` : 'Miễn phí'}</div>
+                    </div>
+                  </div>
+                  <div className="stat-item">
+                    <AppstoreOutlined className="stat-icon" style={{ color: '#8b5cf6' }} />
+                    <div>
+                      <div className="stat-label">Dịch vụ chung</div>
+                      <div className="stat-value">{listing.room?.general_price != null ? `${Number(listing.room.general_price).toLocaleString()} VNĐ/người/tháng` : 'Miễn phí'}</div>
+                    </div>
+                  </div>
                 </div>
               </div>
 

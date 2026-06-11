@@ -4,11 +4,13 @@
   "private": true,
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
+    "@popperjs/core": "^2.11.8",
     "@react-google-maps/api": "^2.20.8",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/user-event": "^13.5.0",
     "antd": "^5.27.4",
     "axios": "^1.12.2",
+    "bootstrap": "^5.3.8",
     "dayjs": "^1.11.18",
     "leaflet": "^1.9.4",
     "react": "^18.2.0",

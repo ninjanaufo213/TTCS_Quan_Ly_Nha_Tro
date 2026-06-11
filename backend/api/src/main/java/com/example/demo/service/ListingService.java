@@ -248,6 +248,10 @@ public class ListingService {
                     .imageUrls(imageUrls)
                     .latitude(latitude)
                     .longitude(longitude)
+                    .waterPrice(listing.getRoom().getWaterPrice())
+                    .internetPrice(listing.getRoom().getInternetPrice())
+                    .generalPrice(listing.getRoom().getGeneralPrice())
+                    .electricityPrice(listing.getRoom().getElectricityPrice())
                     .build();
         }
 

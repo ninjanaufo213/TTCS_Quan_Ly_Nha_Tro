@@ -147,9 +147,9 @@ const SharedHeader = ({
           justifyContent: 'center',
           color: 'white',
           fontWeight: 'bold',
-          fontSize: 18,
+          fontSize: 14,
         }}>
-          TT
+          TTCS
         </div>
         <span style={{ color: 'white', fontWeight: 700, fontSize: 16, display: { xs: 'none', sm: 'block' } }}>
           TTCS Quản Lý Nhà Trọ

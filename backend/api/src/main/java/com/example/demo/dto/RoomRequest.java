@@ -9,5 +9,9 @@ public record RoomRequest(
         Integer capacity,
         Double area,
         Boolean is_available,
-        String description
+        String description,
+        BigDecimal water_price,
+        BigDecimal internet_price,
+        BigDecimal general_price,
+        BigDecimal electricity_price
 ) {}
