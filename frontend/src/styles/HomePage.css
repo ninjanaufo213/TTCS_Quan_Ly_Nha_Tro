@@ -715,9 +715,23 @@
   }
 }
 
-/* Prefers Reduced Motion support */
+/* Prefers Reduced Motion support — scoped to page elements only.
+   IMPORTANT: Do NOT use a universal * selector here with transition-duration !important,
+   because it will break Ant Design's internal popup/dropdown/select transitions. */
 @media (prefers-reduced-motion: reduce) {
-  * {
+  .home-page .animate-fade-in-up,
+  .home-page .animate-fade-in,
+  .home-page .hero-banner-title,
+  .home-page .hero-banner-subtitle,
+  .home-page .hero-search-wrapper,
+  .home-page .float-button,
+  .home-page .listing-card,
+  .home-page .menu-item,
+  .home-page .tab-item,
+  .home-page .province-btn,
+  .home-page .filter-item,
+  .home-page .heart-btn-animate,
+  .home-page .new-listing-item {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
