@@ -65,8 +65,11 @@ const LocationSelector = ({ selectedAddress, onChange, className = "" }) => {
   }, []);
 
   // Hàm filter dùng chung cho tính năng tìm kiếm của Select
-  const filterOption = (input, option) =>
-    (option?.label ?? '').toLowerCase().includes(input.toLowerCase());
+  const filterOption = (input, option) => {
+    const inputValue = input || '';
+    const labelValue = option?.label || '';
+    return String(labelValue).toLowerCase().includes(String(inputValue).toLowerCase());
+  };
 
   return (
     <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 ${className}`}>
@@ -79,7 +82,6 @@ const LocationSelector = ({ selectedAddress, onChange, className = "" }) => {
           value={selectedProvince || undefined}
           onChange={handleProvinceChange}
           showSearch
-          optionFilterProp="children"
           filterOption={filterOption}
           options={provinces.map(p => ({ label: p.name, value: p.code }))}
         />
@@ -95,7 +97,6 @@ const LocationSelector = ({ selectedAddress, onChange, className = "" }) => {
           onChange={handleDistrictChange}
           disabled={!selectedProvince}
           showSearch
-          optionFilterProp="children"
           filterOption={filterOption}
           options={districts.map(d => ({ label: d.name, value: d.code }))}
         />
@@ -111,7 +112,6 @@ const LocationSelector = ({ selectedAddress, onChange, className = "" }) => {
           onChange={(value) => setSelectedWard(value)}
           disabled={!selectedDistrict}
           showSearch
-          optionFilterProp="children"
           filterOption={filterOption}
           options={wards.map(w => ({ label: w.name, value: w.code }))}
         />
