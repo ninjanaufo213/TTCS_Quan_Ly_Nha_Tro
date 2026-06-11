@@ -66,7 +66,7 @@ const mapAreaDemand = (item, index) => ({
 const AdminDashboard = () => {
   const [stats, setStats] = useState(MOCK_STATS);
   const [areaDemand, setAreaDemand] = useState(MOCK_AREA_DEMAND);
-  const [recentListings] = useState(MOCK_RECENT_LISTINGS);
+  const [recentListings, setRecentListings] = useState(MOCK_RECENT_LISTINGS);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -76,14 +76,52 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsData, areaData] = await Promise.all([
+      const [statsData, areaData, allListingsData, usersData] = await Promise.all([
         adminService.getDashboardStats().catch(() => null),
         adminService.getAreaDemandStats().catch(() => null),
+        adminService.getAllListings().catch(() => null),
+        adminService.getAllUsers().catch(() => null),
       ]);
-      if (statsData) setStats(statsData);
+      
+      let currentStats = { ...stats };
+      if (statsData) {
+        currentStats = statsData;
+      }
+
       if (Array.isArray(areaData) && areaData.length > 0) {
         setAreaDemand(areaData.map(mapAreaDemand));
       }
+      
+      if (Array.isArray(allListingsData)) {
+        const mappedListings = allListingsData.map(l => ({
+          ...l,
+          listingId: l.listing_id || l.listingId,
+          viewsCount: l.views_count || l.viewsCount,
+          isPublished: l.is_published ?? l.isPublished ?? l.published,
+          createdAt: l.created_at || l.createdAt
+        }));
+
+        const sortedListings = [...mappedListings].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const recent = sortedListings.slice(0, 5).map(item => ({
+          id: item.listingId,
+          title: item.title,
+          district: item.room?.district || '—',
+          views: item.viewsCount || 0,
+          status: item.isPublished ? 'approved' : 'pending'
+        }));
+        setRecentListings(recent);
+
+        currentStats.totalListings = mappedListings.length;
+        currentStats.approvedListings = mappedListings.filter(l => l.isPublished).length;
+        currentStats.pendingListings = mappedListings.filter(l => !l.isPublished).length;
+      }
+
+      if (Array.isArray(usersData)) {
+        currentStats.totalUsers = usersData.length;
+      }
+
+      setStats(currentStats);
+
     } catch {
       // Use mock data if API not available
     } finally {

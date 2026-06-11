@@ -212,19 +212,21 @@ export default function NotificationPopover({ variant = 'light' }) {
         placement="bottomRight"
         overlayInnerStyle={{ padding: 0 }}
       >
-        <Badge count={unreadCount} overflowCount={99} size="small" offset={[-4, 4]}>
-          <Button 
-            type="text" 
-            icon={<BellOutlined style={{ fontSize: 20 }} />} 
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: '50%',
-              color: isDark ? '#fff' : undefined,
-              background: isDark ? 'rgba(255,255,255,0.08)' : undefined,
-            }}
-          />
-        </Badge>
+        <span style={{ display: 'inline-block', cursor: 'pointer' }}>
+          <Badge count={unreadCount} overflowCount={99} size="small" offset={[-4, 4]}>
+            <Button 
+              type="text" 
+              icon={<BellOutlined style={{ fontSize: 20 }} />} 
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                color: isDark ? '#fff' : undefined,
+                background: isDark ? 'rgba(255,255,255,0.08)' : undefined,
+              }}
+            />
+          </Badge>
+        </span>
       </Popover>
 
       <Modal

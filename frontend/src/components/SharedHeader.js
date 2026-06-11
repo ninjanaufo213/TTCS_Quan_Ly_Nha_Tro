@@ -212,18 +212,18 @@ const SharedHeader = ({
             menu={{ items: userMenuItems, onClick: onUserMenuClick }}
             placement="bottomRight"
             arrow
+            trigger={['hover', 'click']}
           >
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              cursor: 'pointer',
-              padding: '6px 12px',
-              borderRadius: 8,
-              transition: 'background 0.2s',
-            }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            <div 
+              className="user-dropdown-trigger"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                cursor: 'pointer',
+                padding: '6px 12px',
+                borderRadius: 8,
+              }}
             >
               <Avatar
                 style={{ background: 'linear-gradient(135deg, #e94560, #0f3460)' }}
