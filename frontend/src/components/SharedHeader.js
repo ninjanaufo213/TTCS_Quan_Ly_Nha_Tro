@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Button, Dropdown, Avatar, Input } from 'antd';
+import React, { useState, useEffect, useRef } from 'react';
+import { Button, Avatar, Input } from 'antd';
 import {
   UserOutlined,
   LogoutOutlined,
@@ -24,6 +24,8 @@ const SharedHeader = ({
 }) => {
   const [userInfo, setUserInfo] = useState(null);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -57,6 +59,17 @@ const SharedHeader = ({
   useEffect(() => {
     loadUserInfo();
   }, [location.pathname]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleLogout = () => {
     authService.logout();
@@ -208,14 +221,17 @@ const SharedHeader = ({
 
         {/* User Menu */}
         {authService.isAuthenticated() ? (
-          <Dropdown
-            menu={{ items: userMenuItems, onClick: onUserMenuClick }}
-            placement="bottomRight"
-            arrow
-            trigger={['hover', 'click']}
+          <div
+            ref={userMenuRef}
+            style={{ position: 'relative' }}
+            onMouseEnter={() => setUserMenuOpen(true)}
           >
-            <div 
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={userMenuOpen}
               className="user-dropdown-trigger"
+              onClick={() => setUserMenuOpen((current) => !current)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -223,6 +239,8 @@ const SharedHeader = ({
                 cursor: 'pointer',
                 padding: '6px 12px',
                 borderRadius: 8,
+                border: 0,
+                background: userMenuOpen ? 'rgba(255,255,255,0.1)' : 'transparent',
               }}
             >
               <Avatar
@@ -232,8 +250,61 @@ const SharedHeader = ({
               <span style={{ color: 'white', fontSize: 14, fontWeight: 500 }}>
                 {resolveDisplayName(userInfo)}
               </span>
-            </div>
-          </Dropdown>
+            </button>
+
+            {userMenuOpen && (
+              <div
+                role="menu"
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  right: 0,
+                  zIndex: 1300,
+                  minWidth: 190,
+                  background: '#fff',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 8,
+                  boxShadow: '0 12px 28px rgba(15, 23, 42, 0.18)',
+                  padding: 4,
+                }}
+              >
+                {userMenuItems.map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      onUserMenuClick({ key: item.key });
+                    }}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '9px 12px',
+                      border: 0,
+                      borderRadius: 6,
+                      background: 'transparent',
+                      color: item.danger ? '#dc2626' : '#111827',
+                      cursor: 'pointer',
+                      fontSize: 14,
+                      textAlign: 'left',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = item.danger ? '#fef2f2' : '#f3f4f6';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         ) : (
           <div style={{ display: 'flex', gap: 8 }}>
             <Button type="link" onClick={() => navigate('/login')} style={{ color: 'white' }}>

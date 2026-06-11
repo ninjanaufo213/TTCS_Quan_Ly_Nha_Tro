@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { Popover, Badge, List, Typography, Spin, Button, Modal, Divider, Tag } from 'antd';
-import { BellOutlined, CheckCircleOutlined, ReloadOutlined } from '@ant-design/icons';
+import React, { useEffect, useRef, useState } from 'react';
+import { Badge, Button, Divider, List, Modal, Spin, Tag, Typography } from 'antd';
+import { BellOutlined, ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/vi';
@@ -17,14 +17,17 @@ export default function NotificationPopover({ variant = 'light' }) {
   const [open, setOpen] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const popoverRef = useRef(null);
 
   const isDark = variant === 'dark';
+
+  const getIsRead = (item) => (item.isRead !== undefined ? item.isRead : item.is_read);
+  const getId = (item) => item.notificationId || item.notification_id;
 
   const fetchNotifications = async () => {
     setLoading(true);
     try {
       const data = await notificationService.getMyNotifications();
-      // Ensure data is array and sort by latest first
       const list = Array.isArray(data) ? data : [];
       setNotifications(list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
     } catch (error) {
@@ -36,8 +39,7 @@ export default function NotificationPopover({ variant = 'light' }) {
 
   useEffect(() => {
     fetchNotifications();
-    
-    // Lắng nghe sự kiện từ trang Notifications hoặc các nơi khác
+
     const handleSync = () => fetchNotifications();
     window.addEventListener('notificationMarkedRead', handleSync);
 
@@ -46,31 +48,36 @@ export default function NotificationPopover({ variant = 'light' }) {
     };
   }, []);
 
-  const handleOpenChange = (newOpen) => {
-    setOpen(newOpen);
-    if (newOpen) {
-      fetchNotifications();
-    }
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (popoverRef.current && !popoverRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const toggleOpen = () => {
+    const nextOpen = !open;
+    setOpen(nextOpen);
+    if (nextOpen) fetchNotifications();
   };
 
-  const handleMarkAsRead = async (id, isRead, e) => {
-    // Hiển thị chi tiết trong Modal
-    setSelectedNotification(notifications.find(n => getId(n) === id));
+  const handleMarkAsRead = async (id, isRead) => {
+    setSelectedNotification(notifications.find((item) => getId(item) === id));
     setIsModalOpen(true);
-    setOpen(false); // Đóng popover khi mở modal cho đỡ rối
+    setOpen(false);
 
-    if (isRead) return; // already read
+    if (isRead) return;
 
     try {
       await notificationService.markRead(id);
       window.dispatchEvent(new CustomEvent('notificationMarkedRead', { detail: { id } }));
-      
-      // Update local state
-      setNotifications(prev =>
-        prev.map(notif =>
-          (notif.notificationId === id || notif.notification_id === id) 
-            ? { ...notif, isRead: true, is_read: true } 
-            : notif
+      setNotifications((prev) =>
+        prev.map((item) =>
+          getId(item) === id ? { ...item, isRead: true, is_read: true } : item
         )
       );
     } catch (error) {
@@ -88,11 +95,7 @@ export default function NotificationPopover({ variant = 'light' }) {
     }
   };
 
-  // Support both camelCase and snake_case depending on API mapping
-  const getIsRead = (item) => item.isRead !== undefined ? item.isRead : item.is_read;
-  const getId = (item) => item.notificationId || item.notification_id;
-
-  const unreadCount = notifications.filter(n => !getIsRead(n)).length;
+  const unreadCount = notifications.filter((item) => !getIsRead(item)).length;
 
   const content = (
     <div style={{ width: 320, maxHeight: 400, overflowY: 'auto' }}>
@@ -107,13 +110,14 @@ export default function NotificationPopover({ variant = 'light' }) {
           locale={{ emptyText: 'Không có thông báo nào.' }}
           renderItem={(item) => {
             const isRead = getIsRead(item);
+
             return (
               <List.Item
                 className={`notification-item ${isRead ? 'is-read' : 'is-unread'}`}
                 style={{
                   padding: '12px 16px',
                   borderBottom: '1px solid #f0f0f0',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
                 }}
                 onClick={() => handleMarkAsRead(getId(item), isRead)}
               >
@@ -123,14 +127,16 @@ export default function NotificationPopover({ variant = 'light' }) {
                       <Text strong={!isRead} style={{ color: isRead ? '#8c8c8c' : '#262626' }}>
                         {item.title}
                       </Text>
-                      {!isRead && (
-                        <Badge dot color="blue" />
-                      )}
+                      {!isRead && <Badge dot color="blue" />}
                     </div>
                   }
                   description={
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      <Text type="secondary" ellipsis={{ rows: 2 }} style={{ fontSize: 13, color: isRead ? '#bfbfbf' : '#595959' }}>
+                      <Text
+                        type="secondary"
+                        ellipsis={{ rows: 2 }}
+                        style={{ fontSize: 13, color: isRead ? '#bfbfbf' : '#595959' }}
+                      >
                         {item.message}
                       </Text>
                       <Text type="secondary" style={{ fontSize: 12, color: '#bfbfbf' }}>
@@ -149,85 +155,106 @@ export default function NotificationPopover({ variant = 'light' }) {
 
   return (
     <>
-      <Popover
-        content={content}
-        title={
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
+      <div ref={popoverRef} style={{ position: 'relative', display: 'inline-flex' }}>
+        <button
+          type="button"
+          aria-label="Mở thông báo"
+          aria-expanded={open}
+          onClick={toggleOpen}
+          style={{
+            width: 40,
+            height: 40,
+            border: 0,
+            borderRadius: '50%',
+            color: isDark ? '#fff' : '#111827',
+            background: isDark ? 'rgba(255,255,255,0.08)' : 'transparent',
+            cursor: 'pointer',
+            display: 'inline-flex',
             alignItems: 'center',
-            padding: '4px 0'
-          }}>
-            <span style={{ 
-              fontSize: '16px', 
-              fontWeight: 700, 
-              color: '#1e293b',
-              letterSpacing: '-0.02em'
-            }}>
-              Thông báo
-            </span>
-            <div>
-              <Button 
-                type="text" 
-                size="small" 
-                onClick={handleMarkAllRead}
-                disabled={unreadCount === 0}
-                style={{
-                  color: unreadCount === 0 ? '#94a3b8' : '#16a34a',
-                  fontSize: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  fontWeight: 500,
-                  borderRadius: '6px',
-                  padding: '0 8px'
-                }}
-              >
-                Đánh dấu tất cả đã đọc
-              </Button>
-              <Button 
-                type="text" 
-                size="small" 
-                icon={<ReloadOutlined style={{ fontSize: 12 }} />}
-                onClick={fetchNotifications} 
-                loading={loading}
-                style={{ 
-                  color: '#3b82f6', 
-                  fontSize: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  fontWeight: 500,
-                  borderRadius: '6px',
-                  padding: '0 8px'
-                }}
-                className="hover-bright"
-              >
-                Làm mới
-              </Button>
-            </div>
-          </div>
-        }
-        trigger="click"
-        open={open}
-        onOpenChange={handleOpenChange}
-        placement="bottomRight"
-        overlayInnerStyle={{ padding: 0 }}
-      >
-        <span style={{ display: 'inline-block', cursor: 'pointer' }}>
+            justifyContent: 'center',
+            padding: 0,
+          }}
+        >
           <Badge count={unreadCount} overflowCount={99} size="small" offset={[-4, 4]}>
-            <Button 
-              type="text" 
-              icon={<BellOutlined style={{ fontSize: 20 }} />} 
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                color: isDark ? '#fff' : undefined,
-                background: isDark ? 'rgba(255,255,255,0.08)' : undefined,
-              }}
-            />
+            <BellOutlined style={{ fontSize: 20, color: isDark ? '#fff' : '#111827' }} />
           </Badge>
-        </span>
-      </Popover>
+        </button>
+
+        {open && (
+          <div
+            role="dialog"
+            aria-label="Thông báo"
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 8px)',
+              right: 0,
+              zIndex: 1300,
+              width: 340,
+              maxWidth: 'calc(100vw - 24px)',
+              background: '#fff',
+              border: '1px solid #e5e7eb',
+              borderRadius: 10,
+              boxShadow: '0 12px 32px rgba(15, 23, 42, 0.18)',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '10px 12px',
+                borderBottom: '1px solid #f1f5f9',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  color: '#1e293b',
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                Thông báo
+              </span>
+              <div>
+                <Button
+                  type="text"
+                  size="small"
+                  onClick={handleMarkAllRead}
+                  disabled={unreadCount === 0}
+                  style={{
+                    color: unreadCount === 0 ? '#94a3b8' : '#16a34a',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    borderRadius: '6px',
+                    padding: '0 8px',
+                  }}
+                >
+                  Đánh dấu tất cả đã đọc
+                </Button>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<ReloadOutlined style={{ fontSize: 12 }} />}
+                  onClick={fetchNotifications}
+                  loading={loading}
+                  style={{
+                    color: '#3b82f6',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    borderRadius: '6px',
+                    padding: '0 8px',
+                  }}
+                >
+                  Làm mới
+                </Button>
+              </div>
+            </div>
+            {content}
+          </div>
+        )}
+      </div>
 
       <Modal
         title={
@@ -241,7 +268,7 @@ export default function NotificationPopover({ variant = 'light' }) {
         footer={[
           <Button key="close" type="primary" onClick={() => setIsModalOpen(false)}>
             Đóng
-          </Button>
+          </Button>,
         ]}
         centered
         width={400}
