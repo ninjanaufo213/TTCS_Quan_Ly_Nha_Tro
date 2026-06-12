@@ -795,13 +795,26 @@ const Invoices = () => {
             />
           </Form.Item>
 
-          <Form.Item label="Nhà trọ">
-            <Input
-              value={selectedContract ? getContractHouseName(selectedContract, roomsMap, housesMap) : ''}
-              placeholder="Chọn hợp đồng để xem nhà trọ"
-              disabled
-            />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Nhà trọ">
+                <Input
+                  value={selectedContract ? getContractHouseName(selectedContract, roomsMap, housesMap) : ''}
+                  placeholder="Chọn hợp đồng để xem nhà trọ"
+                  disabled
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Số lượng người (theo HĐ)">
+                <Input
+                  value={selectedContract ? (selectedContract.number_of_tenants || 1) : ''}
+                  placeholder="Chọn hợp đồng để xem số lượng người"
+                  disabled
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Divider>Chi phí cơ bản</Divider>
           <Row gutter={16}>
@@ -811,12 +824,12 @@ const Invoices = () => {
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name="water_price" label="Tiền nước (VNĐ)">
+              <Form.Item name="water_price" label={`Tiền nước (VNĐ) - ${selectedContract ? (selectedContract.number_of_tenants || 1) + ' người' : 'Theo người'}`}>
                 <InputNumber min={0} style={{ width: '100%' }} placeholder="Tiền nước" formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name="internet_price" label="Tiền internet (VNĐ)">
+              <Form.Item name="internet_price" label="Tiền internet (VNĐ) - Theo phòng">
                 <InputNumber min={0} style={{ width: '100%' }} placeholder="Tiền internet" formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} />
               </Form.Item>
             </Col>
@@ -850,7 +863,7 @@ const Invoices = () => {
           <Divider>Chi phí khác</Divider>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="general_price" label="Phí dịch vụ chung (VNĐ)">
+              <Form.Item name="general_price" label={`Phí dịch vụ chung (VNĐ) - ${selectedContract ? (selectedContract.number_of_tenants || 1) + ' người' : 'Theo người'}`}>
                 <InputNumber min={0} style={{ width: '100%' }} placeholder="Phí dịch vụ" formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} />
               </Form.Item>
             </Col>
