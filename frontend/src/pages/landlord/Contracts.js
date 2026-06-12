@@ -21,7 +21,8 @@ import {
   EditOutlined,
   DeleteOutlined,
   FileTextOutlined,
-  ReloadOutlined
+  ReloadOutlined,
+  FilePdfOutlined
 } from '@ant-design/icons';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { rentedRoomService } from '../../services/rentedRoomService';
@@ -32,6 +33,7 @@ import { contractRequestService } from '../../services/contractRequestService';
 import { viewingService } from '../../services/viewingService';
 import { contractExtensionRequestService } from '../../services/contractExtensionRequestService';
 import dayjs from 'dayjs';
+import { generateContractPdf } from '../../services/contractPdfExport';
 
 const { Option } = Select;
 
@@ -489,6 +491,36 @@ const Contracts = () => {
     fetchAllContracts();
   };
 
+  const handleExportPdf = async (record) => {
+    try {
+      // Get house info
+      const houseId = record.room?.house_id || roomsMap[record.room_id]?.house_id;
+      let houseInfo = houseId ? housesById[houseId] : null;
+
+      if (!houseInfo && houseId) {
+        try {
+          houseInfo = await houseService.getById(houseId);
+        } catch (_) {}
+      }
+
+      // Get landlord info from localStorage
+      let landlordInfo = {};
+      try {
+        const userInfo = JSON.parse(localStorage.getItem('user_info') || 'null');
+        landlordInfo = {
+          name: userInfo?.fullname || userInfo?.name || userInfo?.brandName || '',
+          phone: userInfo?.phone || '',
+        };
+      } catch (_) {}
+
+      generateContractPdf(record, houseInfo || {}, landlordInfo);
+      message.success('Đã xuất file PDF hợp đồng!');
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      message.error('Lỗi khi xuất file PDF hợp đồng!');
+    }
+  };
+
   // Filter contracts based on filter state
   const filteredContracts = useMemo(() => {
     return contracts.filter(contract => {
@@ -606,9 +638,17 @@ const Contracts = () => {
       title: 'Hành động',
       key: 'action',
       align: 'center',
-      width: 260,
+      width: 320,
       render: (_, record) => (
         <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 8 }}>
+          <Button
+            type="link"
+            icon={<FilePdfOutlined />}
+            onClick={() => handleExportPdf(record)}
+            style={{ color: '#cf1322' }}
+          >
+            Xuất PDF
+          </Button>
           <Button
             type="link"
             icon={<FileTextOutlined />}

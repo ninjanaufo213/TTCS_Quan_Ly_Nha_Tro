@@ -1,8 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Card, Col, DatePicker, Descriptions, Form, Modal, Row, Select, Spin, Tag, Typography, message } from 'antd';
+import { FilePdfOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { rentedRoomService } from '../../services/rentedRoomService';
+import { houseService } from '../../services/houseService';
 import { contractExtensionRequestService } from '../../services/contractExtensionRequestService';
+import { generateContractPdf } from '../../services/contractPdfExport';
 
 const { Title, Text, Link } = Typography;
 
@@ -67,6 +70,30 @@ export default function TenantContractInfo() {
     setExtensionModalOpen(true);
   };
 
+  const handleExportPdf = async () => {
+    if (!selectedContract) return;
+    try {
+      // Get house info
+      const houseId = selectedContract.room?.house_id;
+      let houseInfo = null;
+      if (houseId) {
+        try {
+          houseInfo = await houseService.getById(houseId);
+        } catch (_) {}
+      }
+
+      // Get landlord info — tenant doesn't have landlord info in localStorage,
+      // so we leave it blank (chủ trọ sẽ điền khi ký)
+      const landlordInfo = { name: '', phone: '' };
+
+      generateContractPdf(selectedContract, houseInfo || {}, landlordInfo);
+      message.success('Đã xuất file PDF hợp đồng!');
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      message.error('Lỗi khi xuất file PDF hợp đồng!');
+    }
+  };
+
   const handleSubmitExtension = async (values) => {
     if (!selectedContract?.rr_id) return;
     setExtensionLoading(true);
@@ -128,6 +155,17 @@ export default function TenantContractInfo() {
               label: c.room?.name || `Phòng #${c.room_id}`,
             }))}
           />
+        </Col>
+        <Col>
+          <Button
+            type="default"
+            icon={<FilePdfOutlined />}
+            onClick={handleExportPdf}
+            disabled={!selectedContract}
+            style={{ color: '#cf1322', borderColor: '#cf1322' }}
+          >
+            Xuất PDF hợp đồng
+          </Button>
         </Col>
         <Col>
           <Button type="primary" onClick={handleOpenExtension} disabled={!selectedContract}>
