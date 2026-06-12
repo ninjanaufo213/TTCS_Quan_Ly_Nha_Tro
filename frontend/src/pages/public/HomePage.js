@@ -10,7 +10,9 @@ import {
   Empty,
   Select,
   Drawer,
-  Slider
+  Slider,
+  Modal,
+  message
 } from 'antd';
 import {
   SearchOutlined,
@@ -20,7 +22,10 @@ import {
   StarFilled,
   MessageOutlined,
   ArrowUpOutlined,
-  EnvironmentOutlined
+  EnvironmentOutlined,
+  CheckCircleFilled,
+  CloseCircleOutlined,
+  PlusOutlined
 } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { listingService } from '../../services/listingService';
@@ -28,6 +33,7 @@ import SharedHeader from '../../components/SharedHeader';
 import SharedFooter from '../../components/SharedFooter';
 import LocationSelector from '../../components/LocationSelector';
 import MapPicker from '../../components/MapPicker';
+import HomePageMapModal from '../../components/HomePageMapModal';
 import '../../styles/HomePage.css';
 
 const AMENITIES_OPTIONS = [
@@ -70,6 +76,27 @@ const HomePage = () => {
   // Recommendations data
   const [recommendedListings, setRecommendedListings] = useState([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+
+  // Compare State
+  const [compareListings, setCompareListings] = useState([]);
+  const [isCompareModalVisible, setIsCompareModalVisible] = useState(false);
+
+  // Map View State
+  const [isMapModalVisible, setIsMapModalVisible] = useState(false);
+
+  const toggleCompare = (listing) => {
+    setCompareListings(prev => {
+      const isExist = prev.find(item => item.id === listing.id);
+      if (isExist) {
+        return prev.filter(item => item.id !== listing.id);
+      }
+      if (prev.length >= 2) {
+        message.warning('Chỉ được so sánh tối đa 2 phòng cùng lúc!');
+        return prev;
+      }
+      return [...prev, listing];
+    });
+  };
 
   const priceRanges = [
     { label: 'Tất cả mức giá', value: null },
@@ -143,6 +170,11 @@ const HomePage = () => {
             distance: l.distance,
             averageRating: l.average_rating ?? l.averageRating ?? null,
             totalReviews: l.total_reviews ?? l.totalReviews ?? 0,
+            electricityPrice: room.electricityPrice || room.electricity_price,
+            waterPrice: room.waterPrice || room.water_price,
+            amenities: room.amenities || [],
+            latitude: room.latitude,
+            longitude: room.longitude,
             createdAt: l.created_at || l.createdAt
               ? new Date(l.created_at || l.createdAt).toLocaleDateString('vi-VN')
               : '',
@@ -232,6 +264,11 @@ const HomePage = () => {
             totalImages: images.length,
             averageRating: l.average_rating ?? l.averageRating ?? null,
             totalReviews: l.total_reviews ?? l.totalReviews ?? 0,
+            electricityPrice: room.electricityPrice || room.electricity_price,
+            waterPrice: room.waterPrice || room.water_price,
+            amenities: room.amenities || [],
+            latitude: room.latitude,
+            longitude: room.longitude,
             createdAt: l.created_at || l.createdAt
               ? new Date(l.created_at || l.createdAt).toLocaleDateString('vi-VN')
               : '',
@@ -341,6 +378,19 @@ const HomePage = () => {
 
             <div className="listing-footer">
               <div className="actions">
+                <Button
+                  type="default"
+                  shape="round"
+                  className={`compare-btn ${compareListings.find(c => c.id === listing.id) ? 'active' : ''}`}
+                  icon={compareListings.find(c => c.id === listing.id) ? <CheckCircleFilled style={{color: '#10b981'}} /> : <PlusOutlined />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleCompare(listing);
+                  }}
+                  style={{ borderColor: compareListings.find(c => c.id === listing.id) ? '#10b981' : '#d9d9d9', color: compareListings.find(c => c.id === listing.id) ? '#10b981' : undefined }}
+                >
+                  So sánh
+                </Button>
                 <Button
                   type="link"
                   className={`heart-btn-animate ${savedListings.has(listing.id) ? 'is-active' : ''}`}
@@ -485,11 +535,20 @@ const HomePage = () => {
                   Có video xem trước
                 </div>
               </div>
-              <Select
-                value={sortBy}
-                onChange={setSortBy}
-                style={{ width: 200, marginRight: 16 }}
-                options={[
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginRight: 16 }}>
+                <Button 
+                  type="primary" 
+                  icon={<EnvironmentOutlined />}
+                  onClick={() => setIsMapModalVisible(true)}
+                  style={{ borderRadius: '8px', fontWeight: 600 }}
+                >
+                  Xem Bản đồ
+                </Button>
+                <Select
+                  value={sortBy}
+                  onChange={setSortBy}
+                  style={{ width: 180 }}
+                  options={[
                   { value: 'newest', label: 'Mới đăng gần đây' },
                   { value: 'priceAsc', label: 'Giá: Thấp đến cao' },
                   { value: 'priceDesc', label: 'Giá: Cao đến thấp' },
@@ -497,9 +556,10 @@ const HomePage = () => {
                 ]}
               />
             </div>
+          </div>
 
-            <section className="listings-section">
-              {activeTab === 'suggest' ? (
+          <section className="listings-section">
+            {activeTab === 'suggest' ? (
                 loadingRecommendations ? (
                   <div style={{ textAlign: 'center', padding: '40px' }}>Đang tìm các phòng gần bạn nhất...</div>
                 ) : recommendedListings.length > 0 ? (
@@ -575,6 +635,141 @@ const HomePage = () => {
       </div>
 
       <SharedFooter />
+
+      {/* Map View Modal */}
+      <HomePageMapModal 
+        visible={isMapModalVisible} 
+        onClose={() => setIsMapModalVisible(false)} 
+        filteredListings={filteredListings} 
+        formatPrice={formatPrice} 
+      />
+
+      {/* Compare Floating Bar */}
+      <div className={`compare-floating-bar ${compareListings.length > 0 ? 'visible' : ''}`}>
+        <div className="compare-items">
+          {compareListings.map(listing => (
+            <div key={listing.id} className="compare-item">
+              <img src={listing.images[0]} alt={listing.title} />
+              <div className="compare-item-info">
+                <div className="compare-item-title">{listing.title}</div>
+                <div className="compare-item-price">{formatPrice(listing.price)}</div>
+              </div>
+              <Button 
+                shape="circle" 
+                size="small" 
+                icon={<CloseCircleOutlined />} 
+                className="remove-compare-btn"
+                onClick={() => toggleCompare(listing)}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="compare-actions">
+          <Button danger onClick={() => setCompareListings([])}>Xóa tất cả</Button>
+          <Button type="primary" disabled={compareListings.length < 2} onClick={() => setIsCompareModalVisible(true)}>So sánh ngay</Button>
+        </div>
+      </div>
+
+      {/* Compare Modal */}
+      <Modal
+        title={<span style={{ fontSize: '18px', fontWeight: 600 }}>So sánh phòng</span>}
+        open={isCompareModalVisible}
+        onCancel={() => setIsCompareModalVisible(false)}
+        footer={null}
+        width={900}
+      >
+        {compareListings.length === 2 && (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="compare-table">
+              <tbody>
+                <tr>
+                  <th>Hình ảnh</th>
+                  {compareListings.map(listing => (
+                    <td key={listing.id}>
+                      <img src={listing.images[0]} alt={listing.title} className="compare-table-img" />
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <th>Tên phòng</th>
+                  {compareListings.map(listing => (
+                    <td key={listing.id}>
+                      <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: 8 }}>{listing.title}</div>
+                      <div><EnvironmentOutlined /> {listing.addressLine}</div>
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <th>Giá thuê</th>
+                  {compareListings.map(listing => (
+                    <td key={listing.id}>
+                      <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#ef4444' }}>
+                        {formatPrice(listing.price)}/tháng
+                      </span>
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <th>Diện tích</th>
+                  {compareListings.map(listing => (
+                    <td key={listing.id}>{listing.area ? `${listing.area} m²` : 'Không xác định'}</td>
+                  ))}
+                </tr>
+                <tr>
+                  <th>Tiền điện</th>
+                  {compareListings.map(listing => (
+                    <td key={listing.id}>{listing.electricityPrice != null ? `${Number(listing.electricityPrice).toLocaleString()} VNĐ/kWh` : 'Theo giá nhà nước'}</td>
+                  ))}
+                </tr>
+                <tr>
+                  <th>Tiền nước</th>
+                  {compareListings.map(listing => (
+                    <td key={listing.id}>{listing.waterPrice != null ? `${Number(listing.waterPrice).toLocaleString()} VNĐ/người` : 'Miễn phí'}</td>
+                  ))}
+                </tr>
+                <tr>
+                  <th>Tiện ích</th>
+                  {compareListings.map(listing => (
+                    <td key={listing.id}>
+                      {listing.amenities && listing.amenities.length > 0 ? (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          {listing.amenities.map((am, idx) => (
+                            <Badge key={idx} count={am} style={{ backgroundColor: '#f0f9ff', color: '#0369a1', borderColor: '#bae6fd' }} />
+                          ))}
+                        </div>
+                      ) : 'Chưa cập nhật'}
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <th>Đánh giá</th>
+                  {compareListings.map(listing => (
+                    <td key={listing.id}>
+                      {listing.totalReviews > 0 ? (
+                        <div>
+                          <StarFilled style={{ color: '#f59e0b', marginRight: 4 }} />
+                          <span style={{ fontWeight: 600 }}>{Number(listing.averageRating).toFixed(1)}</span>
+                          <span style={{ color: '#64748b', marginLeft: 4 }}>({listing.totalReviews} đánh giá)</span>
+                        </div>
+                      ) : 'Chưa có đánh giá'}
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <th></th>
+                  {compareListings.map(listing => (
+                    <td key={listing.id}>
+                      <Button type="primary" style={{ width: '100%' }} onClick={() => { setIsCompareModalVisible(false); navigate(`/listings/${listing.id}`); }}>
+                        Xem chi tiết
+                      </Button>
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Modal>
 
       {/* Advanced Filter Drawer */}
       <Drawer
