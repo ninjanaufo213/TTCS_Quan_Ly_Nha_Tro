@@ -367,13 +367,16 @@ const ListingDetail = () => {
               <div className="detail-card">
                 <h2 className="section-heading">Tiện ích phòng trọ</h2>
                 <div className="amenities-grid">
-                  {['Điện nước', 'Wifi miễn phí', 'Giờ giấc tự do', 'An ninh 24/7',
-                    'Chỗ để xe', 'Vệ sinh riêng'].map((item) => (
+                  {listing.room?.amenities && listing.room.amenities.length > 0 ? (
+                    listing.room.amenities.map((item) => (
                       <div key={item} className="amenity-item">
                         <CheckCircleOutlined className="amenity-icon" />
                         <span>{item}</span>
                       </div>
-                    ))}
+                    ))
+                  ) : (
+                    <span style={{ color: '#94a3b8' }}>Phòng này chưa cập nhật tiện ích.</span>
+                  )}
                 </div>
               </div>
 

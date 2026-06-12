@@ -61,7 +61,9 @@ public class ListingService {
                                                          Double maxArea,
                                                          Double latitude,
                                                          Double longitude,
-                                                         Double radius) {
+                                                         Double radius,
+                                                         List<String> amenities,
+                                                         String sortBy) {
         List<Listing> listings = listingRepository.searchPublishedListings(keyword, district, ward, minPrice, maxPrice, minArea, maxArea);
 
         if (latitude != null && longitude != null && radius != null) {
@@ -74,13 +76,51 @@ public class ListingService {
                 double dist = calculateDistance(latitude, longitude, 
                                                 l.getRoom().getHouse().getLatitude(), 
                                                 l.getRoom().getHouse().getLongitude());
+                // Store distance temporarily in a map or we rely on mapToResponse later. Actually mapToResponse doesn't store distance unless we calculate it.
+                // Wait, mapToResponse in ListingService doesn't have distance unless we set it!
+                // Currently calculateDistance is used, but the original code didn't set distance in mapToResponse.
                 return dist <= radius;
             }).collect(Collectors.toList());
         }
 
-        return listings.stream()
+        // Filter by amenities
+        if (amenities != null && !amenities.isEmpty()) {
+            listings = listings.stream().filter(l -> {
+                if (l.getRoom() == null || l.getRoom().getAmenities() == null) return false;
+                List<String> roomAmenities = l.getRoom().getAmenities().stream()
+                        .map(com.example.demo.model.RoomAmenity::getName)
+                        .collect(Collectors.toList());
+                return roomAmenities.containsAll(amenities);
+            }).collect(Collectors.toList());
+        }
+
+        List<ListingResponse> responses = listings.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+
+        // We should set distance if we have lat/lng before sorting by distance
+        if (latitude != null && longitude != null) {
+            for (ListingResponse r : responses) {
+                if (r.getRoom() != null && r.getRoom().getLatitude() != null && r.getRoom().getLongitude() != null) {
+                    double dist = calculateDistance(latitude, longitude, r.getRoom().getLatitude(), r.getRoom().getLongitude());
+                    r.setDistance(dist);
+                }
+            }
+        }
+
+        // Sort
+        if ("priceAsc".equals(sortBy)) {
+            responses.sort(java.util.Comparator.comparing(r -> r.getRoom() != null ? r.getRoom().getPrice() : BigDecimal.ZERO));
+        } else if ("priceDesc".equals(sortBy)) {
+            responses.sort(java.util.Comparator.comparing((ListingResponse r) -> r.getRoom() != null ? r.getRoom().getPrice() : BigDecimal.ZERO).reversed());
+        } else if ("distance".equals(sortBy) && latitude != null && longitude != null) {
+            responses.sort(java.util.Comparator.comparing(ListingResponse::getDistance, java.util.Comparator.nullsLast(Double::compareTo)));
+        } else {
+            // "newest" or default
+            responses.sort(java.util.Comparator.comparing(ListingResponse::getCreatedAt, java.util.Comparator.nullsLast(java.time.LocalDateTime::compareTo)).reversed());
+        }
+
+        return responses;
     }
 
     private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
@@ -230,6 +270,13 @@ public class ListingService {
                         .collect(java.util.stream.Collectors.toList());
             }
 
+            java.util.List<String> amenities = new java.util.ArrayList<>();
+            if (listing.getRoom().getAmenities() != null) {
+                amenities = listing.getRoom().getAmenities().stream()
+                        .map(com.example.demo.model.RoomAmenity::getName)
+                        .collect(java.util.stream.Collectors.toList());
+            }
+
             roomInfo = ListingResponse.RoomInfo.builder()
                     .roomId(roomId)
                     .houseId(houseId)
@@ -252,6 +299,7 @@ public class ListingService {
                     .internetPrice(listing.getRoom().getInternetPrice())
                     .generalPrice(listing.getRoom().getGeneralPrice())
                     .electricityPrice(listing.getRoom().getElectricityPrice())
+                    .amenities(amenities)
                     .build();
         }
 

@@ -19,5 +19,6 @@ public record RoomResponse(
         BigDecimal electricityPrice,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
-        List<RoomImageDto> images
+        List<RoomImageDto> images,
+        List<String> amenities
 ) {}

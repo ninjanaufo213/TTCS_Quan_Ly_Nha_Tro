@@ -116,6 +116,13 @@ public class RoomService {
                 .electricityPrice(request.electricity_price())
                 .build();
 
+        if (request.amenities() != null && !request.amenities().isEmpty()) {
+            java.util.List<com.example.demo.model.RoomAmenity> amenityEntities = request.amenities().stream()
+                    .map(name -> com.example.demo.model.RoomAmenity.builder().room(room).name(name).build())
+                    .collect(Collectors.toList());
+            room.setAmenities(amenityEntities);
+        }
+
         Room savedRoom = roomRepository.save(room);
         return mapToResponse(savedRoom);
     }
@@ -157,6 +164,17 @@ public class RoomService {
         room.setInternetPrice(request.internet_price());
         room.setGeneralPrice(request.general_price());
         room.setElectricityPrice(request.electricity_price());
+
+        if (room.getAmenities() != null) {
+            room.getAmenities().clear();
+        } else {
+            room.setAmenities(new java.util.ArrayList<>());
+        }
+        if (request.amenities() != null && !request.amenities().isEmpty()) {
+            for (String name : request.amenities()) {
+                room.getAmenities().add(com.example.demo.model.RoomAmenity.builder().room(room).name(name).build());
+            }
+        }
 
         Room updatedRoom = roomRepository.save(room);
         return mapToResponse(updatedRoom);
@@ -219,6 +237,11 @@ public class RoomService {
                         .map(this::mapToImageDto)
                         .collect(Collectors.toList()) : List.of();
 
+        List<String> amenityList = room.getAmenities() != null ?
+                room.getAmenities().stream()
+                        .map(com.example.demo.model.RoomAmenity::getName)
+                        .collect(Collectors.toList()) : List.of();
+
         return new RoomResponse(
                 room.getRoomId(),
                 room.getHouse() != null ? room.getHouse().getHouseId() : null,
@@ -234,7 +257,8 @@ public class RoomService {
                 room.getElectricityPrice(),
                 room.getCreatedAt(),
                 room.getUpdatedAt(),
-                imageDtos
+                imageDtos,
+                amenityList
         );
     }
 

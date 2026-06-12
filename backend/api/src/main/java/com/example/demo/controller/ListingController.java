@@ -37,10 +37,12 @@ public class ListingController {
             @RequestParam(required = false) Double maxArea,
             @RequestParam(required = false) Double latitude,
             @RequestParam(required = false) Double longitude,
-            @RequestParam(required = false) Double radius
+            @RequestParam(required = false) Double radius,
+            @RequestParam(required = false) List<String> amenities,
+            @RequestParam(required = false) String sortBy
     ) {
         return ResponseEntity.ok(
-                listingService.searchPublishedListings(keyword, district, ward, minPrice, maxPrice, minArea, maxArea, latitude, longitude, radius)
+                listingService.searchPublishedListings(keyword, district, ward, minPrice, maxPrice, minArea, maxArea, latitude, longitude, radius, amenities, sortBy)
         );
     }
 

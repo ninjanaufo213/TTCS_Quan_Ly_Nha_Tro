@@ -30,6 +30,22 @@ import LocationSelector from '../../components/LocationSelector';
 import MapPicker from '../../components/MapPicker';
 import '../../styles/HomePage.css';
 
+const AMENITIES_OPTIONS = [
+  'Điều hòa',
+  'Nóng lạnh',
+  'Máy giặt',
+  'Tủ lạnh',
+  'Giường',
+  'Tủ quần áo',
+  'Ban công',
+  'Bếp riêng',
+  'Giờ giấc tự do',
+  'Vệ sinh riêng',
+  'Chỗ để xe',
+  'Wifi miễn phí',
+  'An ninh 24/7'
+];
+
 const HomePage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -45,6 +61,8 @@ const HomePage = () => {
   const [selectedAreaRange, setSelectedAreaRange] = useState(null);
   const [mapLocation, setMapLocation] = useState(null);
   const [searchRadius, setSearchRadius] = useState(2); // 2 km default
+  const [selectedAmenities, setSelectedAmenities] = useState([]);
+  const [sortBy, setSortBy] = useState('newest');
 
   // Listings data
   const [filteredListings, setFilteredListings] = useState([]);
@@ -183,6 +201,8 @@ const HomePage = () => {
         latitude: mapLocation ? mapLocation.lat : undefined,
         longitude: mapLocation ? mapLocation.lng : undefined,
         radius: mapLocation ? searchRadius : undefined,
+        amenities: selectedAmenities.length > 0 ? selectedAmenities.join(',') : undefined,
+        sortBy: sortBy !== 'newest' ? sortBy : undefined,
       };
 
       try {
@@ -226,7 +246,7 @@ const HomePage = () => {
 
     const timeoutId = setTimeout(fetchSearchResults, 350);
     return () => clearTimeout(timeoutId);
-  }, [searchKeyword, addressData, selectedPriceRange, selectedAreaRange, mapLocation, searchRadius]);
+  }, [searchKeyword, addressData, selectedPriceRange, selectedAreaRange, mapLocation, searchRadius, selectedAmenities, sortBy]);
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll);
@@ -444,7 +464,7 @@ const HomePage = () => {
               <p>Có {filteredListings.length} tin đăng phù hợp với tìm kiếm của bạn</p>
             </section>
 
-            <div className="content-tabs animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+            <div className="content-tabs animate-fade-in-up" style={{ animationDelay: '200ms', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
               <div className="tab-list">
                 <div
                   className={`tab-item ${activeTab === 'new' ? 'active' : ''}`}
@@ -465,6 +485,17 @@ const HomePage = () => {
                   Có video xem trước
                 </div>
               </div>
+              <Select
+                value={sortBy}
+                onChange={setSortBy}
+                style={{ width: 200, marginRight: 16 }}
+                options={[
+                  { value: 'newest', label: 'Mới đăng gần đây' },
+                  { value: 'priceAsc', label: 'Giá: Thấp đến cao' },
+                  { value: 'priceDesc', label: 'Giá: Cao đến thấp' },
+                  { value: 'distance', label: 'Gần vị trí của tôi', disabled: !mapLocation }
+                ]}
+              />
             </div>
 
             <section className="listings-section">
@@ -564,6 +595,7 @@ const HomePage = () => {
                 setSelectedAreaRange(null);
                 setMapLocation(null);
                 setSearchRadius(2);
+                setSelectedAmenities([]);
               }}
             >
               Xóa bộ lọc
@@ -616,6 +648,22 @@ const HomePage = () => {
               value={selectedAreaRange}
               options={areaRanges}
               onChange={v => setSelectedAreaRange(v)}
+              allowClear
+            />
+          </div>
+
+          <Divider style={{ margin: '8px 0' }} />
+
+          <div>
+            <div style={{ marginBottom: '12px', fontSize: '16px', fontWeight: 500 }}>Tiện ích</div>
+            <Select
+              mode="multiple"
+              size="large"
+              style={{ width: '100%' }}
+              placeholder="Chọn tiện ích"
+              value={selectedAmenities}
+              onChange={v => setSelectedAmenities(v)}
+              options={AMENITIES_OPTIONS.map(a => ({ label: a, value: a }))}
               allowClear
             />
           </div>

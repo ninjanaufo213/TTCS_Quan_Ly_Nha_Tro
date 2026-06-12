@@ -33,6 +33,22 @@ import { houseService } from '../../services/houseService';
 const { TextArea } = Input;
 const { Option } = Select;
 
+const AMENITIES_OPTIONS = [
+  'Điều hòa',
+  'Nóng lạnh',
+  'Máy giặt',
+  'Tủ lạnh',
+  'Giường',
+  'Tủ quần áo',
+  'Ban công',
+  'Bếp riêng',
+  'Giờ giấc tự do',
+  'Vệ sinh riêng',
+  'Chỗ để xe',
+  'Wifi miễn phí',
+  'An ninh 24/7'
+];
+
 const Rooms = () => {
   const { message } = App.useApp(); // Use hook to get message
   const [rooms, setRooms] = useState([]);
@@ -517,6 +533,18 @@ const Rooms = () => {
                 </Option>
               ))}
             </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="amenities"
+            label="Tiện ích phòng"
+          >
+            <Select
+              mode="tags"
+              placeholder="Chọn hoặc nhập thêm tiện ích"
+              allowClear
+              options={AMENITIES_OPTIONS.map(a => ({ label: a, value: a }))}
+            />
           </Form.Item>
 
           <Form.Item

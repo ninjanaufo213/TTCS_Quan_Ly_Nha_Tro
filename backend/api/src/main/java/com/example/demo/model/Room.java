@@ -95,4 +95,10 @@ public class Room {
     @EqualsAndHashCode.Exclude
     @JsonIgnore
     private List<RentedRoom> rentedRooms;
+
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonIgnore
+    private List<RoomAmenity> amenities;
 }

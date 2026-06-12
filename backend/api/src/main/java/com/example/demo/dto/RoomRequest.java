@@ -13,5 +13,6 @@ public record RoomRequest(
         BigDecimal water_price,
         BigDecimal internet_price,
         BigDecimal general_price,
-        BigDecimal electricity_price
+        BigDecimal electricity_price,
+        java.util.List<String> amenities
 ) {}

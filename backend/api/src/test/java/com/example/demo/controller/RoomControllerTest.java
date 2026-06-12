@@ -48,9 +48,14 @@ public class RoomControllerTest {
                 25.0,
                 true,
                 "A nice room",
+                new BigDecimal("100000"),
+                new BigDecimal("100000"),
+                new BigDecimal("50000"),
+                new BigDecimal("3500"),
                 LocalDateTime.now(),
                 LocalDateTime.now(),
-                List.of(image1, image2)
+                List.of(image1, image2),
+                List.of("Điều hòa", "Nóng lạnh")
         );
 
         when(roomService.getRoomById(1)).thenReturn(Optional.of(mockResponse));

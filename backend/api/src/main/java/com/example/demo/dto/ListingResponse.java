@@ -50,5 +50,6 @@ public class ListingResponse {
         private BigDecimal internetPrice;
         private BigDecimal generalPrice;
         private BigDecimal electricityPrice;
+        private java.util.List<String> amenities;
     }
 }
