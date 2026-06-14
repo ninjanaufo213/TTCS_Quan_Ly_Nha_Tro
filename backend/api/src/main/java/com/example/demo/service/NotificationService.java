@@ -4,6 +4,8 @@ import com.example.demo.dto.NotificationResponse;
 import com.example.demo.model.Notification;
 import com.example.demo.model.User;
 import com.example.demo.repository.NotificationRepository;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,10 +18,12 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final AuthService authService;
+    private final MessageSource messageSource;
 
-    public NotificationService(NotificationRepository notificationRepository, AuthService authService) {
+    public NotificationService(NotificationRepository notificationRepository, AuthService authService, MessageSource messageSource) {
         this.notificationRepository = notificationRepository;
         this.authService = authService;
+        this.messageSource = messageSource;
     }
 
     public void notifyUser(User recipient, User sender, String title, String message, String type, Integer referenceId) {
@@ -36,6 +40,12 @@ public class NotificationService {
                 .isRead(false)
                 .build();
         notificationRepository.save(notification);
+    }
+
+    public void notifyUserWithTemplate(User recipient, User sender, String type, Integer referenceId, String titleCode, String messageCode, Object... args) {
+        String title = messageSource.getMessage(titleCode, null, LocaleContextHolder.getLocale());
+        String message = messageSource.getMessage(messageCode, args, LocaleContextHolder.getLocale());
+        notifyUser(recipient, sender, title, message, type, referenceId);
     }
 
     public List<NotificationResponse> getMyNotifications() {

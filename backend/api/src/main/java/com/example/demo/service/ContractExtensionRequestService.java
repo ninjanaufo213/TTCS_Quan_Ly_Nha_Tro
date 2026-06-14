@@ -80,14 +80,14 @@ public class ContractExtensionRequestService {
         if (rentedRoom.getRoom() != null && rentedRoom.getRoom().getHouse() != null
                 && rentedRoom.getRoom().getHouse().getLandlord() != null
                 && rentedRoom.getRoom().getHouse().getLandlord().getUser() != null) {
-            notificationService.notifyUser(
+            notificationService.notifyUserWithTemplate(
                     rentedRoom.getRoom().getHouse().getLandlord().getUser(),
                     tenant.getUser(),
-                    "Yêu cầu gia hạn hợp đồng",
-                    "Người thuê đã yêu cầu gia hạn hợp đồng phòng " + rentedRoom.getRoom().getName()
-                            + " đến " + request.requestedEndDate(),
                     "CONTRACT_EXTENSION_REQUESTED",
-                    saved.getExtensionRequestId()
+                    saved.getExtensionRequestId(),
+                    "noti.extension.requested.title",
+                    "noti.extension.requested.message",
+                    rentedRoom.getRoom().getName()
             );
         }
 
@@ -131,14 +131,14 @@ public class ContractExtensionRequestService {
         if (extensionRequest.getTenant() != null && extensionRequest.getTenant().getUser() != null
                 && rentedRoom.getRoom() != null && rentedRoom.getRoom().getHouse() != null
                 && rentedRoom.getRoom().getHouse().getLandlord() != null) {
-            notificationService.notifyUser(
+            notificationService.notifyUserWithTemplate(
                     extensionRequest.getTenant().getUser(),
                     rentedRoom.getRoom().getHouse().getLandlord().getUser(),
-                    "Gia hạn hợp đồng được duyệt",
-                    "Chủ trọ đã duyệt gia hạn hợp đồng phòng " + rentedRoom.getRoom().getName()
-                            + " đến " + extensionRequest.getRequestedEndDate(),
                     "CONTRACT_EXTENSION_APPROVED",
-                    saved.getExtensionRequestId()
+                    saved.getExtensionRequestId(),
+                    "noti.extension.approved.title",
+                    "noti.extension.approved.message",
+                    rentedRoom.getRoom().getName()
             );
         }
 
@@ -162,13 +162,14 @@ public class ContractExtensionRequestService {
         if (extensionRequest.getTenant() != null && extensionRequest.getTenant().getUser() != null
                 && rentedRoom != null && rentedRoom.getRoom() != null && rentedRoom.getRoom().getHouse() != null
                 && rentedRoom.getRoom().getHouse().getLandlord() != null) {
-            notificationService.notifyUser(
+            notificationService.notifyUserWithTemplate(
                     extensionRequest.getTenant().getUser(),
                     rentedRoom.getRoom().getHouse().getLandlord().getUser(),
-                    "Gia hạn hợp đồng bị từ chối",
-                    "Chủ trọ đã từ chối yêu cầu gia hạn hợp đồng phòng " + rentedRoom.getRoom().getName(),
                     "CONTRACT_EXTENSION_REJECTED",
-                    saved.getExtensionRequestId()
+                    saved.getExtensionRequestId(),
+                    "noti.extension.rejected.title",
+                    "noti.extension.rejected.message",
+                    rentedRoom.getRoom().getName()
             );
         }
 

@@ -132,13 +132,14 @@ public class RentedRoomService {
 
         if (saved.getTenant() != null && saved.getTenant().getUser() != null
                 && room.getHouse() != null && room.getHouse().getLandlord() != null) {
-            notificationService.notifyUser(
+            notificationService.notifyUserWithTemplate(
                     saved.getTenant().getUser(),
                     room.getHouse().getLandlord().getUser(),
-                    "Hợp đồng thuê phòng mới",
-                    "Chủ trọ đã tạo hợp đồng thuê phòng cho phòng " + room.getName(),
                     "CONTRACT_CREATED",
-                    saved.getRrId()
+                    saved.getRrId(),
+                    "noti.contract.created.title",
+                    "noti.contract.created.message",
+                    room.getName()
             );
         }
 
@@ -240,13 +241,14 @@ public class RentedRoomService {
             
             if (updated.getTenant() != null && updated.getTenant().getUser() != null
                     && updated.getRoom().getHouse() != null && updated.getRoom().getHouse().getLandlord() != null) {
-                notificationService.notifyUser(
+                notificationService.notifyUserWithTemplate(
                         updated.getTenant().getUser(),
                         updated.getRoom().getHouse().getLandlord().getUser(),
-                        "Cập nhật hợp đồng",
-                        "Chủ trọ đã cập nhật thông tin hợp đồng phòng " + updated.getRoom().getName(),
                         "CONTRACT_UPDATED",
-                        updated.getRrId()
+                        updated.getRrId(),
+                        "noti.contract.updated.title",
+                        "noti.contract.updated.message",
+                        updated.getRoom().getName()
                 );
             }
         }
@@ -278,13 +280,14 @@ public class RentedRoomService {
             
             if (updated.getTenant() != null && updated.getTenant().getUser() != null
                     && updated.getRoom().getHouse() != null && updated.getRoom().getHouse().getLandlord() != null) {
-                notificationService.notifyUser(
+                notificationService.notifyUserWithTemplate(
                         updated.getTenant().getUser(),
                         updated.getRoom().getHouse().getLandlord().getUser(),
-                        "Hợp đồng chấm dứt",
-                        "Chủ trọ đã chấm dứt hợp đồng phòng " + updated.getRoom().getName(),
                         "CONTRACT_TERMINATED",
-                        updated.getRrId()
+                        updated.getRrId(),
+                        "noti.contract.terminated.title",
+                        "noti.contract.terminated.message",
+                        updated.getRoom().getName()
                 );
             }
         }

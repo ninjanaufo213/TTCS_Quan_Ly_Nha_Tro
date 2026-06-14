@@ -315,7 +315,9 @@ const ListingDetail = () => {
                     <CheckCircleOutlined className="stat-icon green-icon" />
                     <div>
                       <div className="stat-label">Trạng thái</div>
-                      <div className="stat-value green-value">Còn trống</div>
+                      <div className="stat-value green-value">
+                        {listing.room?.is_available ? 'Còn trống' : 'Hết phòng'}
+                      </div>
                     </div>
                   </div>
                 </div>

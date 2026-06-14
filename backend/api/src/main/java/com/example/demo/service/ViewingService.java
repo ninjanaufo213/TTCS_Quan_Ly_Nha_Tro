@@ -6,6 +6,7 @@ import com.example.demo.integration.esms.EsmsSmsSender;
 import com.example.demo.model.RentRequest;
 import com.example.demo.model.Room;
 import com.example.demo.model.Tenant;
+import com.example.demo.model.User;
 import com.example.demo.repository.RentRequestRepository;
 import com.example.demo.repository.RoomRepository;
 import com.example.demo.repository.TenantRepository;
@@ -77,13 +78,15 @@ public class ViewingService {
 
         RentRequest saved = rentRequestRepository.save(rentRequest);
 
-        notificationService.notifyUser(
+        notificationService.notifyUserWithTemplate(
                 room.getHouse() != null && room.getHouse().getLandlord() != null ? room.getHouse().getLandlord().getUser() : null,
                 tenant.getUser(),
-                "Yêu cầu xem phòng mới",
-                "Bạn có yêu cầu xem phòng từ " + tenant.getFullname() + " cho phòng " + room.getName(),
                 "VIEWING_REQUESTED",
-                saved.getRequestId()
+                saved.getRequestId(),
+                "noti.viewing.requested.title",
+                "noti.viewing.requested.message",
+                tenant.getFullname(),
+                room.getName()
         );
 
         return mapToResponse(saved);
@@ -127,16 +130,18 @@ public class ViewingService {
         rentRequest.setStatus(STATUS_CANCELED);
         RentRequest saved = rentRequestRepository.save(rentRequest);
 
-        notificationService.notifyUser(
+        notificationService.notifyUserWithTemplate(
                 rentRequest.getRoom() != null && rentRequest.getRoom().getHouse() != null
                         && rentRequest.getRoom().getHouse().getLandlord() != null
                         ? rentRequest.getRoom().getHouse().getLandlord().getUser()
                         : null,
                 tenant.getUser(),
-                "Hủy lịch xem phòng",
-                tenant.getFullname() + " đã hủy lịch xem phòng " + (rentRequest.getRoom() != null ? rentRequest.getRoom().getName() : ""),
                 "VIEWING_CANCELED",
-                rentRequest.getRequestId()
+                rentRequest.getRequestId(),
+                "noti.viewing.canceled.title",
+                "noti.viewing.canceled.message",
+                tenant.getFullname(),
+                rentRequest.getRoom() != null ? rentRequest.getRoom().getName() : ""
         );
 
         return mapToResponse(saved);
@@ -160,16 +165,17 @@ public class ViewingService {
         rentRequest.setStatus(STATUS_CANCELED);
         RentRequest saved = rentRequestRepository.save(rentRequest);
 
-        notificationService.notifyUser(
+        notificationService.notifyUserWithTemplate(
                 rentRequest.getTenant() != null ? rentRequest.getTenant().getUser() : null,
                 rentRequest.getRoom() != null && rentRequest.getRoom().getHouse() != null
                         && rentRequest.getRoom().getHouse().getLandlord() != null
                         ? rentRequest.getRoom().getHouse().getLandlord().getUser()
                         : null,
-                "Hủy lịch xem phòng",
-                "Chủ trọ đã hủy lịch xem phòng " + (rentRequest.getRoom() != null ? rentRequest.getRoom().getName() : ""),
                 "VIEWING_CANCELED",
-                rentRequest.getRequestId()
+                rentRequest.getRequestId(),
+                "noti.viewing.canceled_by_landlord.title",
+                "noti.viewing.canceled_by_landlord.message",
+                rentRequest.getRoom() != null ? rentRequest.getRoom().getName() : ""
         );
 
         return mapToResponse(saved);
@@ -193,16 +199,17 @@ public class ViewingService {
         rentRequest.setStatus(STATUS_APPROVED);
         RentRequest saved = rentRequestRepository.save(rentRequest);
 
-        notificationService.notifyUser(
+        notificationService.notifyUserWithTemplate(
                 rentRequest.getTenant() != null ? rentRequest.getTenant().getUser() : null,
                 rentRequest.getRoom() != null && rentRequest.getRoom().getHouse() != null
                         && rentRequest.getRoom().getHouse().getLandlord() != null
                         ? rentRequest.getRoom().getHouse().getLandlord().getUser()
                         : null,
-                "Xác nhận lịch xem phòng",
-                "Chủ trọ đã xác nhận lịch xem phòng " + (rentRequest.getRoom() != null ? rentRequest.getRoom().getName() : ""),
                 "VIEWING_APPROVED",
-                rentRequest.getRequestId()
+                rentRequest.getRequestId(),
+                "noti.viewing.approved.title",
+                "noti.viewing.approved.message",
+                rentRequest.getRoom() != null ? rentRequest.getRoom().getName() : ""
         );
 
         if (saved.getTenant() != null && saved.getTenant().getUser() != null) {
@@ -235,16 +242,17 @@ public class ViewingService {
         rentRequest.setStatus(STATUS_CANCELED);
         RentRequest saved = rentRequestRepository.save(rentRequest);
 
-        notificationService.notifyUser(
+        notificationService.notifyUserWithTemplate(
                 rentRequest.getTenant() != null ? rentRequest.getTenant().getUser() : null,
                 rentRequest.getRoom() != null && rentRequest.getRoom().getHouse() != null
                         && rentRequest.getRoom().getHouse().getLandlord() != null
                         ? rentRequest.getRoom().getHouse().getLandlord().getUser()
                         : null,
-                "Từ chối lịch xem phòng",
-                "Chủ trọ đã từ chối yêu cầu xem phòng " + (rentRequest.getRoom() != null ? rentRequest.getRoom().getName() : ""),
                 "VIEWING_REJECTED",
-                rentRequest.getRequestId()
+                rentRequest.getRequestId(),
+                "noti.viewing.rejected.title",
+                "noti.viewing.rejected.message",
+                rentRequest.getRoom() != null ? rentRequest.getRoom().getName() : ""
         );
 
         return mapToResponse(saved);
@@ -260,6 +268,20 @@ public class ViewingService {
         }
         for (RentRequest request : requests) {
             request.setStatus(STATUS_CANCELED);
+            
+            User landlordUser = null;
+            if (request.getRoom() != null && request.getRoom().getHouse() != null && request.getRoom().getHouse().getLandlord() != null) {
+                landlordUser = request.getRoom().getHouse().getLandlord().getUser();
+            }
+            notificationService.notifyUserWithTemplate(
+                    request.getTenant() != null ? request.getTenant().getUser() : null,
+                    landlordUser,
+                    "VIEWING_CANCELED",
+                    request.getRequestId(),
+                    "noti.viewing.canceled_by_system.tenant.title",
+                    "noti.viewing.canceled_by_system.tenant.message",
+                    request.getRoom() != null ? request.getRoom().getName() : ""
+            );
         }
         rentRequestRepository.saveAll(requests);
     }
@@ -280,7 +302,29 @@ public class ViewingService {
                 .filter(req -> keepRequestId == null || !keepRequestId.equals(req.getRequestId()))
                 .filter(req -> List.of(STATUS_PENDING, STATUS_APPROVED, STATUS_SCHEDULED, STATUS_CONTRACT_PENDING)
                         .contains(req.getStatus()))
-                .peek(req -> req.setStatus(STATUS_CANCELED))
+                .peek(req -> {
+                    req.setStatus(STATUS_CANCELED);
+                    
+                    User tenantUser = req.getTenant() != null ? req.getTenant().getUser() : null;
+                    User landlordUser = null;
+                    if (req.getRoom() != null && req.getRoom().getHouse() != null && req.getRoom().getHouse().getLandlord() != null) {
+                        landlordUser = req.getRoom().getHouse().getLandlord().getUser();
+                    }
+                    String tenantName = req.getTenant() != null ? req.getTenant().getFullname() : "Khách thuê";
+                    
+                    if (landlordUser != null) {
+                        notificationService.notifyUserWithTemplate(
+                                landlordUser,
+                                tenantUser,
+                                "VIEWING_CANCELED",
+                                req.getRequestId(),
+                                "noti.viewing.canceled_by_system.landlord.title",
+                                "noti.viewing.canceled_by_system.landlord.message",
+                                tenantName,
+                                req.getRoom() != null ? req.getRoom().getName() : ""
+                        );
+                    }
+                })
                 .collect(Collectors.toList());
         if (!toCancel.isEmpty()) {
             rentRequestRepository.saveAll(toCancel);
