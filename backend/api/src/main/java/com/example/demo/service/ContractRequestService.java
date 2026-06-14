@@ -115,13 +115,14 @@ public class ContractRequestService {
 
         ContractRequest saved = contractRequestRepository.save(contractRequest);
 
-        notificationService.notifyUser(
+        notificationService.notifyUserWithTemplate(
                 tenant.getUser(),
                 room.getHouse() != null && room.getHouse().getLandlord() != null ? room.getHouse().getLandlord().getUser() : null,
-                "Yêu cầu xác nhận hợp đồng",
-                "Chủ trọ đã gửi yêu cầu hợp đồng cho phòng " + room.getName() + ". Vui lòng xác nhận.",
                 "CONTRACT_REQUESTED",
-                saved.getContractRequestId()
+                saved.getContractRequestId(),
+                "noti.contract.requested.title",
+                "noti.contract.requested.message",
+                room.getName()
         );
 
         return mapToResponse(saved);
@@ -198,13 +199,14 @@ public class ContractRequestService {
 
         if (contractRequest.getRoom() != null && contractRequest.getRoom().getHouse() != null
                 && contractRequest.getRoom().getHouse().getLandlord() != null) {
-            notificationService.notifyUser(
+            notificationService.notifyUserWithTemplate(
                     contractRequest.getRoom().getHouse().getLandlord().getUser(),
                     contractRequest.getTenant() != null ? contractRequest.getTenant().getUser() : null,
-                    "Hợp đồng đã được xác nhận",
-                    "Người thuê đã xác nhận hợp đồng cho phòng " + contractRequest.getRoom().getName(),
                     "CONTRACT_CONFIRMED",
-                    contractRequest.getContractRequestId()
+                    contractRequest.getContractRequestId(),
+                    "noti.contract.confirmed.title",
+                    "noti.contract.confirmed.message",
+                    contractRequest.getRoom().getName()
             );
         }
 
@@ -235,13 +237,14 @@ public class ContractRequestService {
 
         if (contractRequest.getRoom() != null && contractRequest.getRoom().getHouse() != null
                 && contractRequest.getRoom().getHouse().getLandlord() != null) {
-            notificationService.notifyUser(
+            notificationService.notifyUserWithTemplate(
                     contractRequest.getRoom().getHouse().getLandlord().getUser(),
                     contractRequest.getTenant() != null ? contractRequest.getTenant().getUser() : null,
-                    "Hủy yêu cầu hợp đồng",
-                    "Người thuê đã hủy yêu cầu hợp đồng cho phòng " + contractRequest.getRoom().getName(),
                     "CONTRACT_CANCELED",
-                    contractRequest.getContractRequestId()
+                    contractRequest.getContractRequestId(),
+                    "noti.contract.canceled.title",
+                    "noti.contract.canceled.message",
+                    contractRequest.getRoom().getName()
             );
         }
 

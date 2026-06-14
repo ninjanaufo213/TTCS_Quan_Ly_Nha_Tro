@@ -408,13 +408,18 @@ public class InvoiceService {
                 .map(com.example.demo.model.Landlord::getUser)
                 .orElse(null);
 
-        notificationService.notifyUser(
+        String monthStr = invoice != null && invoice.getDueDate() != null ? String.valueOf(invoice.getDueDate().getMonthValue()) : "";
+        String roomName = invoice != null && invoice.getRentedRoom() != null && invoice.getRentedRoom().getRoom() != null ? invoice.getRentedRoom().getRoom().getName() : "";
+
+        notificationService.notifyUserWithTemplate(
                 tenantUser,
                 landlordUser,
-                "Hóa đơn mới",
-                "Chủ trọ đã tạo hóa đơn mới. Vui lòng thanh toán trước hạn.",
                 "INVOICE_CREATED",
-                invoice != null ? invoice.getInvoiceId() : null
+                invoice != null ? invoice.getInvoiceId() : null,
+                "noti.invoice.created.title",
+                "noti.invoice.created.message",
+                roomName,
+                monthStr
         );
     }
 
@@ -432,13 +437,18 @@ public class InvoiceService {
                 .map(com.example.demo.model.Landlord::getUser)
                 .orElse(null);
 
-        notificationService.notifyUser(
+        String monthStr = invoice != null && invoice.getDueDate() != null ? String.valueOf(invoice.getDueDate().getMonthValue()) : "";
+        String roomName = invoice != null && invoice.getRentedRoom() != null && invoice.getRentedRoom().getRoom() != null ? invoice.getRentedRoom().getRoom().getName() : "";
+
+        notificationService.notifyUserWithTemplate(
                 landlordUser,
                 tenantUser,
-                "Minh chứng thanh toán",
-                "Người thuê đã gửi minh chứng thanh toán. Vui lòng duyệt.",
                 "INVOICE_PROOF_SUBMITTED",
-                invoice != null ? invoice.getInvoiceId() : null
+                invoice != null ? invoice.getInvoiceId() : null,
+                "noti.invoice.proof_submitted.title",
+                "noti.invoice.proof_submitted.message",
+                roomName,
+                monthStr
         );
     }
 
@@ -456,13 +466,18 @@ public class InvoiceService {
                 .map(com.example.demo.model.Landlord::getUser)
                 .orElse(null);
 
-        notificationService.notifyUser(
+        String monthStr = invoice != null && invoice.getDueDate() != null ? String.valueOf(invoice.getDueDate().getMonthValue()) : "";
+        String roomName = invoice != null && invoice.getRentedRoom() != null && invoice.getRentedRoom().getRoom() != null ? invoice.getRentedRoom().getRoom().getName() : "";
+
+        notificationService.notifyUserWithTemplate(
                 tenantUser,
                 landlordUser,
-                "Thanh toán được duyệt",
-                "Chủ trọ đã duyệt thanh toán hóa đơn của bạn.",
                 "INVOICE_PROOF_APPROVED",
-                invoice != null ? invoice.getInvoiceId() : null
+                invoice != null ? invoice.getInvoiceId() : null,
+                "noti.invoice.proof_approved.title",
+                "noti.invoice.proof_approved.message",
+                roomName,
+                monthStr
         );
     }
 
@@ -480,13 +495,18 @@ public class InvoiceService {
                 .map(com.example.demo.model.Landlord::getUser)
                 .orElse(null);
 
-        notificationService.notifyUser(
+        String monthStr = invoice != null && invoice.getDueDate() != null ? String.valueOf(invoice.getDueDate().getMonthValue()) : "";
+        String roomName = invoice != null && invoice.getRentedRoom() != null && invoice.getRentedRoom().getRoom() != null ? invoice.getRentedRoom().getRoom().getName() : "";
+
+        notificationService.notifyUserWithTemplate(
                 tenantUser,
                 landlordUser,
-                "Thanh toán bị từ chối",
-                "Chủ trọ đã từ chối minh chứng thanh toán. Vui lòng gửi lại.",
                 "INVOICE_PROOF_REJECTED",
-                invoice != null ? invoice.getInvoiceId() : null
+                invoice != null ? invoice.getInvoiceId() : null,
+                "noti.invoice.proof_rejected.title",
+                "noti.invoice.proof_rejected.message",
+                roomName,
+                monthStr
         );
     }
 
