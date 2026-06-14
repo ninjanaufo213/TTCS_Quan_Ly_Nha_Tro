@@ -53,6 +53,17 @@ const getContractHouseName = (contract, roomsMap, housesMap) => {
   return room?.house_id ? (housesMap[room.house_id]?.name || 'N/A') : 'N/A';
 };
 
+const apiBaseUrl = (process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api').replace(/\/$/, '');
+const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
+const resolveImageUrl = (url) => {
+  if (!url) return url;
+  if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (!apiOrigin) return url;
+  const normalized = url.startsWith('/') ? url : `/${url}`;
+  return `${apiOrigin}${normalized}`;
+};
+
 const Invoices = () => {
   const [invoices, setInvoices] = useState([]);
   const [contracts, setContracts] = useState([]);
@@ -637,7 +648,7 @@ const Invoices = () => {
           <Button type="link" icon={<FilePdfOutlined />} onClick={() => handleExportPDF(record)}>PDF</Button>
           <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>Sửa</Button>
           {record.proof_url && (
-            <Button type="link" href={record.proof_url} target="_blank" rel="noreferrer">Minh chứng</Button>
+            <Button type="link" href={resolveImageUrl(record.proof_url)} target="_blank" rel="noreferrer">Minh chứng</Button>
           )}
           {record.proof_status === 'PENDING' && (
             <>
