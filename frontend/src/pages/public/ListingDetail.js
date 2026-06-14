@@ -195,6 +195,7 @@ const ListingDetail = () => {
   const area = listing.room?.area;
   const district = listing.room?.district || '';
   const ward = listing.room?.ward || '';
+  const province = listing.room?.province || '';
   const address = listing.room?.address || '';
   const views = listing.views_count || listing.viewsCount || 0;
   const createdAt = listing.created_at || listing.createdAt;
@@ -203,7 +204,7 @@ const ListingDetail = () => {
   const lat = listing.room?.latitude;
   const lng = listing.room?.longitude;
   const hasCoords = lat != null && lng != null;
-  const fullAddress = [address, ward, district, 'Việt Nam'].filter(Boolean).join(', ');
+  const fullAddress = [address, ward, district, province, 'Việt Nam'].filter(Boolean).join(', ');
   const googleMapsUrl = hasCoords
     ? `https://www.google.com/maps?q=${lat},${lng}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
@@ -284,7 +285,7 @@ const ListingDetail = () => {
 
                 <div className="detail-location">
                   <EnvironmentOutlined className="location-icon" />
-                  <span>{[address, ward, district].filter(Boolean).join(', ') || 'Chưa có địa chỉ'}</span>
+                  <span>{[address, ward, district, province].filter(Boolean).join(', ') || 'Chưa có địa chỉ'}</span>
                 </div>
 
                 <div className="stats-grid">
@@ -512,14 +513,14 @@ const ListingDetail = () => {
                     <MapView
                       lat={lat}
                       lng={lng}
-                      label={[address, ward, district].filter(Boolean).join(', ')}
+                      label={[address, ward, district, province].filter(Boolean).join(', ')}
                       googleMapsUrl={googleMapsUrl}
                       height={200}
                     />
                   ) : (
                     <div className="map-placeholder">
                       <EnvironmentOutlined style={{ fontSize: 36, color: '#94a3b8' }} />
-                      <p>{[ward, district].filter(Boolean).join(', ') || 'Chưa xác định'}</p>
+                      <p>{[ward, district, province].filter(Boolean).join(', ') || 'Chưa xác định'}</p>
                     </div>
                   )}
                 </div>

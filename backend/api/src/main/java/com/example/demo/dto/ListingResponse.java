@@ -40,6 +40,7 @@ public class ListingResponse {
         private String description;
         private String district;
         private String ward;
+        private String province;
         private String address;
         private String landlordName;
         private String landlordPhone;

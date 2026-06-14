@@ -29,6 +29,7 @@ public class ListingController {
     @GetMapping("/api/listings/search")
     public ResponseEntity<List<ListingResponse>> searchPublishedListings(
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String province,
             @RequestParam(required = false) String district,
             @RequestParam(required = false) String ward,
             @RequestParam(required = false) java.math.BigDecimal minPrice,
@@ -42,7 +43,7 @@ public class ListingController {
             @RequestParam(required = false) String sortBy
     ) {
         return ResponseEntity.ok(
-                listingService.searchPublishedListings(keyword, district, ward, minPrice, maxPrice, minArea, maxArea, latitude, longitude, radius, amenities, sortBy)
+                listingService.searchPublishedListings(keyword, province, district, ward, minPrice, maxPrice, minArea, maxArea, latitude, longitude, radius, amenities, sortBy)
         );
     }
 

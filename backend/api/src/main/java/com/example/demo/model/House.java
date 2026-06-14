@@ -41,6 +41,9 @@ public class House {
     @Column(length = 100)
     private String district;
 
+    @Column(length = 100)
+    private String province;
+
     @Column
     private Double latitude;
 
