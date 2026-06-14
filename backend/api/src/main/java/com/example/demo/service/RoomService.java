@@ -193,6 +193,11 @@ public class RoomService {
             throw new IllegalArgumentException("Bạn không có quyền xóa phòng này");
         }
 
+        // Chặn xóa nếu phòng đã/đang có người thuê để bảo toàn lịch sử dữ liệu
+        if (room.getRentedRooms() != null && !room.getRentedRooms().isEmpty()) {
+            throw new IllegalArgumentException("Không thể xóa phòng trọ này vì đã từng hoặc đang có người thuê (dính dáng tới hợp đồng/hóa đơn).");
+        }
+
         roomRepository.deleteById(roomId);
     }
 
