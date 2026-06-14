@@ -68,7 +68,7 @@ const Dashboard = () => {
         houseService.getAll(),
         roomService.getAll(),
         rentedRoomService.getAll(),
-        invoiceService.getPending(),
+        invoiceService.getAll({ is_paid: false }),
       ]);
 
       setStats({
@@ -362,7 +362,7 @@ const Dashboard = () => {
       {/* Content Rows */}
       <Row gutter={16}>
         <Col xs={24} lg={12}>
-          <Card className="dash-animate-fade-in-up" title="Nhà trọ gần đây" style={{ height: 400 }}>
+          <Card className="dash-animate-fade-in-up" title="Nhà trọ của tôi" style={{ height: 400 }}>
             <Table className="dash-animate-fade-in-up"               columns={houseColumns}
               dataSource={recentData}
               rowKey="house_id"

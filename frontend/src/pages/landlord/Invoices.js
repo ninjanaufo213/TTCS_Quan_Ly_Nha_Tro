@@ -89,8 +89,19 @@ const Invoices = () => {
   const [electricityUnitPrice, setElectricityUnitPrice] = useState(3500); // Giá điện/kWh mặc định
   const [roomsAll, setRoomsAll] = useState([]);
   const [housesAll, setHousesAll] = useState([]);
-  const [tenantOptions, setTenantOptions] = useState([]);
-  const [tenantLoading, setTenantLoading] = useState(false);
+  const tenantOptions = useMemo(() => {
+    const map = new Map();
+    contracts.forEach(c => {
+      if (c.tenant_id && !map.has(c.tenant_id)) {
+        map.set(c.tenant_id, {
+          tenant_id: c.tenant_id,
+          phone: c.tenant_phone,
+          fullname: c.tenant_name
+        });
+      }
+    });
+    return Array.from(map.values());
+  }, [contracts]);
   const [filterTenantId, setFilterTenantId] = useState(null);
   const [modalTenantId, setModalTenantId] = useState(null);
   const selectedRrId = Form.useWatch('rr_id', form);
@@ -459,22 +470,7 @@ const Invoices = () => {
     await prefillByContract(rrId);
   };
 
-  const loadTenants = async (search = '') => {
-    try {
-      setTenantLoading(true);
-      const data = await tenantService.lookup(search);
-      setTenantOptions(Array.isArray(data) ? data : []);
-    } catch (error) {
-      message.error('Lỗi khi tải danh sách khách thuê!');
-    } finally {
-      setTenantLoading(false);
-    }
-  };
 
-  useEffect(() => {
-    if (!modalVisible) return;
-    loadTenants();
-  }, [modalVisible]);
 
   useEffect(() => {
     if (!filterHouseId || !contractId) return;
@@ -701,11 +697,11 @@ const Invoices = () => {
                 <Select
                   showSearch
                   placeholder="Chọn số điện thoại"
-                  loading={tenantLoading}
                   optionFilterProp="label"
-                  onSearch={(value) => loadTenants(value)}
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                  }
                   onChange={(value) => setFilterTenantId(value ?? null)}
-                  filterOption={false}
                   allowClear
                   style={{ width: '100%' }}
                   value={filterTenantId ?? undefined}
@@ -753,9 +749,10 @@ const Invoices = () => {
             <Select
               showSearch
               placeholder="Chọn số điện thoại"
-              loading={tenantLoading}
               optionFilterProp="label"
-              onSearch={(value) => loadTenants(value)}
+              filterOption={(input, option) =>
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
               onChange={async (value) => {
                 setModalTenantId(value ?? null);
                 if (!value) {
@@ -768,7 +765,6 @@ const Invoices = () => {
                   await prefillByContract(matches[0].rr_id);
                 }
               }}
-              filterOption={false}
               allowClear
               value={modalTenantId ?? undefined}
             >
