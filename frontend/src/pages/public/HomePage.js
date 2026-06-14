@@ -120,19 +120,6 @@ const HomePage = () => {
     { label: 'Trên 90 m²', value: '90-9999' }
   ];
 
-  const newListings = filteredListings.slice(0, 3);
-
-  const menuCategories = [
-    { key: 'rooms', label: 'Phòng trọ' },
-    { key: 'houses', label: 'Nhà nguyên căn' },
-    { key: 'apartments', label: 'Căn hộ chung cư' },
-    { key: 'mini', label: 'Căn hộ mini' },
-    { key: 'service', label: 'Căn hộ dịch vụ' },
-    { key: 'sharing', label: 'Ở ghép' },
-    { key: 'office', label: 'Mặt bằng' },
-    { key: 'blog', label: 'Blog' },
-    { key: 'pricing', label: 'Bảng giá dịch vụ' }
-  ];
 
   useEffect(() => {
     const fetchRecommendations = async (lat, lng) => {
@@ -320,108 +307,80 @@ const HomePage = () => {
   const renderListingCard = (listing, index) => (
     <Card
       key={listing.id}
-      className="listing-card animate-fade-in-up"
-      style={{ '--i': index % 8, cursor: 'pointer' }}
+      className="listing-card-grid animate-fade-in-up"
+      style={{ '--i': index % 8, cursor: 'pointer', padding: 0, overflow: 'hidden' }}
       onClick={() => navigate(`/listings/${listing.id}`)}
+      bodyStyle={{ padding: 0 }}
     >
-      <Row gutter={24}>
-        <Col xs={24} sm={24} md={10}>
-          <div className="images-container">
-            <div className="main-image">
-              <img src={listing.images[0]} alt="Main" />
-              <Badge
-                count={`${listing.totalImages}`}
-                className="image-count"
-              />
-            </div>
+      <div className="grid-image-container">
+        <img src={listing.images[0]} alt={listing.title} className="grid-main-image" />
+        <Badge count={`${listing.totalImages}`} className="grid-image-count" />
+        <div className="grid-actions-top">
+          <Button
+            type="text"
+            shape="circle"
+            className={`grid-heart-btn ${savedListings.has(listing.id) ? 'is-active' : ''}`}
+            icon={
+              savedListings.has(listing.id) ? (
+                <HeartFilled style={{ color: '#ef4444', fontSize: '20px' }} />
+              ) : (
+                <HeartOutlined style={{ fontSize: '20px', color: 'white' }} />
+              )
+            }
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleSavedListing(listing.id);
+            }}
+          />
+        </div>
+        {listing.distance !== undefined && listing.distance !== null && (
+          <div className="grid-distance-badge">
+            Cách {listing.distance.toFixed(1)} km
           </div>
-        </Col>
+        )}
+      </div>
 
-        <Col xs={24} sm={24} md={14}>
-          <div className="listing-content">
-            <div className="listing-title">
-              <span>{listing.title}</span>
+      <div className="grid-content">
+        <div className="grid-price-row">
+          <span className="grid-price">{formatPrice(listing.price)}<span className="grid-price-unit">/tháng</span></span>
+          <span className="grid-area">{listing.area || '-'} m²</span>
+        </div>
+
+        <div className="grid-title" title={listing.title}>
+          {listing.title}
+        </div>
+
+        <div className="grid-address">
+          <EnvironmentOutlined style={{ marginRight: '6px', color: '#94a3b8' }} />
+          <span className="address-text">{listing.addressLine || 'Chưa có địa chỉ'}</span>
+        </div>
+
+        <div className="grid-footer">
+          {(listing.totalReviews || 0) > 0 ? (
+            <div className="grid-rating">
+              <StarFilled style={{ color: '#f59e0b', fontSize: '14px' }} />
+              <span className="rating-score">{Number(listing.averageRating || 0).toFixed(1)}</span>
+              <span className="rating-count">({listing.totalReviews})</span>
             </div>
+          ) : (
+            <span className="grid-no-rating">Mới</span>
+          )}
 
-            <div className="listing-address">
-              <EnvironmentOutlined style={{ marginRight: '6px' }} />
-              {listing.addressLine || 'Chưa có địa chỉ'}
-            </div>
-
-            {(listing.totalReviews || 0) > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#f59e0b', margin: '6px 0' }}>
-                <StarFilled />
-                <span style={{ fontWeight: 600 }}>
-                  {Number(listing.averageRating || 0).toFixed(1)}
-                </span>
-                <span style={{ color: '#64748b' }}>
-                  ({listing.totalReviews} đánh giá)
-                </span>
-              </div>
-            )}
-
-            <div className="listing-meta">
-              <span className="price">{formatPrice(listing.price)}/tháng</span>
-              <span className="divider">•</span>
-              <span className="area">{listing.area || '-'} m²</span>
-              {listing.distance !== undefined && listing.distance !== null && (
-                <>
-                  <span className="divider">•</span>
-                  <span className="distance" style={{ color: '#10b981', fontWeight: 500 }}>
-                    Cách bạn {listing.distance.toFixed(1)} km
-                  </span>
-                </>
-              )}
-            </div>
-
-            <p className="listing-description">{listing.description || 'Chưa có mô tả.'}</p>
-
-            <div className="listing-footer">
-              <div className="actions">
-                <Button
-                  type="default"
-                  shape="round"
-                  className={`compare-btn ${compareListings.find(c => c.id === listing.id) ? 'active' : ''}`}
-                  icon={compareListings.find(c => c.id === listing.id) ? <CheckCircleFilled style={{color: '#10b981'}} /> : <PlusOutlined />}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleCompare(listing);
-                  }}
-                  style={{ borderColor: compareListings.find(c => c.id === listing.id) ? '#10b981' : '#d9d9d9', color: compareListings.find(c => c.id === listing.id) ? '#10b981' : undefined }}
-                >
-                  So sánh
-                </Button>
-                <Button
-                  type="link"
-                  className={`heart-btn-animate ${savedListings.has(listing.id) ? 'is-active' : ''}`}
-                  icon={
-                    savedListings.has(listing.id) ? (
-                      <HeartFilled style={{ color: '#ef4444', fontSize: '20px' }} />
-                    ) : (
-                      <HeartOutlined style={{ fontSize: '20px' }} />
-                    )
-                  }
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleSavedListing(listing.id);
-                  }}
-                />
-                <Button
-                  type="primary"
-                  shape="round"
-                  className="phone-button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/listings/${listing.id}`);
-                  }}
-                >
-                  Xem chi tiết
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Col>
-      </Row>
+          <Button
+            type="default"
+            size="small"
+            shape="round"
+            className={`grid-compare-btn ${compareListings.find(c => c.id === listing.id) ? 'active' : ''}`}
+            icon={compareListings.find(c => c.id === listing.id) ? <CheckCircleFilled style={{ color: '#10b981' }} /> : <PlusOutlined />}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleCompare(listing);
+            }}
+          >
+            So sánh
+          </Button>
+        </div>
+      </div>
     </Card>
   );
 
@@ -449,65 +408,113 @@ const HomePage = () => {
         }
       />
 
-      <nav className={`category-menu animate-fade-in`}>
-        <div className="menu-container">
-          {menuCategories.map(cat => (
-            <a
-              key={cat.key}
-              href="#/"
-              className={`menu-item ${cat.key === 'rooms' ? 'active' : ''}`}
-              onClick={(e) => e.preventDefault()}
-            >
-              {cat.label}
-            </a>
-          ))}
-        </div>
-      </nav>
 
       {/* Premium Hero Banner Section */}
-      <section
-        className="hero-banner-section animate-fade-in"
-        style={{
-          background: 'linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6)), url("https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=2069&auto=format&fit=crop") center/cover no-repeat',
-          padding: '80px 24px',
-          textAlign: 'center',
-          color: 'white'
-        }}
-      >
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <h1 className="hero-banner-title" style={{ color: 'white', fontSize: '36px', fontWeight: 700, marginBottom: '16px' }}>
-            Không Gian Sống Lý Tưởng
+      <section className="hero-banner-section animate-fade-in">
+        <div className="hero-content">
+          <h1 className="hero-banner-title">
+            Tìm Nơi An Cư Lý Tưởng Của Bạn
           </h1>
-          <p className="hero-banner-subtitle" style={{ color: '#f0f0f0', fontSize: '18px', marginBottom: '40px' }}>
+          <p className="hero-banner-subtitle">
             Hàng ngàn phòng trọ, căn hộ, nhà nguyên căn cao cấp đang chờ bạn khám phá.
           </p>
-          <div className="hero-search-wrapper">
-            <Input
-              size="large"
-              bordered={false}
-              prefix={<SearchOutlined style={{ color: '#bfbfbf', fontSize: '20px', marginRight: '8px' }} />}
-              placeholder="Nhập tên nhà trọ, tên đường, hoặc khu vực bạn muốn tìm..."
-              value={searchKeyword}
-              onChange={e => setSearchKeyword(e.target.value)}
-              allowClear
-              style={{ flex: 1, fontSize: '16px' }}
-            />
+          <div className="hero-search-wrapper glassmorphism">
+            <div className="search-input-group">
+              <SearchOutlined className="search-icon" />
+              <input
+                className="search-input-transparent"
+                placeholder="Nhập tên nhà trọ, tên đường, hoặc khu vực..."
+                value={searchKeyword}
+                onChange={e => setSearchKeyword(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    document.getElementById('search-results')?.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+              />
+            </div>
+            <div className="search-divider"></div>
             <Button
               type="primary"
               shape="round"
               size="large"
-              style={{ padding: '0 32px' }}
+              className="hero-search-btn"
+              onClick={() => {
+                document.getElementById('search-results')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              Tìm kiếm
+            </Button>
+            <Button
+              type="default"
+              shape="circle"
+              size="large"
+              className="hero-filter-btn"
               onClick={() => setShowFilters(true)}
               icon={<FilterOutlined />}
-            >
-              Lọc chi tiết
-            </Button>
+            />
           </div>
         </div>
       </section>
 
-      <div className="main-content" style={{ marginTop: '32px' }}>
-        <div className="content-container">
+      {/* Benefits Section */}
+      <section className="benefits-section">
+        <div className="section-container">
+          <div className="benefits-grid">
+            <div className="benefit-item">
+              <div className="benefit-icon"><CheckCircleFilled /></div>
+              <h3>Thông tin xác thực</h3>
+              <p>100% phòng trọ được kiểm duyệt thông tin minh bạch.</p>
+            </div>
+            <div className="benefit-item">
+              <div className="benefit-icon"><StarFilled /></div>
+              <h3>Chủ trọ uy tín</h3>
+              <p>Đánh giá khách quan từ cộng đồng người thuê trước đó.</p>
+            </div>
+            <div className="benefit-item">
+              <div className="benefit-icon"><EnvironmentOutlined /></div>
+              <h3>Tìm kiếm thông minh</h3>
+              <p>Đề xuất chính xác theo nhu cầu và vị trí của bạn.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Popular Locations Section */}
+      <section className="popular-locations-section">
+        <div className="section-container">
+          <div className="section-header">
+            <h2 className="section-title">Khám phá khu vực nổi bật</h2>
+            <p className="section-subtitle">Những địa điểm được tìm kiếm nhiều nhất</p>
+          </div>
+          <div className="locations-grid">
+            <div className="location-card location-large" onClick={() => { setSearchKeyword('Hà Nội'); document.getElementById('search-results')?.scrollIntoView({ behavior: 'smooth' }); }}>
+              <img src="https://dntt.mediacdn.vn/197608888129458176/2022/9/21/ho-guom-du-lich-ha-noi-ivivu-16637590508811726461079.jpg" alt="Hà Nội" />
+              <div className="location-overlay">
+                <h3>Hà Nội</h3>
+                <p>Khám phá phòng trọ Thủ Đô</p>
+              </div>
+            </div>
+            <div className="location-card location-small" onClick={() => { setSearchKeyword('Hồ Chí Minh'); document.getElementById('search-results')?.scrollIntoView({ behavior: 'smooth' }); }}>
+              <img src="https://images.unsplash.com/photo-1583417319070-4a69db38a482?q=80&w=800&auto=format&fit=crop" alt="TP.HCM" />
+              <div className="location-overlay">
+                <h3>TP. Hồ Chí Minh</h3>
+                <p>Trung tâm kinh tế sầm uất</p>
+              </div>
+            </div>
+            <div className="location-card location-small" onClick={() => { setSearchKeyword('Đà Nẵng'); document.getElementById('search-results')?.scrollIntoView({ behavior: 'smooth' }); }}>
+              <img src="https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?q=80&w=800&auto=format&fit=crop" alt="Đà Nẵng" />
+              <div className="location-overlay">
+                <h3>Đà Nẵng</h3>
+                <p>Thành phố đáng sống</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div id="search-results" className="main-content" style={{ marginTop: '0', paddingTop: '64px' }}>
+        <div className="section-container content-container">
           <main className="center-content">
             <section className="page-title animate-fade-in-up">
               <h1>Tin đăng nổi bật</h1>
@@ -536,8 +543,8 @@ const HomePage = () => {
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginRight: 16 }}>
-                <Button 
-                  type="primary" 
+                <Button
+                  type="primary"
                   icon={<EnvironmentOutlined />}
                   onClick={() => setIsMapModalVisible(true)}
                   style={{ borderRadius: '8px', fontWeight: 600 }}
@@ -549,17 +556,17 @@ const HomePage = () => {
                   onChange={setSortBy}
                   style={{ width: 180 }}
                   options={[
-                  { value: 'newest', label: 'Mới đăng gần đây' },
-                  { value: 'priceAsc', label: 'Giá: Thấp đến cao' },
-                  { value: 'priceDesc', label: 'Giá: Cao đến thấp' },
-                  { value: 'distance', label: 'Gần vị trí của tôi', disabled: !mapLocation }
-                ]}
-              />
+                    { value: 'newest', label: 'Mới đăng gần đây' },
+                    { value: 'priceAsc', label: 'Giá: Thấp đến cao' },
+                    { value: 'priceDesc', label: 'Giá: Cao đến thấp' },
+                    { value: 'distance', label: 'Gần vị trí của tôi', disabled: !mapLocation }
+                  ]}
+                />
+              </div>
             </div>
-          </div>
 
-          <section className="listings-section">
-            {activeTab === 'suggest' ? (
+            <section className="listings-section">
+              {activeTab === 'suggest' ? (
                 loadingRecommendations ? (
                   <div style={{ textAlign: 'center', padding: '40px' }}>Đang tìm các phòng gần bạn nhất...</div>
                 ) : recommendedListings.length > 0 ? (
@@ -577,36 +584,7 @@ const HomePage = () => {
             </section>
           </main>
 
-          <aside className="right-sidebar animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-            {newListings.length > 0 && (
-              <Card className="new-listings-card" style={{ borderRadius: '12px' }}>
-                <h3 className="filter-title" style={{ fontSize: '18px', marginBottom: '16px' }}>Tin mới đăng</h3>
-                {newListings.map((listing, idx) => (
-                  <div key={idx}>
-                    <div className="new-listing-item" style={{ cursor: 'pointer', display: 'flex', gap: '12px' }} onClick={() => navigate(`/listings/${listing.id}`)}>
-                      <img
-                        src={listing.images[0]}
-                        alt={listing.title}
-                        className="new-listing-thumb"
-                        style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }}
-                      />
-                      <div className="new-listing-info" style={{ flex: 1 }}>
-                        <div className="new-listing-title" style={{ fontWeight: 500, fontSize: '14px', marginBottom: '4px', lineHeight: '1.4' }}>
-                          {listing.title.length > 40 ? `${listing.title.substring(0, 40)}...` : listing.title}
-                        </div>
-                        <div className="new-listing-meta">
-                          <span className="new-price" style={{ color: '#ef4444', fontWeight: 'bold' }}>
-                            {formatPrice(listing.price)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    {idx < newListings.length - 1 && <Divider style={{ margin: '16px 0', borderColor: '#e2e8f0' }} />}
-                  </div>
-                ))}
-              </Card>
-            )}
-          </aside>
+
         </div>
       </div>
 
@@ -637,11 +615,11 @@ const HomePage = () => {
       <SharedFooter />
 
       {/* Map View Modal */}
-      <HomePageMapModal 
-        visible={isMapModalVisible} 
-        onClose={() => setIsMapModalVisible(false)} 
-        filteredListings={filteredListings} 
-        formatPrice={formatPrice} 
+      <HomePageMapModal
+        visible={isMapModalVisible}
+        onClose={() => setIsMapModalVisible(false)}
+        filteredListings={filteredListings}
+        formatPrice={formatPrice}
       />
 
       {/* Compare Floating Bar */}
@@ -654,10 +632,10 @@ const HomePage = () => {
                 <div className="compare-item-title">{listing.title}</div>
                 <div className="compare-item-price">{formatPrice(listing.price)}</div>
               </div>
-              <Button 
-                shape="circle" 
-                size="small" 
-                icon={<CloseCircleOutlined />} 
+              <Button
+                shape="circle"
+                size="small"
+                icon={<CloseCircleOutlined />}
                 className="remove-compare-btn"
                 onClick={() => toggleCompare(listing)}
               />
@@ -869,9 +847,9 @@ const HomePage = () => {
             <div style={{ marginBottom: '12px', fontSize: '16px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <EnvironmentOutlined style={{ color: '#1890ff' }} /> Tìm quanh vị trí
             </div>
-            <MapPicker 
-              initialPosition={mapLocation || undefined} 
-              onChange={(pos) => setMapLocation(pos)} 
+            <MapPicker
+              initialPosition={mapLocation || undefined}
+              onChange={(pos) => setMapLocation(pos)}
             />
             {mapLocation && (
               <div style={{ marginTop: '16px' }}>
@@ -879,12 +857,12 @@ const HomePage = () => {
                   <span>Bán kính tìm kiếm:</span>
                   <span style={{ fontWeight: 'bold', color: '#1890ff' }}>{searchRadius} km</span>
                 </div>
-                <Slider 
-                  min={0.5} 
-                  max={20} 
-                  step={0.5} 
-                  value={searchRadius} 
-                  onChange={(val) => setSearchRadius(val)} 
+                <Slider
+                  min={0.5}
+                  max={20}
+                  step={0.5}
+                  value={searchRadius}
+                  onChange={(val) => setSearchRadius(val)}
                 />
               </div>
             )}
