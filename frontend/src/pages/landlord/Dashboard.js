@@ -36,7 +36,7 @@ const Dashboard = () => {
   const [selectedHouse, setSelectedHouse] = useState(null);
   const navigate = useNavigate();
 
-  const apiBaseUrl = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/$/, '');
+  const apiBaseUrl = (process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api').replace(/\/$/, '');
   const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
   const resolveImageUrl = (url) => {
     if (!url) return url;
@@ -369,6 +369,7 @@ const Dashboard = () => {
               pagination={false}
               loading={loading}
               size="small"
+              scroll={{ y: 280 }}
             />
           </Card>
         </Col>
@@ -448,29 +449,7 @@ const Dashboard = () => {
               </Descriptions.Item>
             </Descriptions>
 
-            <div style={{ marginTop: 16 }}>
-              <strong>Hình ảnh</strong>
-              <div style={{ marginTop: 8 }}>
-                {(selectedHouse?.images || []).length === 0 ? (
-                  <div>Chưa có ảnh</div>
-                ) : (
-                  <Image.PreviewGroup>
-                    {(selectedHouse?.images || []).map((img, index) => {
-                      const url = resolveImageUrl(img.image_url || img.imageUrl);
-                      return (
-                        <Image
-                          key={img.image_id || img.imageId || index}
-                          src={url}
-                          width={120}
-                          height={90}
-                          style={{ objectFit: 'cover', marginRight: 8, marginBottom: 8 }}
-                        />
-                      );
-                    })}
-                  </Image.PreviewGroup>
-                )}
-              </div>
-            </div>
+
 
             <div style={{ marginTop: 16, textAlign: 'right' }}>
               <Button
