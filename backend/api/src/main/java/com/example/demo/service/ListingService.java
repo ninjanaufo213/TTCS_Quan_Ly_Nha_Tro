@@ -53,6 +53,7 @@ public class ListingService {
     }
 
     public List<ListingResponse> searchPublishedListings(String keyword,
+                                                         String province,
                                                          String district,
                                                          String ward,
                                                          BigDecimal minPrice,
@@ -64,7 +65,33 @@ public class ListingService {
                                                          Double radius,
                                                          List<String> amenities,
                                                          String sortBy) {
-        List<Listing> listings = listingRepository.searchPublishedListings(keyword, district, ward, minPrice, maxPrice, minArea, maxArea);
+        boolean provinceNeedsInference = hasText(province);
+        Optional<String> provinceKeyword = LocationSearchSupport.resolveProvinceKeyword(keyword);
+        String keywordForDatabase = provinceKeyword.isPresent() ? null : trimToNull(keyword);
+        String provinceForDatabase = provinceNeedsInference ? null : trimToNull(province);
+
+        List<Listing> listings = listingRepository.searchPublishedListings(
+                keywordForDatabase,
+                provinceForDatabase,
+                trimToNull(district),
+                trimToNull(ward),
+                minPrice,
+                maxPrice,
+                minArea,
+                maxArea
+        );
+
+        if (provinceNeedsInference) {
+            listings = listings.stream()
+                    .filter(listing -> LocationSearchSupport.matchesProvince(listing, province))
+                    .collect(Collectors.toList());
+        }
+
+        if (provinceKeyword.isPresent()) {
+            listings = listings.stream()
+                    .filter(listing -> LocationSearchSupport.matchesKeyword(listing, keyword))
+                    .collect(Collectors.toList());
+        }
 
         if (latitude != null && longitude != null && radius != null) {
             listings = listings.stream().filter(l -> {
@@ -132,6 +159,14 @@ public class ListingService {
                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return earthRadius * c;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
+    private String trimToNull(String value) {
+        return hasText(value) ? value.trim() : null;
     }
 
     public List<ListingResponse> getRecommendedListings(Double latitude, Double longitude, Double radius, Integer limit) {
@@ -241,6 +276,7 @@ public class ListingService {
 
             String district = "";
             String ward = "";
+            String province = "";
             String address = "";
             String houseName = "";
             Integer houseId = null;
@@ -251,6 +287,7 @@ public class ListingService {
             if (listing.getRoom().getHouse() != null) {
                 district = listing.getRoom().getHouse().getDistrict();
                 ward = listing.getRoom().getHouse().getWard();
+                province = LocationSearchSupport.displayProvince(listing.getRoom().getHouse());
                 address = listing.getRoom().getHouse().getAddressLine();
                 houseName = listing.getRoom().getHouse().getName();
                 houseId = listing.getRoom().getHouse().getHouseId();
@@ -289,6 +326,7 @@ public class ListingService {
                     .description(listing.getRoom().getDescription())
                     .district(district)
                     .ward(ward)
+                    .province(province)
                     .address(address)
                     .landlordName(landlordName)
                     .landlordPhone(landlordPhone)

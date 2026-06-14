@@ -10,6 +10,7 @@ public record HouseResponse(
         String addressLine,
         String ward,
         String district,
+        String province,
         Double latitude,
         Double longitude,
         LocalDateTime createdAt,

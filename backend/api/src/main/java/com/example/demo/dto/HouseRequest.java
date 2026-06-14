@@ -10,6 +10,7 @@ public record HouseRequest(
         String addressLine,
         String ward,
         String district,
+        String province,
         Double latitude,
         Double longitude
 ) {}

@@ -104,7 +104,7 @@ public class ListingControllerTest {
                         .build()
         );
 
-        when(listingService.searchPublishedListings(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(mockResponse);
+        when(listingService.searchPublishedListings(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(mockResponse);
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/listings/search")
                         .param("latitude", "21.03")

@@ -43,7 +43,7 @@ const Login = () => {
           <section className="auth-brand">
             <div className="auth-brand__header">
               <div className="auth-brand__logo">TT</div>
-              <h1 className="auth-brand__title">Không Gian Sống Lý Tưởng</h1>
+              <h1 className="auth-brand__title">Không gian sống lý tưởng</h1>
             </div>
             <p className="auth-brand__subtitle">
               Hàng ngàn phòng trọ, căn hộ, nhà nguyên căn cao cấp đang chờ bạn khám phá.

@@ -152,6 +152,11 @@ const Houses = () => {
       key: 'district',
     },
     {
+      title: 'Tỉnh/Thành',
+      dataIndex: 'province',
+      key: 'province',
+    },
+    {
       title: 'Địa chỉ',
       dataIndex: 'address_line',
       key: 'address_line',
@@ -255,6 +260,7 @@ const Houses = () => {
           {/* Ẩn input để ant design form vẫn lấy được giá trị khi submit */}
           <Form.Item name="ward" hidden><Input /></Form.Item>
           <Form.Item name="district" hidden><Input /></Form.Item>
+          <Form.Item name="province" hidden><Input /></Form.Item>
           <Form.Item name="latitude" hidden><Input /></Form.Item>
           <Form.Item name="longitude" hidden><Input /></Form.Item>
 
@@ -267,6 +273,7 @@ const Houses = () => {
               selectedAddress={addressData}
               onChange={(data) => {
                 form.setFieldsValue({
+                  province: data.provinceName,
                   district: data.districtName,
                   ward: data.wardName
                 });

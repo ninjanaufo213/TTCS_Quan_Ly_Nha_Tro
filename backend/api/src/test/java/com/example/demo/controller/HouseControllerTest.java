@@ -35,7 +35,7 @@ public class HouseControllerTest {
     private HouseResponse createMockHouse(Integer id, Double lat, Double lng) {
         return new HouseResponse(
                 id, 1, "House " + id, 3,
-                "123 Test Street", "Ward 1", "District 1",
+                "123 Test Street", "Ward 1", "District 1", "Province 1",
                 lat, lng,
                 LocalDateTime.now(), LocalDateTime.now()
         );

@@ -26,7 +26,9 @@ public interface ListingRepository extends JpaRepository<Listing, Integer> {
                    lower(l.description) like lower(concat('%', :keyword, '%')) or
                    lower(h.addressLine) like lower(concat('%', :keyword, '%')) or
                    lower(h.ward) like lower(concat('%', :keyword, '%')) or
+                   lower(h.province) like lower(concat('%', :keyword, '%')) or
                    lower(h.district) like lower(concat('%', :keyword, '%')))
+              and (:province is null or :province = '' or lower(h.province) like lower(concat('%', :province, '%')))
               and (:district is null or :district = '' or lower(h.district) like lower(concat('%', :district, '%')))
               and (:ward is null or :ward = '' or lower(h.ward) like lower(concat('%', :ward, '%')))
               and (:minPrice is null or r.price >= :minPrice)
@@ -36,6 +38,7 @@ public interface ListingRepository extends JpaRepository<Listing, Integer> {
             """)
     List<Listing> searchPublishedListings(
             @Param("keyword") String keyword,
+            @Param("province") String province,
             @Param("district") String district,
             @Param("ward") String ward,
             @Param("minPrice") BigDecimal minPrice,

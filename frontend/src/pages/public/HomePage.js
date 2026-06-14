@@ -136,7 +136,8 @@ const HomePage = () => {
           const roomName = room.name || '';
           const houseName = room.houseName || '';
           const title = roomName && houseName ? `${roomName} - ${houseName}` : (l.title || roomName || '');
-          const addressLine = [room.address, room.ward, room.district].filter(Boolean).join(', ');
+          const province = room.province || '';
+          const addressLine = [room.address, room.ward, room.district, province].filter(Boolean).join(', ');
           const images = (room.image_urls && room.image_urls.length > 0) ? room.image_urls : (
             (room.imageUrls && room.imageUrls.length > 0) ? room.imageUrls : [
               'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400'
@@ -148,6 +149,7 @@ const HomePage = () => {
             title,
             roomName,
             houseName,
+            province,
             addressLine,
             price: room.price || 0,
             area: room.area ?? null,
@@ -211,6 +213,7 @@ const HomePage = () => {
 
       const params = {
         keyword: keyword || undefined,
+        province: addressData.provinceName || undefined,
         district: addressData.districtName || undefined,
         ward: addressData.wardName || undefined,
         minPrice,
@@ -231,7 +234,8 @@ const HomePage = () => {
           const roomName = room.name || '';
           const houseName = room.houseName || '';
           const title = roomName && houseName ? `${roomName} - ${houseName}` : (l.title || roomName || '');
-          const addressLine = [room.address, room.ward, room.district].filter(Boolean).join(', ');
+          const province = room.province || '';
+          const addressLine = [room.address, room.ward, room.district, province].filter(Boolean).join(', ');
           const images = (room.image_urls && room.image_urls.length > 0) ? room.image_urls : (
             (room.imageUrls && room.imageUrls.length > 0) ? room.imageUrls : [
               'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400'
@@ -243,6 +247,7 @@ const HomePage = () => {
             title,
             roomName,
             houseName,
+            province,
             addressLine,
             price: room.price || 0,
             area: room.area ?? null,
@@ -413,7 +418,7 @@ const HomePage = () => {
       <section className="hero-banner-section animate-fade-in">
         <div className="hero-content">
           <h1 className="hero-banner-title">
-            Tìm Nơi An Cư Lý Tưởng Của Bạn
+            Tìm nơi an cư lý tưởng của bạn
           </h1>
           <p className="hero-banner-subtitle">
             Hàng ngàn phòng trọ, căn hộ, nhà nguyên căn cao cấp đang chờ bạn khám phá.
