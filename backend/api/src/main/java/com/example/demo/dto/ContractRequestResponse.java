@@ -26,6 +26,10 @@ public record ContractRequestResponse(
         Integer initialElectricityNum,
         BigDecimal electricityUnitPrice,
         String contractUrl,
+        String landlordSignature,
+        String tenantSignature,
+        LocalDateTime landlordSignedAt,
+        LocalDateTime tenantSignedAt,
         String status,
         LocalDateTime createdAt
 ) {

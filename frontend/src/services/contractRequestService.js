@@ -21,6 +21,10 @@ const normalizeContractRequest = (item) => {
     initialElectricityNum: item.initialElectricityNum ?? item.initial_electricity_num,
     electricityUnitPrice: item.electricityUnitPrice ?? item.electricity_unit_price,
     contractUrl: item.contractUrl ?? item.contract_url,
+    landlordSignature: item.landlordSignature ?? item.landlord_signature,
+    tenantSignature: item.tenantSignature ?? item.tenant_signature,
+    landlordSignedAt: item.landlordSignedAt ?? item.landlord_signed_at,
+    tenantSignedAt: item.tenantSignedAt ?? item.tenant_signed_at,
     status: item.status,
     createdAt: item.createdAt ?? item.created_at,
   };
@@ -44,8 +48,8 @@ export const contractRequestService = {
     return normalizeList(response.data);
   },
 
-  confirm: async (id) => {
-    const response = await api.patch(`/tenant/contract-requests/${id}/confirm`);
+  confirm: async (id, signRequest = null) => {
+    const response = await api.patch(`/tenant/contract-requests/${id}/confirm`, signRequest);
     return normalizeContractRequest(response.data);
   },
 

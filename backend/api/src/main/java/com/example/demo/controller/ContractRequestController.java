@@ -41,9 +41,9 @@ public class ContractRequestController {
     }
 
     @PatchMapping("/api/tenant/contract-requests/{id}/confirm")
-    public ResponseEntity<?> confirmContractRequest(@PathVariable Integer id) {
+    public ResponseEntity<?> confirmContractRequest(@PathVariable Integer id, @RequestBody(required = false) com.example.demo.dto.ContractSignRequest signRequest) {
         try {
-            return ResponseEntity.ok(contractRequestService.confirmContractRequest(id));
+            return ResponseEntity.ok(contractRequestService.confirmContractRequest(id, signRequest));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("detail", e.getMessage()));
         }

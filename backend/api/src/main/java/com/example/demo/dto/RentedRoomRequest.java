@@ -56,5 +56,14 @@ public class RentedRoomRequest {
 
     @JsonProperty("electricity_unit_price")
     private BigDecimal electricityUnitPrice;
+
+    @JsonProperty("landlord_signature")
+    private String landlordSignature;
+
+    @JsonProperty("tenant_signature")
+    private String tenantSignature;
+
+    @JsonProperty("sign_metadata")
+    private String signMetadata;
 }
 

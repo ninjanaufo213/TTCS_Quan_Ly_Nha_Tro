@@ -14,7 +14,8 @@ import {
   Tag,
   Row,
   Col,
-  Select
+  Select,
+  Divider
 } from 'antd';
 import {
   PlusOutlined,
@@ -32,6 +33,7 @@ import { tenantService } from '../../services/tenantService';
 import { contractRequestService } from '../../services/contractRequestService';
 import { viewingService } from '../../services/viewingService';
 import { contractExtensionRequestService } from '../../services/contractExtensionRequestService';
+import SignaturePad from '../../components/SignaturePad';
 import dayjs from 'dayjs';
 import { generateContractPdf } from '../../services/contractPdfExport';
 
@@ -83,6 +85,7 @@ const Contracts = () => {
     startDate: null,
     endDate: null,
   });
+  const [landlordSignature, setLandlordSignature] = useState(null);
 
   const roomsMap = useMemo(() => {
     const m = {};
@@ -350,6 +353,7 @@ const Contracts = () => {
 
     setEditingContract(null);
     form.resetFields();
+    setLandlordSignature(null);
     if (houseId) {
       form.setFieldsValue({ house_id: parseInt(houseId) });
     }
@@ -366,6 +370,7 @@ const Contracts = () => {
   const handleModalClose = () => {
     setModalVisible(false);
     setRequestMode(false);
+    setLandlordSignature(null);
     // Clear action param from URL so it doesn't auto-open again
     const newParams = new URLSearchParams(searchParams);
     newParams.delete('action');
@@ -445,9 +450,19 @@ const Contracts = () => {
         ...submitValues,
         start_date: values.start_date.format('YYYY-MM-DD'),
         end_date: values.end_date.format('YYYY-MM-DD'),
+        landlord_signature: landlordSignature,
+        sign_metadata: JSON.stringify({
+          signed_at: new Date().toISOString(),
+          user_agent: navigator.userAgent,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        })
       };
 
       if (requestMode && viewingId) {
+        if (!landlordSignature) {
+          message.error('Vui lòng ký vào hợp đồng!');
+          return;
+        }
         delete submitData.tenant_id;
         delete submitData.tenant_name;
         delete submitData.tenant_phone;
@@ -1200,6 +1215,18 @@ const Contracts = () => {
           >
             <Input placeholder="Nhập link hợp đồng (nếu có)" />
           </Form.Item>
+
+          {requestMode && (
+            <>
+              <Divider>Chữ ký</Divider>
+              <SignaturePad
+                label="Chữ ký chủ trọ (Bên A)"
+                onSignatureChange={setLandlordSignature}
+                width={400}
+                height={150}
+              />
+            </>
+          )}
 
           <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
             <Space>

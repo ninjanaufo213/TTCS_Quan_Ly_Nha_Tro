@@ -64,6 +64,18 @@ public class RentedRoomResponse {
     @JsonProperty("electricity_unit_price")
     private BigDecimal electricityUnitPrice;
 
+    @JsonProperty("landlord_signature")
+    private String landlordSignature;
+
+    @JsonProperty("tenant_signature")
+    private String tenantSignature;
+
+    @JsonProperty("landlord_signed_at")
+    private LocalDateTime landlordSignedAt;
+
+    @JsonProperty("tenant_signed_at")
+    private LocalDateTime tenantSignedAt;
+
     @JsonProperty("is_active")
     private Boolean isActive;
 

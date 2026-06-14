@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.ContractRequestResponse;
+import com.example.demo.dto.ContractSignRequest;
 import com.example.demo.dto.RentedRoomRequest;
 import com.example.demo.model.ContractRequest;
 import com.example.demo.model.RentRequest;
@@ -104,6 +105,9 @@ public class ContractRequestService {
                 .generalPrice(request.getGeneralPrice())
                 .initialElectricityNum(request.getInitialElectricityNum())
                 .electricityUnitPrice(request.getElectricityUnitPrice())
+                .landlordSignature(request.getLandlordSignature())
+                .landlordSignedAt(request.getLandlordSignature() != null ? java.time.LocalDateTime.now() : null)
+                .landlordSignMetadata(request.getSignMetadata())
                 .build();
 
         rentRequest.setStatus(ViewingService.STATUS_CONTRACT_PENDING);
@@ -139,7 +143,7 @@ public class ContractRequestService {
                 .collect(Collectors.toList());
     }
 
-    public ContractRequestResponse confirmContractRequest(Integer contractRequestId) {
+    public ContractRequestResponse confirmContractRequest(Integer contractRequestId, ContractSignRequest signRequest) {
         ContractRequest contractRequest = contractRequestRepository.findById(contractRequestId)
                 .orElseThrow(() -> new IllegalArgumentException("Yêu cầu hợp đồng không tồn tại"));
 
@@ -150,6 +154,13 @@ public class ContractRequestService {
 
         if (!STATUS_PENDING.equals(contractRequest.getStatus())) {
             throw new IllegalArgumentException("Yêu cầu hợp đồng đã được xử lý");
+        }
+
+        // Save tenant signature
+        if (signRequest != null && signRequest.getSignature() != null) {
+            contractRequest.setTenantSignature(signRequest.getSignature());
+            contractRequest.setTenantSignedAt(java.time.LocalDateTime.now());
+            contractRequest.setTenantSignMetadata(signRequest.getSignMetadata());
         }
 
         RentRequest rentRequest = contractRequest.getRentRequest();
@@ -175,6 +186,8 @@ public class ContractRequestService {
                 .generalPrice(contractRequest.getGeneralPrice())
                 .initialElectricityNum(contractRequest.getInitialElectricityNum())
                 .electricityUnitPrice(contractRequest.getElectricityUnitPrice())
+                .landlordSignature(contractRequest.getLandlordSignature())
+                .tenantSignature(contractRequest.getTenantSignature())
                 .build();
 
         rentedRoomService.createRentedRoom(rentedRoomRequest);
@@ -294,6 +307,10 @@ public class ContractRequestService {
                 .initialElectricityNum(request.getInitialElectricityNum())
                 .electricityUnitPrice(request.getElectricityUnitPrice())
                 .contractUrl(request.getContractUrl())
+                .landlordSignature(request.getLandlordSignature())
+                .tenantSignature(request.getTenantSignature())
+                .landlordSignedAt(request.getLandlordSignedAt())
+                .tenantSignedAt(request.getTenantSignedAt())
                 .status(request.getStatus())
                 .createdAt(request.getCreatedAt())
                 .build();

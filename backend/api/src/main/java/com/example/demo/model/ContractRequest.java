@@ -70,6 +70,24 @@ public class ContractRequest {
     @Column(name = "electricity_unit_price", precision = 18, scale = 0)
     private BigDecimal electricityUnitPrice;
 
+    @Column(name = "landlord_signature", columnDefinition = "LONGTEXT")
+    private String landlordSignature;
+
+    @Column(name = "tenant_signature", columnDefinition = "LONGTEXT")
+    private String tenantSignature;
+
+    @Column(name = "landlord_signed_at")
+    private LocalDateTime landlordSignedAt;
+
+    @Column(name = "tenant_signed_at")
+    private LocalDateTime tenantSignedAt;
+
+    @Column(name = "landlord_sign_metadata", columnDefinition = "TEXT")
+    private String landlordSignMetadata;
+
+    @Column(name = "tenant_sign_metadata", columnDefinition = "TEXT")
+    private String tenantSignMetadata;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

@@ -458,7 +458,7 @@ export const generateContractPdf = (contractData, houseInfo, landlordInfo = {}) 
   y += 10;
 
   // ── 11. CHỮ KÝ ──
-  y = checkPageBreak(doc, y, 40);
+  y = checkPageBreak(doc, y, 60);
 
   const leftSignX = x;
   const rightSignX = x + CONTENT_WIDTH / 2 + 10;
@@ -474,6 +474,48 @@ export const generateContractPdf = (contractData, houseInfo, landlordInfo = {}) 
   doc.setFontSize(11);
   doc.text('(Ký, ghi rõ họ tên)', leftSignX + signBlockWidth / 2, y, { align: 'center' });
   doc.text('(Ký, ghi rõ họ tên)', rightSignX + signBlockWidth / 2, y, { align: 'center' });
+  y += 4;
+
+  // Embed signature images if available
+  const tenantSig = contractData.tenant_signature || contractData.tenantSignature;
+  const landlordSig = contractData.landlord_signature || contractData.landlordSignature;
+  const sigWidth = 50;
+  const sigHeight = 25;
+
+  if (tenantSig) {
+    try {
+      doc.addImage(tenantSig, 'PNG', leftSignX + (signBlockWidth - sigWidth) / 2, y, sigWidth, sigHeight);
+    } catch (e) {
+      console.warn('Could not embed tenant signature:', e);
+    }
+  }
+  if (landlordSig) {
+    try {
+      doc.addImage(landlordSig, 'PNG', rightSignX + (signBlockWidth - sigWidth) / 2, y, sigWidth, sigHeight);
+    } catch (e) {
+      console.warn('Could not embed landlord signature:', e);
+    }
+  }
+  y += sigHeight + 4;
+
+  // Print signer names below signatures
+  doc.setFont('Roboto', 'normal');
+  doc.setFontSize(12);
+  doc.text(tenantName, leftSignX + signBlockWidth / 2, y, { align: 'center' });
+  doc.text(landlordName, rightSignX + signBlockWidth / 2, y, { align: 'center' });
+
+  // Add e-contract legal notice
+  y += 10;
+  doc.setFont('Roboto', 'italic');
+  doc.setFontSize(9);
+  if (tenantSig || landlordSig) {
+    y = addWrappedText(
+      doc,
+      'Hợp đồng này được giao kết bằng phương thức điện tử theo Luật Giao dịch điện tử 2023 và có giá trị pháp lý tương đương hợp đồng văn bản.',
+      x, y, CONTENT_WIDTH, 4,
+      { fontSize: 9, fontStyle: 'italic' }
+    );
+  }
 
   // ── Save ──
   const fileName = `Hop_dong_thue_phong_${(contractData.room?.name || contractData.roomName || 'phong').replace(/\s+/g, '_')}_${formatDate(startDate).replace(/\//g, '-')}.pdf`;

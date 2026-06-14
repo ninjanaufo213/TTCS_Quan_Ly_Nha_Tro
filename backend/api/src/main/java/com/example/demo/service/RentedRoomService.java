@@ -119,6 +119,8 @@ public class RentedRoomService {
                 .monthlyRent(request.getMonthlyRent())
                 .deposit(request.getDeposit() != null ? request.getDeposit() : BigDecimal.ZERO)
                 .contractUrl(request.getContractUrl())
+                .landlordSignature(request.getLandlordSignature())
+                .tenantSignature(request.getTenantSignature())
                 .isActive(!request.getEndDate().isBefore(LocalDate.now()))
                 .build();
 
@@ -468,6 +470,10 @@ public class RentedRoomService {
                 .generalPrice(generalPrice)
                 .initialElectricityNum(initialElectricityNum)
                 .electricityUnitPrice(electricityUnitPrice)
+                .landlordSignature(rentedRoom.getLandlordSignature())
+                .tenantSignature(rentedRoom.getTenantSignature())
+                .landlordSignedAt(rentedRoom.getLandlordSignedAt())
+                .tenantSignedAt(rentedRoom.getTenantSignedAt())
                 .isActive(rentedRoom.getIsActive())
                 .createdAt(rentedRoom.getCreatedAt())
                 .updatedAt(rentedRoom.getUpdatedAt())

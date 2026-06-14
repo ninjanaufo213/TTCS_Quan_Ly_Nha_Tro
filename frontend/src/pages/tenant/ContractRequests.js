@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Table, Button, Tag, Space, message, Modal, Descriptions } from 'antd';
+import { Card, Table, Button, Tag, Space, message, Modal, Descriptions, Checkbox, Divider, Alert } from 'antd';
+import { CheckCircleFilled, CloseCircleFilled, EyeOutlined, EditOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { contractRequestService } from '../../services/contractRequestService';
+import SignaturePad from '../../components/SignaturePad';
 
 const statusColorMap = {
   PENDING: 'gold',
@@ -9,11 +11,28 @@ const statusColorMap = {
   CANCELED: 'red'
 };
 
+const statusLabelMap = {
+  PENDING: 'Đang chờ',
+  CONFIRMED: 'Đã xác nhận',
+  CANCELED: 'Đã hủy'
+};
+
+const formatMoney = (value) => {
+  if (value === null || value === undefined) return '-';
+  const num = typeof value === 'string' ? Number(value) : value;
+  if (Number.isNaN(num)) return String(value);
+  return new Intl.NumberFormat('vi-VN').format(num);
+};
+
 const ContractRequests = () => {
   const [loading, setLoading] = useState(true);
   const [requests, setRequests] = useState([]);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [signingOpen, setSigningOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [tenantSignature, setTenantSignature] = useState(null);
+  const [agreedTerms, setAgreedTerms] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const loadRequests = async () => {
     setLoading(true);
@@ -31,13 +50,38 @@ const ContractRequests = () => {
     loadRequests();
   }, []);
 
-  const handleConfirm = async (id) => {
+  const handleOpenSigning = (record) => {
+    setSelectedRequest(record);
+    setTenantSignature(null);
+    setAgreedTerms(false);
+    setSigningOpen(true);
+  };
+
+  const handleConfirmWithSignature = async () => {
+    if (!selectedRequest || !tenantSignature) return;
+    setConfirmLoading(true);
     try {
-      await contractRequestService.confirm(id);
-      message.success('Đã xác nhận hợp đồng');
+      const signMetadata = JSON.stringify({
+        signed_at: new Date().toISOString(),
+        user_agent: navigator.userAgent,
+        screen_resolution: `${window.screen.width}x${window.screen.height}`,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      });
+
+      await contractRequestService.confirm(selectedRequest.contractRequestId, {
+        signature: tenantSignature,
+        sign_metadata: signMetadata,
+      });
+      message.success('Đã ký và xác nhận hợp đồng thành công!');
+      setSigningOpen(false);
+      setSelectedRequest(null);
+      setTenantSignature(null);
+      setAgreedTerms(false);
       await loadRequests();
     } catch (error) {
-      message.error('Không thể xác nhận hợp đồng');
+      message.error(error?.response?.data?.detail || 'Không thể xác nhận hợp đồng');
+    } finally {
+      setConfirmLoading(false);
     }
   };
 
@@ -73,9 +117,10 @@ const ContractRequests = () => {
       key: 'houseName'
     },
     {
-      title: 'Số người',
-      dataIndex: 'numberOfTenants',
-      key: 'numberOfTenants'
+      title: 'Tiền thuê',
+      dataIndex: 'monthlyRent',
+      key: 'monthlyRent',
+      render: (value) => value ? `${formatMoney(value)} đ` : '-'
     },
     {
       title: 'Từ ngày',
@@ -90,99 +135,198 @@ const ContractRequests = () => {
       render: (value) => (value ? dayjs(value).format('DD/MM/YYYY') : '')
     },
     {
+      title: 'Chữ ký',
+      key: 'signatures',
+      render: (_, record) => (
+        <Space size={4}>
+          <Tag color={record.landlordSignature ? 'green' : 'default'} style={{ fontSize: 11 }}>
+            {record.landlordSignature ? '✓' : '✗'} Chủ trọ
+          </Tag>
+          <Tag color={record.tenantSignature ? 'green' : 'default'} style={{ fontSize: 11 }}>
+            {record.tenantSignature ? '✓' : '✗'} Người thuê
+          </Tag>
+        </Space>
+      )
+    },
+    {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      render: (value) => <Tag color={statusColorMap[value] || 'default'}>{value}</Tag>
+      render: (value) => <Tag color={statusColorMap[value] || 'default'}>{statusLabelMap[value] || value}</Tag>
     },
     {
       title: 'Hành động',
       key: 'action',
       render: (_, record) => {
-        const disabled = record.status !== 'PENDING';
+        const isPending = record.status === 'PENDING';
         return (
           <Space>
-            <Button size="small" onClick={() => handleOpenDetail(record)}>
+            <Button size="small" icon={<EyeOutlined />} onClick={() => handleOpenDetail(record)}>
               Xem
             </Button>
-            <Button type="primary" size="small" onClick={() => handleConfirm(record.contractRequestId)} disabled={disabled}>
-              Xác nhận
-            </Button>
-            <Button size="small" danger onClick={() => handleCancel(record.contractRequestId)} disabled={disabled}>
-              Hủy
-            </Button>
+            {isPending && (
+              <>
+                <Button type="primary" size="small" icon={<EditOutlined />} onClick={() => handleOpenSigning(record)}>
+                  Ký & Xác nhận
+                </Button>
+                <Button size="small" danger onClick={() => handleCancel(record.contractRequestId)}>
+                  Hủy
+                </Button>
+              </>
+            )}
           </Space>
         );
       }
     }
   ];
 
+  // Contract details component (reused in both modals)
+  const ContractDetails = ({ request }) => (
+    <Descriptions column={1} size="middle">
+      <Descriptions.Item label="Phòng">{request?.roomName || '-'}</Descriptions.Item>
+      <Descriptions.Item label="Nhà trọ">{request?.houseName || '-'}</Descriptions.Item>
+      <Descriptions.Item label="Số người">{request?.numberOfTenants ?? '-'}</Descriptions.Item>
+      <Descriptions.Item label="Từ ngày">{request?.startDate ? dayjs(request.startDate).format('DD/MM/YYYY') : '-'}</Descriptions.Item>
+      <Descriptions.Item label="Đến ngày">{request?.endDate ? dayjs(request.endDate).format('DD/MM/YYYY') : '-'}</Descriptions.Item>
+      <Descriptions.Item label="Tiền thuê/tháng">{formatMoney(request?.monthlyRent)} đ</Descriptions.Item>
+      <Descriptions.Item label="Tiền cọc">{formatMoney(request?.deposit)} đ</Descriptions.Item>
+      <Descriptions.Item label="Giá điện">{formatMoney(request?.electricityUnitPrice)} đ/kWh</Descriptions.Item>
+      <Descriptions.Item label="Số điện ban đầu">{request?.initialElectricityNum ?? '-'}</Descriptions.Item>
+      <Descriptions.Item label="Giá nước">{formatMoney(request?.waterPrice)} đ</Descriptions.Item>
+      <Descriptions.Item label="Giá wifi">{formatMoney(request?.internetPrice)} đ</Descriptions.Item>
+      <Descriptions.Item label="Giá dịch vụ chung">{formatMoney(request?.generalPrice)} đ</Descriptions.Item>
+    </Descriptions>
+  );
+
   return (
     <Card className="dash-animate-fade-in-up" title="Yêu cầu hợp đồng">
-      <Table className="dash-animate-fade-in-up"         rowKey="contractRequestId"
+      <Table
+        className="dash-animate-fade-in-up"
+        rowKey="contractRequestId"
         loading={loading}
         dataSource={requests}
         columns={columns}
         pagination={{ pageSize: 8 }}
       />
 
+      {/* Detail View Modal */}
       <Modal
         title="Chi tiết yêu cầu hợp đồng"
         open={detailOpen}
         onCancel={handleCloseDetail}
-        footer={null}
-        width={520}
+        footer={<Button onClick={handleCloseDetail}>Đóng</Button>}
+        width={600}
       >
-        <Descriptions column={1} size="middle">
-          <Descriptions.Item label="Phòng">{selectedRequest?.roomName || '-'}</Descriptions.Item>
-          <Descriptions.Item label="Nhà trọ">{selectedRequest?.houseName || '-'}</Descriptions.Item>
-          <Descriptions.Item label="Số người">{selectedRequest?.numberOfTenants ?? '-'}</Descriptions.Item>
-          <Descriptions.Item label="Từ ngày">{selectedRequest?.startDate ? dayjs(selectedRequest.startDate).format('DD/MM/YYYY') : '-'}</Descriptions.Item>
-          <Descriptions.Item label="Đến ngày">{selectedRequest?.endDate ? dayjs(selectedRequest.endDate).format('DD/MM/YYYY') : '-'}</Descriptions.Item>
-          <Descriptions.Item label="Tiền thuê/tháng">{selectedRequest?.monthlyRent ? Number(selectedRequest.monthlyRent).toLocaleString('vi-VN') : '-'} đ</Descriptions.Item>
-          <Descriptions.Item label="Tiền cọc">{selectedRequest?.deposit ? Number(selectedRequest.deposit).toLocaleString('vi-VN') : '-'} đ</Descriptions.Item>
-          <Descriptions.Item label="Giá điện">{selectedRequest?.electricityUnitPrice ? Number(selectedRequest.electricityUnitPrice).toLocaleString('vi-VN') : '-'} đ/kWh</Descriptions.Item>
-          <Descriptions.Item label="Số điện ban đầu">{selectedRequest?.initialElectricityNum ?? '-'}</Descriptions.Item>
-          <Descriptions.Item label="Giá nước">{selectedRequest?.waterPrice ? Number(selectedRequest.waterPrice).toLocaleString('vi-VN') : '-'} đ</Descriptions.Item>
-          <Descriptions.Item label="Giá wifi">{selectedRequest?.internetPrice ? Number(selectedRequest.internetPrice).toLocaleString('vi-VN') : '-'} đ</Descriptions.Item>
-          <Descriptions.Item label="Giá dịch vụ chung">{selectedRequest?.generalPrice ? Number(selectedRequest.generalPrice).toLocaleString('vi-VN') : '-'} đ</Descriptions.Item>
-          <Descriptions.Item label="Link hợp đồng">
-            {selectedRequest?.contractUrl ? (
-              <a href={selectedRequest.contractUrl} target="_blank" rel="noreferrer">
-                Xem hợp đồng
-              </a>
-            ) : (
-              '-'
-            )}
-          </Descriptions.Item>
+        <ContractDetails request={selectedRequest} />
+
+        {/* Show signatures if they exist */}
+        {(selectedRequest?.landlordSignature || selectedRequest?.tenantSignature) && (
+          <>
+            <Divider>Chữ ký</Divider>
+            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+              <SignaturePad
+                label="Chữ ký chủ trọ (Bên A)"
+                value={selectedRequest?.landlordSignature}
+                disabled={true}
+                width={250}
+                height={120}
+              />
+              <SignaturePad
+                label="Chữ ký người thuê (Bên B)"
+                value={selectedRequest?.tenantSignature}
+                disabled={true}
+                width={250}
+                height={120}
+              />
+            </div>
+          </>
+        )}
+
+        <Descriptions column={1} size="middle" style={{ marginTop: 16 }}>
           <Descriptions.Item label="Trạng thái">
             <Tag color={statusColorMap[selectedRequest?.status] || 'default'}>
-              {selectedRequest?.status || '-'}
+              {statusLabelMap[selectedRequest?.status] || selectedRequest?.status || '-'}
             </Tag>
           </Descriptions.Item>
         </Descriptions>
+      </Modal>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
-          <Button onClick={handleCloseDetail}>Đóng</Button>
+      {/* Signing Modal */}
+      <Modal
+        title="Ký & Xác nhận hợp đồng"
+        open={signingOpen}
+        onCancel={() => {
+          setSigningOpen(false);
+          setSelectedRequest(null);
+          setTenantSignature(null);
+          setAgreedTerms(false);
+        }}
+        width={700}
+        footer={[
           <Button
-            type="primary"
-            onClick={() => selectedRequest && handleConfirm(selectedRequest.contractRequestId)}
-            disabled={selectedRequest?.status !== 'PENDING'}
-          >
-            Xác nhận
-          </Button>
-          <Button
-            danger
-            onClick={() => selectedRequest && handleCancel(selectedRequest.contractRequestId)}
-            disabled={selectedRequest?.status !== 'PENDING'}
+            key="cancel"
+            onClick={() => {
+              setSigningOpen(false);
+              setSelectedRequest(null);
+              setTenantSignature(null);
+              setAgreedTerms(false);
+            }}
           >
             Hủy
+          </Button>,
+          <Button
+            key="confirm"
+            type="primary"
+            loading={confirmLoading}
+            disabled={!tenantSignature || !agreedTerms}
+            onClick={handleConfirmWithSignature}
+            icon={<CheckCircleFilled />}
+          >
+            Ký & Xác nhận hợp đồng
           </Button>
-        </div>
+        ]}
+      >
+        <Alert
+          message="Vui lòng đọc kỹ các điều khoản hợp đồng trước khi ký"
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+
+        <ContractDetails request={selectedRequest} />
+
+        <Divider>Chữ ký</Divider>
+
+        {/* Landlord signature (read-only) */}
+        <SignaturePad
+          label="Chữ ký chủ trọ (Bên A)"
+          value={selectedRequest?.landlordSignature}
+          disabled={true}
+          width={400}
+          height={150}
+        />
+
+        {/* Tenant signature (editable) */}
+        <SignaturePad
+          label="Chữ ký của bạn (Bên B)"
+          onSignatureChange={setTenantSignature}
+          width={400}
+          height={150}
+        />
+
+        <Checkbox
+          checked={agreedTerms}
+          onChange={(e) => setAgreedTerms(e.target.checked)}
+          style={{ marginTop: 16 }}
+        >
+          <span style={{ fontSize: 13 }}>
+            Tôi đồng ý rằng hợp đồng này được giao kết bằng phương thức điện tử theo
+            <strong> Luật Giao dịch điện tử 2023</strong> và có giá trị pháp lý tương đương hợp đồng văn bản.
+          </span>
+        </Checkbox>
       </Modal>
     </Card>
   );
 };
 
 export default ContractRequests;
-
