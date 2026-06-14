@@ -540,12 +540,6 @@ const HomePage = () => {
                 >
                   Đề xuất theo vị trí
                 </div>
-                <div
-                  className={`tab-item ${activeTab === 'video' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('video')}
-                >
-                  Có video xem trước
-                </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginRight: 16 }}>
                 <Button
