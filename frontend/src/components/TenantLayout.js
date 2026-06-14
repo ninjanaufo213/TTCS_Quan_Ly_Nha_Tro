@@ -6,6 +6,7 @@ import {
   ThunderboltOutlined,
   BellOutlined,
   CalendarOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import SharedHeader from './SharedHeader';
@@ -52,6 +53,11 @@ export default function TenantLayout() {
       key: '/tenant/notifications',
       icon: <BellOutlined />,
       label: 'Thông báo',
+    },
+    {
+      key: '/tenant/profile',
+      icon: <UserOutlined />,
+      label: 'Thông tin cá nhân',
     },
   ];
 
@@ -104,7 +110,7 @@ export default function TenantLayout() {
           showDashboardButton={false}
           onMenuToggle={() => setCollapsed(!collapsed)}
           menuCollapsed={collapsed}
-          showProfileItem={false}
+          showProfileItem={true}
           showNotifications
         />
 

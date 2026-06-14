@@ -172,6 +172,7 @@ function App() {
                             <Route path="viewings" element={<MyViewings />} />
                             <Route path="contract-requests" element={<ContractRequests />} />
                             <Route path="notifications" element={<Notifications />} />
+                            <Route path="profile" element={<Profile />} />
                         </Route>
 
                         {/* Admin routes */}

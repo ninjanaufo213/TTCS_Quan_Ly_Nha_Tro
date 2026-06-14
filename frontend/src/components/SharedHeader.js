@@ -106,7 +106,7 @@ const SharedHeader = ({
       if (role === 'admin' || role === 'ADMIN') {
         navigate('/admin/profile');
       } else if (role === 'tenant' || role === 'TENANT') {
-        navigate('/tenant/room-info');
+        navigate('/tenant/profile');
       } else {
         navigate('/app/profile');
       }

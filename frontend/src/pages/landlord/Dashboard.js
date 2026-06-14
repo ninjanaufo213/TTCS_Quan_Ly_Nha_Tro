@@ -306,7 +306,9 @@ const Dashboard = () => {
     },
   ];
 
-  const activeRequests = viewingRequests.filter(r => !['CANCELED', 'CONTRACTED'].includes(r.status));
+  const activeRequests = viewingRequests
+    .filter(r => !['CANCELED', 'CONTRACTED'].includes(r.status))
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
   return (
     <DashboardLayout
