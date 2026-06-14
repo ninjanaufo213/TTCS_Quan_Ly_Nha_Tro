@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 public record HouseResponse(
         Integer houseId,
         Integer landlordId,
+        String landlordName,
+        String landlordPhone,
         String name,
         Integer floorCount,
         String addressLine,

@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Table, Button, Tag, Space, message, Modal, Descriptions, Checkbox, Divider, Alert } from 'antd';
-import { CheckCircleFilled, CloseCircleFilled, EyeOutlined, EditOutlined } from '@ant-design/icons';
+import { CheckCircleFilled, CloseCircleFilled, EyeOutlined, EditOutlined, FilePdfOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { contractRequestService } from '../../services/contractRequestService';
+import { roomService } from '../../services/roomService';
+import { houseService } from '../../services/houseService';
+import { generateContractPdf } from '../../services/contractPdfExport';
 import SignaturePad from '../../components/SignaturePad';
 
 const statusColorMap = {
@@ -105,6 +108,38 @@ const ContractRequests = () => {
     setSelectedRequest(null);
   };
 
+  const handleExportPdf = async (request) => {
+    try {
+      const hideMsg = message.loading('Đang tạo PDF...', 0);
+      let houseInfo = null;
+      if (request.roomId) {
+        try {
+          const room = await roomService.getById(request.roomId);
+          if (room && room.house_id) {
+            houseInfo = await houseService.getById(room.house_id);
+          }
+        } catch (_) {}
+      }
+      
+      const landlordInfo = { 
+        name: houseInfo?.landlord_name || houseInfo?.landlordName || '', 
+        phone: houseInfo?.landlord_phone || houseInfo?.landlordPhone || '' 
+      };
+      
+      const contractData = {
+        ...request,
+        room: { name: request.roomName },
+      };
+
+      generateContractPdf(contractData, houseInfo || {}, landlordInfo);
+      hideMsg();
+      message.success('Đã xuất file PDF hợp đồng!');
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      message.error('Lỗi khi xuất file PDF hợp đồng!');
+    }
+  };
+
   const columns = [
     {
       title: 'Phòng',
@@ -164,6 +199,9 @@ const ContractRequests = () => {
             <Button size="small" icon={<EyeOutlined />} onClick={() => handleOpenDetail(record)}>
               Xem
             </Button>
+            <Button size="small" icon={<FilePdfOutlined />} onClick={() => handleExportPdf(record)}>
+              PDF
+            </Button>
             {isPending && (
               <>
                 <Button type="primary" size="small" icon={<EditOutlined />} onClick={() => handleOpenSigning(record)}>
@@ -214,7 +252,14 @@ const ContractRequests = () => {
         title="Chi tiết yêu cầu hợp đồng"
         open={detailOpen}
         onCancel={handleCloseDetail}
-        footer={<Button onClick={handleCloseDetail}>Đóng</Button>}
+        footer={[
+          <Button key="pdf" icon={<FilePdfOutlined />} onClick={() => handleExportPdf(selectedRequest)}>
+            Xuất PDF
+          </Button>,
+          <Button key="close" onClick={handleCloseDetail}>
+            Đóng
+          </Button>
+        ]}
         width={600}
       >
         <ContractDetails request={selectedRequest} />

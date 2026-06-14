@@ -35,7 +35,7 @@ const SignaturePad = ({
   const handleEnd = () => {
     if (sigRef.current && !sigRef.current.isEmpty()) {
       setIsEmpty(false);
-      const dataUrl = sigRef.current.getTrimmedCanvas().toDataURL('image/png');
+      const dataUrl = sigRef.current.getCanvas().toDataURL('image/png');
       if (onSignatureChange) onSignatureChange(dataUrl);
     }
   };
@@ -125,6 +125,7 @@ const SignaturePad = ({
         <SignatureCanvas
           ref={sigRef}
           penColor="#000"
+          backgroundColor="#fff"
           canvasProps={{
             width,
             height,

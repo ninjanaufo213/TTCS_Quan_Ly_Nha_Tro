@@ -116,6 +116,8 @@ public class HouseService {
         return new HouseResponse(
                 house.getHouseId(),
                 house.getLandlord().getLandlordId(),
+                house.getLandlord().getBrandName(),
+                house.getLandlord().getUser().getPhone(),
                 house.getName(),
                 house.getFloorCount(),
                 house.getAddressLine(),

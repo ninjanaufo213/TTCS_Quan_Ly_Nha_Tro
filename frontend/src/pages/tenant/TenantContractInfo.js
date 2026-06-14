@@ -82,9 +82,11 @@ export default function TenantContractInfo() {
         } catch (_) {}
       }
 
-      // Get landlord info — tenant doesn't have landlord info in localStorage,
-      // so we leave it blank (chủ trọ sẽ điền khi ký)
-      const landlordInfo = { name: '', phone: '' };
+      // Get landlord info from houseInfo
+      const landlordInfo = { 
+        name: houseInfo?.landlord_name || houseInfo?.landlordName || '', 
+        phone: houseInfo?.landlord_phone || houseInfo?.landlordPhone || '' 
+      };
 
       generateContractPdf(selectedContract, houseInfo || {}, landlordInfo);
       message.success('Đã xuất file PDF hợp đồng!');
